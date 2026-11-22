@@ -23,7 +23,7 @@ struct UserDocumentationTests {
         let sections: [(String, [String])] = [
             ("top level", ConfigurationFile.keys), ("ui", UISection.keys), ("skills", SkillsSection.keys),
             ("sandbox", SandboxSection.keys), ("threads", ThreadsSection.keys),
-            ("environment", EnvironmentSection.keys), ("mcp", MCPServerSetting.keys)
+            ("environment", EnvironmentSection.keys), ("mcp", MCPServerSetting.keys), ("policy", PolicySection.keys)
         ]
         for (section, keys) in sections {
             let missing = keys.filter { !page.contains("`\($0)`") }

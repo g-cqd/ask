@@ -69,11 +69,13 @@ public struct ConfigurationLoader: Sendable {
         // Both are read first: a document that cannot be trusted or read stops the load before anything applies.
         let requirements = try managed.load(.requirements)
         for (path, file) in try managed.load(.defaults) {
+            try Self.refusePolicy(file, path: path)
             configuration = configuration.applying(file, from: .managed(path, required: false))
             applied.append(path)
             notices += file.notices
         }
         if let user = try ConfigurationFile.load(userPath) {
+            try Self.refusePolicy(user, path: userPath)
             configuration = configuration.applying(user, from: .file(userPath))
             applied.append(userPath)
             notices += user.notices
@@ -82,6 +84,7 @@ public struct ConfigurationLoader: Sendable {
             switch try ProjectTrust.load(trustPath).standing(of: projectPath, bytes: bytes) {
                 case .trusted:
                     let project = try ConfigurationFile.parse(bytes, path: projectPath, isProject: true)
+                    try Self.refusePolicy(project, path: projectPath)
                     let defined = Set(configuration.mcp.value.servers.map(\.name))
                     for mask in project.mcp?.masks ?? [] where !defined.contains(mask.name) {
                         notices.append(
@@ -118,5 +121,15 @@ public struct ConfigurationLoader: Sendable {
             notices += file.notices
         }
         return Result(configuration: configuration, applied: applied, notices: notices)
+    }
+
+    /// Refuses a file other than an organisation's requirements that sets `policy` (ADR-0168): it is theirs alone to decide.
+    private static func refusePolicy(_ file: ConfigurationFile, path: String) throws(ConfigurationError) {
+        guard file.policy != nil else { return }
+        throw .outOfRange(
+            path: path,
+            key: "policy",
+            reason: "is for an organisation's requirements.json only (\(ManagedFiles.systemDirectory))"
+        )
     }
 }

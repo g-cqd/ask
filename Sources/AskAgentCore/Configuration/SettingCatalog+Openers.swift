@@ -7,3 +7,8 @@ extension SettingCatalog {
     /// Every setting but the openers', section by section.
     static let beforeOpeners = top + ui + sandbox + approvals + hooks + threads + agents + skills + environment + jobs
 }
+
+extension SettingCatalog {
+    /// The settings only an organisation's requirements may hold (ADR-0168): not in ``all``, which lists what a person may set.
+    static let managedOnly: [Setting] = PolicySection.settings.all.map(\.row)
+}

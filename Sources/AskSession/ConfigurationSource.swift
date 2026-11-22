@@ -76,10 +76,21 @@ package struct ConfigurationSource: Sendable {
         }
     }
 
-    /// The source for the project at `workingDirectory`.
-    init(workingDirectory: String, flags: Flags, environment: [String: String] = LaunchEnvironment.values) {
+    /// The source for the project at `workingDirectory`, with the organisation's documents in `managed`'s folder: the system's,
+    /// unless a test names its own (ADR-0168).
+    init(
+        workingDirectory: String,
+        flags: Flags,
+        environment: [String: String] = LaunchEnvironment.values,
+        managed: ManagedFiles = ManagedFiles()
+    ) {
         let directory = askConfigDirectory(environment: environment)
-        loader = ConfigurationLoader(project: workingDirectory, configDirectory: directory, environment: environment)
+        loader = ConfigurationLoader(
+            project: workingDirectory,
+            configDirectory: directory,
+            environment: environment,
+            managed: managed
+        )
         providersPath = directory + "/providers.json"
         self.flags = flags
         self.environment = environment

@@ -83,6 +83,7 @@ extension ConfigurationSource {
             model: discovered.model,
             environment: environment
         )
+        try refuseWhatPolicyForbids(result.configuration.policy, model: thinking.model)
         allowProxy(to: thinking.model)
         let commandEnvironment = CommandEnvironment(providers: providers, configuration: result.configuration)
         // Everything that needed the credentials has read them: the snapshot keeps them, ask's own process does not (ADR-0113).
@@ -110,6 +111,21 @@ extension ConfigurationSource {
             approvalAllow: flags.approvalAllow,
             approvalAsk: flags.approvalAsk
         )
+    }
+
+    /// Refuses a run the organisation's `policy` does not allow (ADR-0168): the flags, and the model the run resolved to, so that a
+    /// `/model` choice, which loads again, is refused the same way.
+    private func refuseWhatPolicyForbids(
+        _ policy: Configuration.Setting<PolicySection>,
+        model: ResolvedModel
+    ) throws(ConfigurationError) {
+        let refused = policy.value.refusal(
+            noSandbox: flags.noSandbox,
+            yes: flags.approvalFlag == .yes,
+            provider: model.providerName,
+            model: model.model
+        )
+        if let refused { throw .notAllowed(path: "\(policy.source)", what: refused) }
     }
 
     private func allowProxy(to model: ResolvedModel) {

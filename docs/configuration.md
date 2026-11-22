@@ -127,6 +127,18 @@ stops ask with a message naming it, rather than being skipped. While ask runs, w
 refuse to change a required model, provider or thinking level, a resumed session's model gives way to the required one, and `/config`
 shows a required row as not editable and does not save it.
 
+`requirements.json` may also hold a `policy` section, which no other file may set:
+
+| Key | What it does | Default |
+| --- | --- | --- |
+| `allowNoSandbox` | `false` refuses `--no-sandbox` and `--yolo`. | `true` |
+| `allowYes` | `false` refuses `--yes` and `--yolo`. | `true` |
+| `providers` | The connections ask may use, by the name `/model` takes, such as `["work"]`; `*` matches anything. | any |
+| `models` | The models ask may use, by id, such as `["claude-*"]`; `*` matches anything. | any |
+
+A run, or a `/model` choice, that the policy does not allow stops with a message naming it and the file. A later drop-in replaces a
+policy key an earlier document set, as for every other key.
+
 ## Older names
 
 Some settings were renamed on 2026-10-30. A file that uses an old name still loads, as the new name, and ask says so once at the start;
