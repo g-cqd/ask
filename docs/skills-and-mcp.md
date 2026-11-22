@@ -16,6 +16,9 @@ use, so the ones you wrote for Claude Code, Codex, pi, opencode, Mistral Vibe or
   the `SKILL.md` file: when it changes, it needs trusting again. The files beside it (scripts, references) are not covered; the model reads
   or runs them only as it would any file in the repository, under the sandbox and your approvals.
 
+On a managed machine, skills an organisation puts in `/Library/Application Support/ask/skills` (`/etc/ask/skills` on Linux) are offered
+too, as the source `organisation`. With `policy.managedSkillsOnly` they are the only ones (see [configuration](configuration.md)).
+
 `skills` in [configuration](configuration.md#skills) turns them off, changes the count, or limits where ask looks.
 
 ## MCP servers

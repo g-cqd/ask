@@ -20,6 +20,8 @@ extension ConfigurationSource {
             thinking: flags.thinking
         )
         var details: [String] = []
+        // A run that may use only the organisation's skills, whose folder cannot be trusted, says why it has none (roadmap 0130).
+        if let refusal = SkillOrigins.of(result.configuration.policy.value).refusal { result.notices.append(refusal) }
         // Before anything reads a credential: the choice decides where they are read from.
         result.notices += CredentialPlacement.apply(result.configuration.credentials.value, environment: environment)
         if let record = sessionSandbox, !flags.noSandbox {

@@ -17,6 +17,14 @@ extension Configuration {
         return next
     }
 
+    /// `self` with what the organisation's policy takes away taken away after every layer (its MCP servers, then its hooks), and a
+    /// notice for each thing taken.
+    func applyingPolicy(organisationCheck: String?) -> (Configuration, [String]) {
+        let (permitted, refusedServers) = applyingServerPolicy()
+        let (hooked, refusedHook) = permitted.applyingHookPolicy(organisationCheck: organisationCheck)
+        return (hooked, refusedServers + refusedHook)
+    }
+
     /// `self` with each MCP server the organisation's `policy.mcpServers` does not list switched off, and a notice for each.
     func applyingServerPolicy() -> (Configuration, [String]) {
         let policy = self.policy
@@ -33,5 +41,23 @@ extension Configuration {
             return off
         }
         return (next, notices)
+    }
+
+    /// `self` with a hook command set outside the organisation's documents replaced by theirs, or off, when its
+    /// `policy.managedHooksOnly` says only they may set one; and a notice when that changed anything.
+    func applyingHookPolicy(organisationCheck: String?) -> (Configuration, [String]) {
+        guard policy.value.managedHooksOnly == true, let check = hooks.value.check, check != organisationCheck else {
+            return (self, [])
+        }
+        var next = self
+        next.hooks.value.check = organisationCheck
+        let instead = organisationCheck == nil ? "it is off" : "the organisation's runs instead"
+        return (
+            next,
+            [
+                "The hook hooks.check is set outside your organisation's documents, which they do not allow "
+                    + "(policy.managedHooksOnly, \(policy.source)); \(instead)."
+            ]
+        )
     }
 }

@@ -8,25 +8,35 @@ package struct SkillBook {
     let block: String?
     let tool: SkillTool?
     let catalog: SkillCatalog
-    let knownSources = SkillSource.standard.map(\.id)
+    let knownSources: [String]
+
+    /// The skills `configuration` offers, its organisation's policy applied (``SkillOrigins``).
+    init(_ configuration: Configuration, workingDirectory: String) {
+        self.init(
+            configuration.skills.value,
+            workingDirectory: workingDirectory,
+            origins: .of(configuration.policy.value)
+        )
+    }
 
     /// - Parameters:
     ///   - section: the `skills` configuration. Off means no block and no tool: the model is not told skills exist.
     ///   - workingDirectory: where the project is.
-    init(_ section: SkillsSection, workingDirectory: String) {
+    ///   - origins: where skills may come from; under the organisation's policy, its folder alone.
+    init(_ section: SkillsSection, workingDirectory: String, origins: SkillOrigins) {
+        let known = origins.sources.map(\.id)
         guard section.enabled != false else {
-            self.init(block: nil, tool: nil, catalog: SkillCatalog())
+            self.init(block: nil, tool: nil, catalog: SkillCatalog(), knownSources: known)
             return
         }
-        let known = SkillSource.standard.map(\.id)
         // The user's skills, a project's, and the bundled ones for `from`. A project's skill is text from a repository: discovery loads it only when
         // the user has trusted its file as it is now (`ask trust --skills`), and sets the others aside for `ask skills` to report.
         let catalog = SkillDiscovery.discover(
             workingDirectory: workingDirectory,
             home: NSHomeDirectory(),
-            sources: SkillSource.standard,
+            sources: origins.sources,
             selection: SkillSelection(
-                tokens: ["user", "project", "bundled"] + (section.sources ?? []),
+                tokens: origins.imposed ?? ["user", "project", "bundled"] + (section.sources ?? []),
                 knownSources: known
             ),
             trust: Self.trust()
@@ -38,7 +48,8 @@ package struct SkillBook {
         self.init(
             block: block,
             tool: catalog.skills.isEmpty ? nil : SkillTool(catalog: catalog, knownSources: known),
-            catalog: catalog
+            catalog: catalog,
+            knownSources: known
         )
     }
 
@@ -47,9 +58,10 @@ package struct SkillBook {
         (try? ProjectTrust.load(ConfigurationSource.here.loader.trustPath)) ?? ProjectTrust()
     }
 
-    private init(block: String?, tool: SkillTool?, catalog: SkillCatalog) {
+    private init(block: String?, tool: SkillTool?, catalog: SkillCatalog, knownSources: [String]) {
         self.block = block
         self.tool = tool
         self.catalog = catalog
+        self.knownSources = knownSources
     }
 }

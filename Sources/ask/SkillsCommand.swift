@@ -50,12 +50,17 @@ struct SkillsCommand: ParsableCommand {
             }
             return
         }
-        let tokens = (from ?? "").split(separator: ",").map(String.init)
-        let selection = SkillSelection(tokens: tokens, knownSources: SkillSource.standard.map(\.id))
+        // What a run would offer: under the organisation's policy, its folder alone. A configuration that cannot be read stops a run,
+        // which says why; here the list is shown as if no policy applied.
+        let loaded = (try? ConfigurationSource.here.loader.load())?.configuration ?? Configuration.defaults
+        let origins = SkillOrigins.of(loaded.policy.value)
+        if let refusal = origins.refusal { print(refusal) }
+        let tokens = origins.imposed ?? (from ?? "").split(separator: ",").map(String.init)
+        let selection = SkillSelection(tokens: tokens, knownSources: origins.sources.map { $0.id })
         let catalog = SkillDiscovery.discover(
             workingDirectory: FileManager.default.currentDirectoryPath,
             home: NSHomeDirectory(),
-            sources: SkillSource.standard,
+            sources: origins.sources,
             selection: selection,
             trust: SkillBook.trust()
         )

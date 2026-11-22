@@ -114,7 +114,7 @@ func makeLoop(
     let resolved = run.model
     let limits = run.limits
     let sandbox = run.sandbox
-    let skills = SkillBook(run.configuration.skills.value, workingDirectory: workingDirectory)
+    let skills = SkillBook(run.configuration, workingDirectory: workingDirectory)
     let agent = settings(
         for: resolved,
         workingDirectory: workingDirectory,
