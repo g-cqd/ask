@@ -12,7 +12,7 @@ public struct ApprovalsSection: Sendable, Equatable, CustomStringConvertible {
     }
 
     /// The keys a file may set under `approvals`.
-    public static let keys = ["default", "allow", "ask", "remember"]
+    public static let keys = settings.all.map(\.name)
 
     public var defaultMode: Mode?
     /// Tool names, or `mcp__server__*` patterns, that run without asking.

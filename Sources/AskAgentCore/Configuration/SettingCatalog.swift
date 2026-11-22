@@ -124,26 +124,7 @@ enum SettingCatalog {
 
     static let sandbox: [Setting] = SandboxSection.settings.all.map(\.row)
 
-    static let approvals: [Setting] = [
-        row(
-            "approvals.default",
-            .choice(["ask", "allow"]),
-            #""ask""#,
-            "ask",
-            user: true,
-            "What a call no list names does."
-        ),
-        row("approvals.allow", .structured, #"["mcp__docs__*"]"#, "none", user: true, "Tools that run without asking."),
-        row("approvals.ask", .structured, #"["write"]"#, "none", user: true, "Tools that always ask."),
-        row(
-            "approvals.remember",
-            words(ApprovalsSection.Scope.self),
-            #""none""#,
-            "none",
-            user: true,
-            "What an \"always\" answer could write back to this file."
-        )
-    ]
+    static let approvals: [Setting] = ApprovalsSection.settings.all.map(\.row)
 
     static let skills: [Setting] = SkillsSection.settings.all.map(\.row)
 
