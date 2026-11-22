@@ -29,6 +29,17 @@ struct HostPasteboardTests {
         }
     }
 
+    @Test func `with no file copied, the picture is the pasteboard's PNG data; empty data is none`() {
+        withPasteboard { pasteboard in
+            pasteboard.clearContents()
+            #expect(pasteboard.setData(Data([0x89, 0x50, 0x4E, 0x47]), forType: .png))
+            #expect(HostPasteboard.picture(on: pasteboard, files: []) == [0x89, 0x50, 0x4E, 0x47])
+            pasteboard.clearContents()
+            #expect(pasteboard.setData(Data(), forType: .png))
+            #expect(HostPasteboard.picture(on: pasteboard, files: []) == nil, "an empty picture is no picture")
+        }
+    }
+
     @Test func `a private pasteboard is never denied`() {
         withPasteboard { #expect($0.accessBehavior != .alwaysDeny) }
     }

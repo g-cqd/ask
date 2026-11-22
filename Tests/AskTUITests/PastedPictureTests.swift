@@ -55,6 +55,9 @@ struct PastedPictureTests {
         #expect(PastedPath.picture(folder.path) == nil)
         #expect(PastedPath.picture("\(plain)\n\(plain)") == nil, "two lines are text")
         #expect(PastedPath.picture("look at shot.png") == nil)
+        // A quote on one side only is part of the text, not a quoted path: stripping both ends of `//…/shot.png'` would name the file.
+        #expect(PastedPath.picture("/\(plain)'") == nil, "a closing quote without an opening one")
+        #expect(PastedPath.picture("\"\(plain)'") == nil, "two different quotes")
     }
 
     @Test func `an attached picture is a token at the cursor and a caption above the input; the message shows it`() {
