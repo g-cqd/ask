@@ -173,29 +173,17 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     // @dl:accept -- the key list and the layering below are the schema's data, a list of names and one line per key
     public var isEmpty: Bool { self == UISection() }
 
-    /// The keys, in the order they are shown, as a file writes them (roadmap 0154); `fold.*` are the keys of the `fold` object.
-    public static let keys =
-        [
-            "mouse", "copyOnSelect", "fold.tools", "fold.thinking", "fold.code", "fold.codeLines", "fold.outputLines",
-            "fold.outputBytes", "scrollLines", "inputRows", "sidebar", "sidebarJobs",
-            "sidebarLayout"
-        ]
-        // @dl:accept -- the list of keys is data; a test's list of call names is other data
-        + lookKeys + behaviorKeys
-
-    /// The keys that set the look of the screen (roadmap 0074).
-    // @dl:accept -- the key table is schema data, a list of names like a test's list of names
-    private static let lookKeys = [
-        // @dl:accept -- a list of key names is data, like any other list of names
-        "inputPrefix", "tint", "appearance", "separator", "padding", "markdown", "highlight", "durations",
-        // @dl:accept -- the rest of the same list of key names
-        "spinner", "shimmer", "hover", "showTimeout", "timeoutLabel", "dim", "sessionTint", "statusPath",
-        // @dl:accept -- a list of key names is data, like any other list of names
-        "statusPathSide"
-    ]
-    private static let behaviorKeys = [
-        "paths", "pathAncestors", "leaveFinishedJob", "stopKeys", "stopTwice", "queuedOnStop", "listAllModels",
-        "sessionColor", "notify", "historyLimit"
+    /// The keys, in the order they are shown, as a file writes them (roadmap 0154); `fold.*` are the keys of the `fold` object. The
+    /// catalog's order, as `docs/config.example.jsonc` and the `/config` editor show them.
+    public static let keys = [
+        "mouse", "copyOnSelect", "tint", "separator", "padding", "markdown", "highlight", "shimmer", "dim",
+        "sessionTint", "paths",
+        "pathAncestors", "historyLimit", "hover", "leaveFinishedJob", "sessionColor", "notify", "listAllModels",
+        "fold.tools",
+        "fold.thinking", "fold.code", "fold.codeLines", "fold.outputLines", "fold.outputBytes", "scrollLines",
+        "inputRows",
+        "sidebar", "sidebarJobs", "sidebarLayout", "inputPrefix", "appearance", "durations", "spinner", "statusPath",
+        "statusPathSide", "showTimeout", "timeoutLabel", "stopKeys", "stopTwice", "queuedOnStop"
     ]
 
     /// The keys this section sets, as a file writes them: `inputRows 4, fold.tools false`.

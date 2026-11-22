@@ -31,7 +31,7 @@ struct UISectionLookTests {
     @Test func `the description lists them`() {
         #expect(
             UISection(prompt: "$ ", tint: false, separator: true).description
-                == #"inputPrefix "$ ", tint false, separator true"#
+                == #"tint false, separator true, inputPrefix "$ ""#
         )
     }
 
