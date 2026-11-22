@@ -1,4 +1,5 @@
 internal import AskAgentCore
+import AskCore
 internal import Testing
 
 /// `ask config` shows every `ui` and `skills` key under the name a file uses, with the layer that set it (roadmap 0103).

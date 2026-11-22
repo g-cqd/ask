@@ -44,7 +44,7 @@ extension RunSettings {
             interruptSendsQueued: ui.interruptSendsQueued.flatMap { QueuedAfterInterrupt(rawValue: $0.rawValue) }
                 ?? defaults.interruptSendsQueued
         )
-        options.dim = Self.word(ui.dim, or: defaults.dim)
+        options.dim = ui.dim ?? defaults.dim
         options.sessionTint = Self.word(ui.sessionTint, or: defaults.sessionTint)
         options.appearance = appearance
         options.timeoutDisplay = Self.word(ui.timeout, or: defaults.timeoutDisplay)

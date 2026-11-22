@@ -1,4 +1,5 @@
 internal import AskAI
+internal import AskCore
 
 // The ui settings, apart from SettingCatalog.swift to keep each file under the 250-line ceiling.
 extension SettingCatalog {
@@ -15,7 +16,7 @@ extension SettingCatalog {
         row("ui.shimmer", .boolean, "true", "true", "A running block's header shimmers."),
         row(
             "ui.dim",
-            words(DimPreference.self),
+            words(Dim.self),
             #""normal""#,
             "normal",
             "How faint secondary text is: ask's own grey, or nearer the page (faint, fainter), never below 3:1 contrast."

@@ -1,3 +1,5 @@
+public import AskCore
+
 /// The `ui` section of a configuration file: how the screen treats the pointer and tool output (ADR-0046). Every key is optional, and a
 /// layer that sets one replaces it and leaves the others.
 public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSection {
@@ -74,7 +76,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     /// `ui.sessionColor`: a colour of the session's own on the status line (roadmap 0164); off by default.
     public var sessionColor: SessionColorPreference?
     /// `ui.dim`: how faint secondary text is (note n13); nil for `normal`.
-    public var dim: DimPreference?
+    public var dim: Dim?
     /// `ui.sessionTint`: where the session's colour shows, the status line and the input's box; nil for `both`.
     public var sessionTint: SessionTintPreference?
     /// `ui.paths` and `ui.pathAncestors` (roadmap 0215): how paths in replies are shown, and how many folders above the project a common
