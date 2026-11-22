@@ -175,16 +175,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
 
     /// The keys, in the order they are shown, as a file writes them (roadmap 0154); `fold.*` are the keys of the `fold` object. The
     /// catalog's order, as `docs/config.example.jsonc` and the `/config` editor show them.
-    public static let keys = [
-        "mouse", "copyOnSelect", "tint", "separator", "padding", "markdown", "highlight", "shimmer", "dim",
-        "sessionTint", "paths",
-        "pathAncestors", "historyLimit", "hover", "leaveFinishedJob", "sessionColor", "notify", "listAllModels",
-        "fold.tools",
-        "fold.thinking", "fold.code", "fold.codeLines", "fold.outputLines", "fold.outputBytes", "scrollLines",
-        "inputRows",
-        "sidebar", "sidebarJobs", "sidebarLayout", "inputPrefix", "appearance", "durations", "spinner", "statusPath",
-        "statusPathSide", "showTimeout", "timeoutLabel", "stopKeys", "stopTwice", "queuedOnStop"
-    ]
+    public static let keys = UISetting.all.map(\.name)
 
     /// The keys this section sets, as a file writes them: `inputRows 4, fold.tools false`.
     public var description: String {
