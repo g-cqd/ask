@@ -58,5 +58,9 @@ cost of recording is measured on the action-to-action budget.
 - A task's cost: each task keeps the moment it last went in progress and the moment it was done (`started`, `finished`, milliseconds),
   its cost is what the session recorded between them, said in a line when it is done (once each time) and after its line in `/tasks
   all` and `/tasks t3`. The model's `tasks` tool does not say it, so its reads cost no more.
-- Left: the comparison between two compactions; the price table that ships with each release.
+- The comparison between two compactions (read as: after each compaction, the work it summarised beside the stretch before, in the
+  same words; provisional until the owner sees it): a line after the compaction block. Its time is the time worked, the model's and
+  the tools', since a stretch can span a night.
+- Left: the price table that ships with each release; the independent count (`ccusage`) and the recording's cost on the action
+  budget that "done when" asks for.
 

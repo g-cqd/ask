@@ -30,6 +30,11 @@ When the model marks a task done, a line says what was spent from when it went i
 meanwhile counts, so two tasks in progress at once both count it. A task marked done without going in progress first has nothing to
 show.
 
+After a compaction, a line compares the work it summarised with the stretch before it:
+`Worked since the previous compaction: 40 requests, 12 tools · ↑2.1M ↓45k · 1:12:00; the stretch before: 32 requests, 9 tools · ↑1.8M
+↓40k · 58:00`. Its time is the time spent waiting for the model and the tools, not the clock: the time between a reply and your next
+message is yours, and a stretch can span a night. The first compaction of a session says its own stretch only.
+
 ## Writing a prompt
 
 - **Enter** sends. **Shift+Enter** or **Ctrl+J** starts a new line; a paste keeps its line breaks.
