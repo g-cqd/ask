@@ -153,6 +153,7 @@ profile: it is refused, and belongs in `requirements.json` or `defaults.json`.
 | `allowYes` | `false` refuses `--yes` and `--yolo`. | `true` |
 | `providers` | The connections ask may use, by the name `/model` takes, such as `["work"]`; `*` matches anything. | any |
 | `models` | The models ask may use, by id, such as `["claude-*"]`; `*` matches anything. | any |
+| `mcpServers` | The MCP servers ask may use, by what they are rather than their name: a URL such as `"https://mcp.example.com/*"`, or a command and its arguments separated by blanks, such as `"npx -y @example/*"`. A server none matches is switched off, and ask says so when it starts. | any |
 
 A profile's `requirements` may hold it too. A run, or a `/model` choice, that the policy does not allow stops with a message naming it
 and the file. A later drop-in replaces a
