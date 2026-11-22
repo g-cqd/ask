@@ -25,7 +25,8 @@ struct ProviderNetworkJobTests {
     @Test func `the command is given the proxy's address`() async {
         ProviderAccess.allow([.init(host: "api.anthropic.com", port: 443)])
         let output = await run("printf '%s|%s' \"$HTTPS_PROXY\" \"$https_proxy\"")
-        #expect(output.content.hasPrefix("http://127.0.0.1:"), "\(output.content)")
+        // With its credential, which another program on this machine does not have (security audit 2026-11-22, HIGH-07).
+        #expect(output.content.hasPrefix("http://ask:") && output.content.contains("@127.0.0.1:"), "\(output.content)")
         let halves = output.content.split(separator: "\n")[0].split(separator: "|")
         #expect(halves.count == 2 && halves[0] == halves[1], "\(output.content)")
     }

@@ -36,13 +36,25 @@ public enum ProxyRequest {
     /// - Parameters:
     ///   - head: the request head, as read.
     ///   - allowed: where tunnels may go.
+    ///   - authorization: the `Proxy-Authorization` value a request must carry: only the commands ask gave the proxy's address
+    ///     know it, so another program on this machine cannot use the tunnel (security audit 2026-11-22, HIGH-07).
     /// - Returns: a tunnel to an allowed target, or the refusal to send.
-    public static func decide(_ head: String, allowing allowed: Set<Target>) -> Decision {
-        let line = head.split(separator: "\r\n", maxSplits: 1, omittingEmptySubsequences: false).first ?? ""
-        let parts = line.split(separator: " ", omittingEmptySubsequences: true)
+    public static func decide(_ head: String, allowing allowed: Set<Target>, authorization: String) -> Decision {
+        let lines = head.split(separator: "\r\n", omittingEmptySubsequences: false)
+        let parts = (lines.first ?? "").split(separator: " ", omittingEmptySubsequences: true)
         guard parts.count == 3, parts[2].hasPrefix("HTTP/1.") else { return .refuse(400, "Bad Request") }
         guard parts[0] == "CONNECT" else {
             return .refuse(405, "Method Not Allowed: this proxy only opens HTTPS tunnels to the model providers")
+        }
+        let presented = lines.dropFirst()
+            .compactMap { line -> Substring? in
+                guard let colon = line.firstIndex(of: ":"),
+                    line[..<colon].trimmingCharacters(in: .whitespaces).lowercased() == "proxy-authorization"
+                else { return nil }
+                return line[line.index(after: colon)...]
+            }
+        guard presented.count == 1, presented[0].trimmingCharacters(in: .whitespaces) == authorization else {
+            return .refuse(407, "Proxy Authentication Required")
         }
         guard let target = target(of: parts[1]) else { return .refuse(400, "Bad Request") }
         guard allowed.contains(target) else {
