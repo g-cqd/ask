@@ -55,8 +55,6 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     public var localizedDurations: Bool?
     /// `ui.spinner`: the spinner style used for progress and status line indicators.
     public var spinner: SpinnerStyle?
-    /// `ui.appearance`: the tints follow the terminal's colours (`"auto"`, default) or are fixed for a `"light"` or `"dark"` page.
-    public var appearance: Appearance?
     /// `ui.jobAutoReturnWhenFocused`: whether leaving a focused job lane automatically returns to main when the job ends.
     public var jobAutoReturnWhenFocused: Bool?
     /// `ui.abortTurnRequiresConfirmation`: whether aborting an active conversation turn requires two Ctrl+C presses within two seconds.
@@ -69,6 +67,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     public var interruptSendsQueued: QueuedAfterInterrupt?
     /// `ui.onlyUsefulModels`: whether model lists leave out the models of no use to ask (`"on"`, default; roadmap 0089).
     public var onlyUsefulModels: Bool?
+    /// `ui.appearance`: the tints follow the terminal's colours (`"auto"`, default) or are fixed for a `"light"` or `"dark"` page.
+    public var appearance: Appearance?
     /// `ui.timeout`: when a command's timeout is written: `"auto"` (default), `"always"` or `"never"` (roadmap 0126).
     public var timeout: TimeoutDisplay?
     /// `ui.timeoutLabel`: the word in front of a command's timeout, 1 to 8 characters (`"timeout"` by default).
@@ -94,80 +94,6 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     public static let noHistoryLimit = -1
     /// `ui.pathAncestors` `null`: no limit.
     public static let noAncestorLimit = -1
-
-    public init(
-        mouse: Bool? = nil,
-        copyOnSelect: Bool? = nil,
-        foldTools: Bool? = nil,
-        foldThinking: Bool? = nil,
-        scrollLines: Int? = nil,
-        promptRows: Int? = nil,
-        foldCode: Bool? = nil,
-        codeFoldLines: Int? = nil,
-        outputFoldLines: Int? = nil,
-        outputFoldBytes: Int? = nil,
-        sidebarOpen: Bool? = nil,
-        sidebarJobsInTree: Bool? = nil,
-        prompt: String? = nil,
-        tint: Bool? = nil,
-        separator: Bool? = nil,
-        padding: Bool? = nil,
-        markdown: Bool? = nil,
-        highlight: Bool? = nil,
-        shimmer: Bool? = nil,
-        hover: Bool? = nil,
-        localizedDurations: Bool? = nil,
-        spinner: SpinnerStyle? = nil,
-        // @dl:accept -- optional settings are schema data: each parameter names a key
-        jobAutoReturnWhenFocused: Bool? = nil,
-        abortTurnRequiresConfirmation: Bool? = nil,
-        // @dl:accept -- optional settings are schema data: each parameter names a key
-        interruptKeys: InterruptKeys? = nil,
-        escapeInterruptRequiresConfirmation: Bool? = nil,
-        interruptSendsQueued: QueuedAfterInterrupt? = nil,
-        onlyUsefulModels: Bool? = nil,
-        appearance: Appearance? = nil,
-        timeout: TimeoutDisplay? = nil,
-        timeoutLabel: String? = nil,
-        // @dl:accept -- optional settings are schema data: each parameter names a key
-        sessionColor: SessionColorPreference? = nil
-    ) {
-        self.sessionColor = sessionColor
-        // @dl:accept -- optional configuration and resolved screen options deliberately assign the same UI keys
-        self.mouse = mouse
-        self.copyOnSelect = copyOnSelect
-        // @dl:accept -- every UI key assigned from its parameter: the section's data, one line a key
-        self.foldTools = foldTools
-        self.foldThinking = foldThinking
-        self.scrollLines = scrollLines
-        self.promptRows = promptRows
-        self.foldCode = foldCode
-        self.codeFoldLines = codeFoldLines
-        self.outputFoldLines = outputFoldLines
-        self.outputFoldBytes = outputFoldBytes
-        self.sidebarOpen = sidebarOpen
-        self.sidebarJobsInTree = sidebarJobsInTree
-        self.prompt = prompt
-        self.tint = tint
-        self.separator = separator
-        self.padding = padding
-        self.markdown = markdown
-        self.highlight = highlight
-        self.shimmer = shimmer
-        self.hover = hover
-        self.localizedDurations = localizedDurations
-        self.spinner = spinner
-        self.jobAutoReturnWhenFocused = jobAutoReturnWhenFocused
-        // @dl:accept -- one assignment per key: the initializer is the schema, as any memberwise initializer
-        self.abortTurnRequiresConfirmation = abortTurnRequiresConfirmation
-        self.interruptKeys = interruptKeys
-        self.escapeInterruptRequiresConfirmation = escapeInterruptRequiresConfirmation
-        self.interruptSendsQueued = interruptSendsQueued
-        self.onlyUsefulModels = onlyUsefulModels
-        self.appearance = appearance
-        self.timeout = timeout
-        self.timeoutLabel = timeoutLabel
-    }
 
     /// Whether the section sets no key: equal to one that sets none, so a new key cannot be left out.
     // @dl:accept -- the key list and the layering below are the schema's data, a list of names and one line per key

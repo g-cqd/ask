@@ -1,6 +1,7 @@
-internal import AskAgentCore
 import AskCore
 internal import Testing
+
+@testable import AskAgentCore
 
 /// `ask config` shows every `ui` and `skills` key under the name a file uses, with the layer that set it (roadmap 0103).
 @Suite("Every ui and skills key has a value and a source")
