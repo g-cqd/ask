@@ -49,10 +49,7 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
     }
 
     /// The keys, in the order they are shown.
-    public static let keys = [
-        "max", "depth", "names", "namesModel", "model", "summaryInstructions", "mergedShownFor", "questions",
-        "questionsAfter"
-    ]
+    public static let keys = settings.all.map(\.name)
 
     public var atOnce: Int { max ?? Self.defaultMax }
     public var nesting: Int { depth ?? Self.defaultDepth }
@@ -104,36 +101,12 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
     /// `self` with every key `section` sets replaced.
     // @dl:accept -- each section layers its keys the same way; the key lists are the data
     public func layered(with section: ThreadsSection) -> ThreadsSection {
-        var merged = ThreadsSection(
-            // @dl:accept -- every section layers its keys this way; the key lists are the data
-            max: section.max ?? max,
-            depth: section.depth ?? depth,
-            names: section.names ?? names
-        )
-        // @dl:accept -- every section layers its keys this way; the key lists are the data
-        merged.mergedShownFor = section.mergedShownFor ?? mergedShownFor
-        merged.questions = section.questions ?? questions
-        merged.questionsAfter = section.questionsAfter ?? questionsAfter
-        merged.namesModel = section.namesModel ?? namesModel
-        merged.summaryInstructions = section.summaryInstructions ?? summaryInstructions
-        merged.model = section.model ?? model
-        return merged
+        declaredLayered(with: section)
     }
 
     /// The value of `key` (one of `keys`) as a file writes it, or nil when this section does not set it.
     public func value(forKey key: String) -> String? {
-        switch key {
-            case "max": max.map(String.init)
-            case "depth": depth.map(String.init)
-            case "names": names?.rawValue
-            case "mergedShownFor": mergedShownFor
-            case "questions": questions
-            case "questionsAfter": questionsAfter
-            case "namesModel": namesModel
-            case "summaryInstructions": summaryInstructions
-            case "model": model
-            default: nil
-        }
+        declaredValue(forKey: key)
     }
 
     public var description: String { SectionText.describe(Self.keys, value(forKey:)) }

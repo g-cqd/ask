@@ -111,6 +111,19 @@ struct SettingDeclaration<Section: Sendable>: Sendable {
         }
     }
 
+    /// One of `words`, kept and written back as it is.
+    static func word(
+        _ row: SettingCatalog.Setting,
+        _ field: any WritableKeyPath<Section, String?> & Sendable,
+        _ words: [String]
+    ) -> SettingDeclaration {
+        Self.field(row, field) {
+            try ConfigurationFile.word($0, $1, $2, words)
+        } write: {
+            $0
+        }
+    }
+
     /// One of two words, stored as whether it is the first.
     static func either(
         _ row: SettingCatalog.Setting,
