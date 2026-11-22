@@ -20,6 +20,11 @@ Right after its mark it names the folder ask works in, by its last folder (`ui.s
 for none; `ui.statusPathSide` `"trailing"` puts it last). When the line is narrow the folder shortens to its last part, then goes
 first.
 
+After the session's tokens (`↑2.5k ↓15`: sent, cached or not, and received) the status line says what the last turn cost, until the
+next one starts: `last turn 4 requests, 6 tools · ↑45k ↓3.1k · 1:12, tools 0:30`, its requests to the model, its tool calls, its
+tokens, how long it took, and how much of that went to tools (and to waiting for your approval). It is the first thing to shorten
+when the line is narrow, then to go. A figure the provider did not report is left out rather than shown as zero.
+
 ## Writing a prompt
 
 - **Enter** sends. **Shift+Enter** or **Ctrl+J** starts a new line; a paste keeps its line breaks.

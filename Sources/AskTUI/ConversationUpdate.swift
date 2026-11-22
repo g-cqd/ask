@@ -62,6 +62,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     case labelVariants([String])
     /// A short status for the status line, such as token usage.
     case status(String)
+    /// What the last turn cost, shown until the next turn begins; nil clears it (roadmap 0239).
+    case turnSpent(TurnSpend?)
     /// Latest measured context occupancy and model capacity, separate from cumulative token spend: as the status line says it,
     /// and as numbers of tokens for a driver that shows them its own way; a number is nil when it is not known.
     case context(String, used: Int? = nil, size: Int? = nil)

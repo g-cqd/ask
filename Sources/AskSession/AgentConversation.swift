@@ -161,6 +161,7 @@ final class AgentConversation: Conversation {
         return Task {
             self.beginTurn()
             defer { self.endTurn(update: update) }
+            update(.turnSpent(nil))
             do {
                 await self.refreshSettings(update: update)
                 self.noticeUntrustedSkills(update: update)
@@ -186,6 +187,9 @@ final class AgentConversation: Conversation {
                 self.saveHeldIdeas(update: update)
                 self.nameConversation(startingWith: prompt, update: update)
                 try self.current.withLock { $0.settings }.record(in: recorder)
+                // What the turn cost, said when it ends, however it ends (roadmap 0239).
+                let start = recorder.tree.leaf
+                defer { self.showTurnSpend(in: recorder, since: start, update: update) }
                 try await loop.run(prompt, images: images.map(\.part), in: recorder, input: input) {
                     self.deliver($0, to: update)
                 }

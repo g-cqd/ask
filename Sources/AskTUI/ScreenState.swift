@@ -39,6 +39,8 @@ public struct ScreenState: Sendable, Equatable {
     public var detail = ""
     /// Latest measured context occupancy, distinct from session-wide spend.
     public var context = ""
+    /// What the last turn cost, until the next turn (roadmap 0239).
+    public var turnSpend: TurnSpend?
     /// The newest runner snapshot. Its cached preorder and counts feed every view.
     public private(set) var runnerTree = RunnerTree()
     /// The runners as the conversation listed them, a job's owner its parent.

@@ -111,6 +111,10 @@ extension ScreenComposer {
         pieces.append(label)
         if !state.context.isEmpty { pieces.append(StatusSegment(state.context, priority: 40)) }
         if !state.detail.isEmpty { pieces.append(StatusSegment(state.detail, priority: 20)) }
+        // The last turn's cost, after the session's: the first to go when the line is short (roadmap 0239).
+        if let spend = state.turnSpend {
+            pieces.append(StatusSegment(spend.forms(localized: state.blocks.localizedDurations), priority: 18))
+        }
         if state.quitArmedAt != nil {
             pieces.append(StatusSegment(["press Ctrl+C again to quit", "ctrl+c again to quit"], priority: 80))
         }

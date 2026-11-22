@@ -30,7 +30,7 @@ enum ACPUpdate {
             case .jobOutput, .promptPictures: nil
             case .skills, .choices, .choicesStale, .submitPrompt, .detail, .choiceSummary: nil
             // The status line's words for what `usage_update` says in numbers, and a context that was not measured.
-            case .status, .context: nil
+            case .status, .context, .turnSpent: nil
             // The screen's furniture, which no client is sent (ADR-0154): the status line's segments, the pickers' rows, drafts,
             // the configuration editor, runners, threads and asides.
             case .sessionIdentity, .label, .labelVariants, .gitStatus, .branchPullRequest, .referencesResolved: nil
