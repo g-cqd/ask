@@ -1,7 +1,13 @@
 // The threads settings (roadmap 0195), each declared once (roadmap 0209).
+// @dl:disable near-clone -- a section's settings are data: a key, its field, a type, an example, a default and help each
+// @dl:disable structural-clone -- the same rows, matched by their shape
 extension ThreadsSection: DeclaredSection {
-    // @dl:disable near-clone -- the rows below are the settings' data: a key, its field, a type, an example, a default and help each
-    // @dl:disable structural-clone -- the same rows, matched by their shape
+    /// A section that sets nothing.
+    init() { self.init(max: nil) }
+
+    /// Retired (note n52): a thread merges only by /merge. Still read, so a file that sets it opens.
+    static let retired: Set<String> = ["merge"]
+
     static let settings = SettingTable<ThreadsSection>(
         "threads",
         [
@@ -92,6 +98,6 @@ extension ThreadsSection: DeclaredSection {
             )
         ]
     )
-    // @dl:enable near-clone
-    // @dl:enable structural-clone
 }
+// @dl:enable near-clone
+// @dl:enable structural-clone

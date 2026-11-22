@@ -31,15 +31,10 @@ public struct HooksSection: Sendable, Equatable, CustomStringConvertible, Layere
     // @dl:accept -- every section of the file is decoded and layered by the same idiom; its keys are the data
     public var checkSeconds: Int { checkTimeout ?? Self.defaultCheckSeconds }
 
-    /// `self` with every key `section` sets replaced.
-    public func layered(with section: HooksSection) -> HooksSection {
-        declaredLayered(with: section)
-    }
-
     /// The value of `key` (one of `keys`) as a file writes it, or nil when this section does not set it.
     public func value(forKey key: String) -> String? {
-        declaredValue(forKey: key)
+        Self.settings.named[key]?.write(self)
     }
 
-    public var description: String { SectionText.describe(Self.keys, value(forKey:)) }
+    public var description: String { Self.settings.describe(self) }
 }

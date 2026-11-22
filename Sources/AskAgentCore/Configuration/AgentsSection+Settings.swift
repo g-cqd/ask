@@ -1,7 +1,7 @@
 // The agents settings (roadmap 0063, ADR-0146), each declared once (roadmap 0209).
+// @dl:disable near-clone -- a section's settings are data: a key, its field, a type, an example, a default and help each
+// @dl:disable structural-clone -- the same rows, matched by their shape
 extension AgentsSection: DeclaredSection {
-    // @dl:disable near-clone -- the rows below are the settings' data: a key, its field, a type, an example, a default and help each
-    // @dl:disable structural-clone -- the same rows, matched by their shape
     static let settings = SettingTable<AgentsSection>(
         "agents",
         [
@@ -60,6 +60,6 @@ extension AgentsSection: DeclaredSection {
             )
         ]
     )
-    // @dl:enable near-clone
-    // @dl:enable structural-clone
 }
+// @dl:enable near-clone
+// @dl:enable structural-clone

@@ -98,16 +98,7 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
         return .some(.seconds(count * unit))
     }
 
-    /// `self` with every key `section` sets replaced.
     // @dl:accept -- each section layers its keys the same way; the key lists are the data
-    public func layered(with section: ThreadsSection) -> ThreadsSection {
-        declaredLayered(with: section)
-    }
-
     /// The value of `key` (one of `keys`) as a file writes it, or nil when this section does not set it.
-    public func value(forKey key: String) -> String? {
-        declaredValue(forKey: key)
-    }
-
-    public var description: String { SectionText.describe(Self.keys, value(forKey:)) }
+    public var description: String { Self.settings.describe(self) }
 }

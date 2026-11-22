@@ -1,4 +1,6 @@
 // The jobs settings (t232), each declared once (roadmap 0209).
+// @dl:disable near-clone -- a section's settings are data: a key, its field, a type, an example, a default and help each
+// @dl:disable structural-clone -- the same rows, matched by their shape
 extension JobsSection: DeclaredSection {
     static let settings = SettingTable<JobsSection>(
         "jobs",
@@ -17,3 +19,5 @@ extension JobsSection: DeclaredSection {
         ]
     )
 }
+// @dl:enable near-clone
+// @dl:enable structural-clone

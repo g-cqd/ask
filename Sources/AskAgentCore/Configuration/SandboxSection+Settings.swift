@@ -1,7 +1,12 @@
 // The sandbox settings (ADR-0035, roadmap 0042), each declared once (roadmap 0209), with how a later layer combines with an earlier
 // one: what may be read or written again is replaced by the file that names it (only the person's own can), and everything else only
 // narrows: hidden paths add up, write and read scopes are intersected, and the network takes the lower level.
+// @dl:disable near-clone -- a section's settings are data: a key, its field, a type, an example, a default and help each
+// @dl:disable structural-clone -- the same rows, matched by their shape
 extension SandboxSection: DeclaredSection {
+    /// A section that sets nothing.
+    init() { self.init(allowRead: []) }
+
     static let settings = SettingTable<SandboxSection>(
         "sandbox",
         [
@@ -73,3 +78,5 @@ extension SandboxSection: DeclaredSection {
         }
     )
 }
+// @dl:enable near-clone
+// @dl:enable structural-clone

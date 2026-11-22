@@ -43,17 +43,6 @@ extension ConfigurationFile {
         }
     }
 
-    /// The `sandbox` object: its two lists, and nothing else.
-    // @dl:accept -- three key tables decoded the same way; the tables are the data, and the walk is already shared
-    struct SandboxDecoded: Decodable {
-        var section = SandboxSection()
-        init(from decoder: any Decoder) throws {
-            try ConfigurationFile.eachKey(of: decoder) { key, container in
-                try section.read(key.stringValue, at: key, in: container)
-            }
-        }
-    }
-
     /// A write or read scope: "workspace", "anywhere", or a list of paths.
     static func scope(_ container: KeyedDecodingContainer<Key>, _ key: Key, name: String) throws -> PathSetting {
         guard let one = try? container.decode(String.self, forKey: key) else {

@@ -1,17 +1,5 @@
 // @dl:accept -- each section decodes its keys through the one shared walk; the key tables are the data
 extension ConfigurationFile {
-    /// The `skills` keys; unknown keys are refused.
-    // @dl:accept -- three key tables decoded the same way; the tables are the data, and the walk is already shared
-    struct SkillsDecoded: Decodable {
-        var section = SkillsSection()
-        // @dl:accept -- the key walk is shared; each section names its own keys
-        init(from decoder: any Decoder) throws {
-            try ConfigurationFile.eachKey(of: decoder) { key, container in
-                try section.read(key.stringValue, at: key, in: container)
-            }
-        }
-    }
-
     /// A project's file may turn skills off and nothing else: a repository must not turn on, enlarge or redirect what the model is told to load.
     static func validateSkills(_ section: SkillsSection?, path: String, isProject: Bool) throws(ConfigurationError) {
         guard let section else { return }

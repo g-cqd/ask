@@ -1,17 +1,5 @@
 // @dl:accept -- every configuration section is decoded, layered and compared by the same idiom; the keys are the data
 extension ConfigurationFile {
-    /// The `agents` keys (roadmap 0063, ADR-0146); unknown keys are refused.
-    // @dl:accept -- each section decodes its own keys through the shared walk; the tables are the data
-    struct AgentsDecoded: Decodable {
-        var section = AgentsSection()
-
-        init(from decoder: any Decoder) throws {
-            try ConfigurationFile.eachKey(of: decoder) { key, container in
-                try section.read(key.stringValue, at: key, in: container)
-            }
-        }
-    }
-
     /// A project's file may turn subagents off, never on, nor let them write; turns within range.
     static func validateAgents(_ section: AgentsSection?, path: String, isProject: Bool) throws(ConfigurationError) {
         guard let section else { return }

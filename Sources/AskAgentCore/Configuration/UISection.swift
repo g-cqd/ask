@@ -179,6 +179,6 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
 
     /// The keys this section sets, as a file writes them: `inputRows 4, fold.tools false`.
     public var description: String {
-        SectionText.describe(Self.keys, value(forKey:))
+        Self.settings.describe(self)
     }
 }

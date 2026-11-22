@@ -3,6 +3,6 @@ extension UISection {
     /// not set it. The names are those of ``keys``, so `ask config` can show each key under the name a person types (roadmaps 0103 and
     /// 0154). Each setting's own declaration writes it (``SettingDeclaration``, roadmap 0209).
     public func value(forKey key: String) -> String? {
-        declaredValue(forKey: key)
+        Self.settings.named[key]?.write(self)
     }
 }

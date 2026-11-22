@@ -14,15 +14,6 @@ public struct JobsSection: Sendable, Equatable, CustomStringConvertible, Layered
     /// The most finished jobs kept; nil for all of them, the default.
     public var limit: Int? { keepFinished.flatMap { $0 == Self.noLimit ? nil : $0 } }
 
-    /// `self` with every key `section` sets replaced.
-    public func layered(with section: JobsSection) -> JobsSection {
-        declaredLayered(with: section)
-    }
-
     /// The value of `key` (one of `keys`) as a file writes it, or nil when this section does not set it.
-    public func value(forKey key: String) -> String? {
-        declaredValue(forKey: key)
-    }
-
-    public var description: String { SectionText.describe(Self.keys, value(forKey:)) }
+    public var description: String { Self.settings.describe(self) }
 }
