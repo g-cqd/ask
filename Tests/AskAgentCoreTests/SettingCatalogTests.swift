@@ -30,7 +30,10 @@ struct SettingCatalogTests {
             #expect(catalogKeys(under: section) == Set(keys), "\(section)")
         }
         let top = Set(SettingCatalog.all.filter { $0.path.count == 1 }.map { $0.path[0] })
-        #expect(top == Set(ConfigurationFile.keys).subtracting(sections.keys).subtracting(["mcp"]))
+        // `policy` is an organisation's alone (ADR-0168): its rows are the managed-only ones, apart from what a person may set.
+        #expect(top == Set(ConfigurationFile.keys).subtracting(sections.keys).subtracting(["mcp", "policy"]))
+        #expect(SettingCatalog.managedOnly.map { $0.path.dropFirst().joined(separator: ".") } == PolicySection.keys)
+        #expect(SettingCatalog.managedOnly.allSatisfy { $0.path.first == "policy" })
     }
 
     @Test func `the example loads as your own file, and sets every setting`() throws {

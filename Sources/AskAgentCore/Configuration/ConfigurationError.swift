@@ -11,6 +11,8 @@ public enum ConfigurationError: Error, Sendable, Equatable, CustomStringConverti
     /// A managed document (ADR-0168) that someone other than its owner could have written: an organisation's policy that cannot be
     /// trusted stops ask rather than being dropped.
     case untrusted(path: String, reason: String)
+    /// What an organisation's `policy` (ADR-0168), set in `path`, does not allow.
+    case notAllowed(path: String, what: String)
 
     public var description: String {
         switch self {
@@ -22,6 +24,7 @@ public enum ConfigurationError: Error, Sendable, Equatable, CustomStringConverti
             case .outOfRange(let path, let key, let reason): "\(path): \"\(key)\" \(reason)"
             case .untrusted(let path, let reason):
                 "\(path): your organisation's configuration cannot be trusted: \(reason). Ask the person who manages this machine."
+            case .notAllowed(let path, let what): "Your organisation does not allow \(what) (\(path))."
         }
     }
 }

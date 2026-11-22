@@ -29,6 +29,7 @@ extension Configuration {
         compare("agents", previous.agents, agents)
         compare("jobs", previous.jobs, jobs)
         compare("openers", previous.openers, openers)
+        compare("policy", previous.policy, policy)
         compare("sandbox", previous.sandbox, sandbox)
         compare("ui", previous.ui, ui)
         compare("skills", previous.skills, skills)

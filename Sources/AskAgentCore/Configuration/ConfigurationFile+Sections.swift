@@ -28,11 +28,13 @@ extension ConfigurationFile {
 
     /// The sections, by their key in a file.
     // @dl:disable structural-clone -- one entry per section, each naming its own field: the table is the data
+    // @dl:disable near-clone -- the same entries, matched by their text
     static let sections: [String: SectionKey] = [
         "sandbox": .declared(\.sandbox), "ui": .declared(\.ui), "skills": .declared(\.skills),
         "approvals": .declared(\.approvals),
         "hooks": .declared(\.hooks), "threads": .declared(\.threads), "agents": .declared(\.agents),
-        "openers": .declared(\.openers), "jobs": .declared(\.jobs), "environment": .declared(\.environment),
+        "openers": .declared(\.openers), "jobs": .declared(\.jobs), "policy": .declared(\.policy),
+        "environment": .declared(\.environment),
         "mcp": SectionKey(
             read: { file, container, key in file.mcp = try container.decode(MCPDecoded.self, forKey: key).section },
             isSet: { $0.mcp != nil },
@@ -42,6 +44,7 @@ extension ConfigurationFile {
             }
         )
     ]
+    // @dl:enable near-clone
     // @dl:enable structural-clone
 }
 

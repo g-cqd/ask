@@ -38,3 +38,10 @@ phase 2: `/model` and `/config` respect requirements; managed-only keys (refusin
 models and MCP servers). Then the profile's domain `studio.aemi.ask` (phase 3), console schemas and `.mobileconfig` (phase 4), an HTTPS
 endpoint (phase 5).
 
+## Phase 2 built (2026-11-22, diary 2026-11-22-04)
+
+Required keys hold while ask runs (`/model`, `/thinking`, `/config`, a resumed session); `policy` (`allowNoSandbox`, `allowYes`,
+`providers`, `models`) in requirements only. Still open from the proposal's managed-only keys: an MCP server allowlist (by command or
+URL, not by name, which a person chooses), hooks and skills sources only from the organisation, a minimum ask version, session
+retention. Next: phase 3, the profile's domain `studio.aemi.ask`.
+

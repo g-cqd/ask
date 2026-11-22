@@ -51,6 +51,7 @@ struct SectionKeyReadingTests {
         try check(SandboxSection.self, in: \.sandbox)
         try check(OpenersSection.self, in: \.openers)
         try check(ApprovalsSection.self, in: \.approvals)
+        try check(PolicySection.self, in: \.policy)
     }
 
     @Test func `the catalog lists each section's settings in its table's order`() {
@@ -70,7 +71,8 @@ struct SectionKeyReadingTests {
     /// `ConfigurationFile.sets` answers for every key a file may hold; `openers` was missing (found while declaring the top-level keys).
     @Test func `a file that sets a key says it does, for every key`() throws {
         let file = try ConfigurationFile.parse(Array(SettingCatalog.example.utf8), path: "example")
-        let unset = ConfigurationFile.keys.filter { !file.sets($0) }
+        // The example is a person's file, which may not hold `policy` (ADR-0168).
+        let unset = ConfigurationFile.keys.filter { $0 != "policy" && !file.sets($0) }
         #expect(unset.isEmpty, "the example sets these, and the file says it does not: \(unset)")
     }
 
