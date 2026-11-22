@@ -58,7 +58,7 @@ public struct ManagedFiles: Sendable, Equatable {
     }
 
     /// Refuses `path` unless it, once its links are followed, and its folder belong to `owner` and only the owner may write them.
-    static func trust(_ path: String, owner: UInt32) throws(ConfigurationError) {
+    package static func trust(_ path: String, owner: UInt32) throws(ConfigurationError) {
         guard let resolved = realpath(path, nil) else { throw .unreadable(path: path, errno: errno) }
         defer { free(resolved) }
         let file = String(cString: resolved)

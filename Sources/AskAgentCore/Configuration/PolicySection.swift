@@ -12,6 +12,11 @@ public struct PolicySection: Sendable, Equatable, CustomStringConvertible, Layer
     /// `policy.mcpServers`: the MCP servers ask may start or reach, by what they are, not the name a person gives them: a server's
     /// URL, or its command and arguments separated by blanks; `*` matches anything. A server none matches is switched off.
     public var mcpServers: [String]?
+    /// `policy.managedHooksOnly`: whether only the organisation's documents may set a hook command; one set anywhere else is off.
+    public var managedHooksOnly: Bool?
+    /// `policy.managedSkillsOnly`: whether skills come only from the organisation's folder (`skills` beside its requirements),
+    /// which must belong to root as its documents do.
+    public var managedSkillsOnly: Bool?
 
     /// The keys, in the order they are shown, from their declarations (``PolicySection/settings``).
     public static let keys = settings.all.map(\.name)

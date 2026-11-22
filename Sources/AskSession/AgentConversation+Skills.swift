@@ -10,7 +10,7 @@ extension AgentConversation {
     /// need `--from bundled`. Nothing is listed when skills are turned off.
     func skillCommands() async -> [SlashCommand] {
         let settings = current.withLock { $0.settings }
-        let book = SkillBook(settings.configuration.skills.value, workingDirectory: settings.workspace)
+        let book = SkillBook(settings.configuration, workingDirectory: settings.workspace)
         let loaded = book.catalog.skills.filter { $0.scope != .bundled }
             .map {
                 SlashCommand(
@@ -38,7 +38,7 @@ extension AgentConversation {
             })
         else { return }
         let settings = current.withLock { $0.settings }
-        let count = SkillBook(settings.configuration.skills.value, workingDirectory: settings.workspace).catalog
+        let count = SkillBook(settings.configuration, workingDirectory: settings.workspace).catalog
             .untrusted.count
         guard count > 0 else { return }
         update(
@@ -57,7 +57,7 @@ extension AgentConversation {
     ) -> String? {
         guard SkillInvocation.asksForSkill(prompt) else { return prompt }
         let settings = current.withLock { $0.settings }
-        let book = SkillBook(settings.configuration.skills.value, workingDirectory: settings.workspace)
+        let book = SkillBook(settings.configuration, workingDirectory: settings.workspace)
         switch SkillInvocation.expand(prompt, catalog: book.catalog, knownSources: book.knownSources) {
             case .prompt(let text): return text
             case .notASkill: return prompt

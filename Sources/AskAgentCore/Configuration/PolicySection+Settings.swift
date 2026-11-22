@@ -55,6 +55,26 @@ extension PolicySection: DeclaredSection {
                     "The MCP servers ask may use, by URL or by command and arguments; * matches anything. Others are switched off."
                 ),
                 \.mcpServers
+            ),
+            .bool(
+                SettingCatalog.row(
+                    "policy.managedHooksOnly",
+                    .boolean,
+                    "true",
+                    "false",
+                    "Whether only the organisation's documents may set a hook command; one set anywhere else is off."
+                ),
+                \.managedHooksOnly
+            ),
+            .bool(
+                SettingCatalog.row(
+                    "policy.managedSkillsOnly",
+                    .boolean,
+                    "true",
+                    "false",
+                    "Whether skills come only from the organisation's skills folder, beside its requirements."
+                ),
+                \.managedSkillsOnly
             )
         ]
     )

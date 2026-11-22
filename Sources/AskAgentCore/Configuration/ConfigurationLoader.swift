@@ -68,7 +68,8 @@ public struct ConfigurationLoader: Sendable {
         var notices: [String] = []
         // Both are read first: a document that cannot be trusted or read stops the load before anything applies.
         let requirements = try managed.load(.requirements)
-        for (path, file) in try managed.load(.defaults) {
+        let defaults = try managed.load(.defaults)
+        for (path, file) in defaults {
             try Self.refusePolicy(file, path: path)
             configuration = configuration.applying(file, from: .managed(path, required: false))
             applied.append(path)
@@ -120,8 +121,11 @@ public struct ConfigurationLoader: Sendable {
             applied.append(path)
             notices += file.notices
         }
-        let (permitted, refusedServers) = configuration.applyingServerPolicy()
-        return Result(configuration: permitted, applied: applied, notices: notices + refusedServers)
+        // The organisation's own hook command, the last of its documents' (requirements after defaults): a section's merged value
+        // keeps one source for all its keys, so it cannot say who set this one.
+        let theirs = (defaults + requirements).compactMap { $0.file.hooks?.check }.last
+        let (permitted, refused) = configuration.applyingPolicy(organisationCheck: theirs)
+        return Result(configuration: permitted, applied: applied, notices: notices + refused)
     }
 
     /// Refuses a file other than an organisation's requirements that sets `policy` (ADR-0168): it is theirs alone to decide.

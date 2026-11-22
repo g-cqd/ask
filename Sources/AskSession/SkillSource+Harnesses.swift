@@ -44,5 +44,5 @@ extension SkillSource {
     ]
 
     /// The ids `from` may name, bundled included.
-    package static var ids: [String] { standard.map(\.id) + [bundledID] }
+    package static var ids: [String] { standard.map(\.id) + [SkillOrigins.organisationID, bundledID] }
 }

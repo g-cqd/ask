@@ -13,7 +13,7 @@ internal import TerminalKitInput
 /// says why, before anything is sent.
 private func expandingSkill(_ prompt: String, settings: RunSettings, workingDirectory: String) -> String {
     guard SkillInvocation.asksForSkill(prompt) else { return prompt }
-    let book = SkillBook(settings.configuration.skills.value, workingDirectory: workingDirectory)
+    let book = SkillBook(settings.configuration, workingDirectory: workingDirectory)
     switch SkillInvocation.expand(prompt, catalog: book.catalog, knownSources: book.knownSources) {
         case .prompt(let text): return text
         case .notASkill: return prompt

@@ -154,6 +154,8 @@ profile: it is refused, and belongs in `requirements.json` or `defaults.json`.
 | `providers` | The connections ask may use, by the name `/model` takes, such as `["work"]`; `*` matches anything. | any |
 | `models` | The models ask may use, by id, such as `["claude-*"]`; `*` matches anything. | any |
 | `mcpServers` | The MCP servers ask may use, by what they are rather than their name: a URL such as `"https://mcp.example.com/*"`, or a command and its arguments separated by blanks, such as `"npx -y @example/*"`. A server none matches is switched off, and ask says so when it starts. | any |
+| `managedHooksOnly` | `true` lets only the organisation's documents (`requirements.json`, `defaults.json`, their drop-ins and a profile) set a hook command: `hooks.check` set anywhere else is replaced by theirs, or off, and ask says so. | `false` |
+| `managedSkillsOnly` | `true` offers only the skills in the organisation's `skills` folder, beside `requirements.json`; the person's and the projects' are not. The folder must belong to root and be writable by nobody else, as the documents must; otherwise no skill is offered, and ask says why. | `false` |
 
 A profile's `requirements` may hold it too. A run, or a `/model` choice, that the policy does not allow stops with a message naming it
 and the file. A later drop-in replaces a
