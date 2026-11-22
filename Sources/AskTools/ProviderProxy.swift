@@ -16,6 +16,11 @@ public final class ProviderProxy: Sendable {
 
     /// The port it listens on, on 127.0.0.1.
     public let port: Int
+    /// The credential in the address commands are given, random for each proxy: another program on this machine, which can find
+    /// the port but not this, cannot use the tunnel (security audit 2026-11-22, HIGH-07).
+    let token: String
+    /// The most tunnels open at once; a connection beyond is closed unanswered, so many connections cannot exhaust ask's threads.
+    static let maximumTunnels = 32
     /// Written once by ``stop()`` to wake the accept thread, which alone closes the listener: closed from here instead, its number
     /// could be another socket's by the time the thread next accepted, and the thread would take that socket's connections.
     private let wake: Int32
@@ -66,14 +71,26 @@ public final class ProviderProxy: Sendable {
         port = Int(UInt16(bigEndian: address.sin_port))
         let allowList = AllowList(allowed)
         self.allowList = allowList
+        var generator = SystemRandomNumberGenerator()
+        let token = (0 ..< 4).map { _ in String(generator.next() as UInt64, radix: 16) }.joined()
+        self.token = token
+        let authorization = "Basic " + Data("ask:\(token)".utf8).base64EncodedString()
         // The thread gets the pipe's ends as they are now, not the variable `pipe(2)` filled in.
         let ends = pipe
-        Thread.detachNewThread { Self.accepting(on: listener, until: ends, allowing: allowList) }
+        Thread.detachNewThread {
+            Self.accepting(on: listener, until: ends, allowing: allowList, authorization: authorization)
+        }
     }
 
     /// Serves each connection to `listener` until a byte arrives on `wake`, then closes both, and `wake`'s other end.
-    private static func accepting(on listener: Int32, until wake: [Int32], allowing allowList: AllowList) {
+    private static func accepting(
+        on listener: Int32,
+        until wake: [Int32],
+        allowing allowList: AllowList,
+        authorization: String
+    ) {
         defer { for descriptor in [listener] + wake { close(descriptor) } }
+        let open = Atomic<Int>(0)
         var fds = [
             pollfd(fd: listener, events: Int16(POLLIN), revents: 0),
             pollfd(fd: wake[0], events: Int16(POLLIN), revents: 0)
@@ -90,14 +107,22 @@ public final class ProviderProxy: Sendable {
             _ = fcntl(client, F_SETFD, FD_CLOEXEC)
             // It inherits the listener's non-blocking mode; a tunnel reads and writes blocking, with timeouts.
             _ = fcntl(client, F_SETFL, fcntl(client, F_GETFL) & ~O_NONBLOCK)
-            Thread.detachNewThread { ProxyTunnel.serve(client, allowing: allowList.current) }
+            guard open.wrappingAdd(1, ordering: .relaxed).newValue <= maximumTunnels else {
+                open.wrappingSubtract(1, ordering: .relaxed)
+                close(client)
+                continue
+            }
+            Thread.detachNewThread {
+                ProxyTunnel.serve(client, allowing: allowList.current, authorization: authorization)
+                open.wrappingSubtract(1, ordering: .relaxed)
+            }
         }
     }
 
     /// What a command needs to send its traffic here: the proxy variables, in both cases, and an empty `NO_PROXY`, so nothing is sent
     /// around the proxy (it would fail anyway, the sandbox reaching localhost only).
     public var environment: [String: String] {
-        let address = "http://127.0.0.1:\(port)"
+        let address = "http://ask:\(token)@127.0.0.1:\(port)"
         var values: [String: String] = ["NO_PROXY": "", "no_proxy": ""]
         for name in ["HTTPS_PROXY", "HTTP_PROXY", "ALL_PROXY"] {
             values[name] = address

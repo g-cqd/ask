@@ -1,3 +1,4 @@
+internal import AskAI
 internal import Darwin
 internal import Foundation
 
@@ -9,7 +10,7 @@ enum ProxyTunnel {
     /// How long a client gets to send its request, and a connection to the provider to open.
     static let waitSeconds = 10
 
-    static func serve(_ client: Int32, allowing allowed: Set<ProxyRequest.Target>) {
+    static func serve(_ client: Int32, allowing allowed: Set<ProxyRequest.Target>, authorization: String) {
         defer { close(client) }
         noSignalOnClose(client)
         setTimeout(client, seconds: waitSeconds)
@@ -17,7 +18,7 @@ enum ProxyTunnel {
             reply(client, 400, "Bad Request")
             return
         }
-        switch ProxyRequest.decide(head, allowing: allowed) {
+        switch ProxyRequest.decide(head, allowing: allowed, authorization: authorization) {
             case .refuse(let status, let reason): reply(client, status, reason)
             case .tunnel(let target):
                 guard let upstream = connect(to: target) else {
@@ -51,7 +52,12 @@ enum ProxyTunnel {
 
     private static func reply(_ client: Int32, _ status: Int, _ reason: String) {
         let flat = reason.replacing("\r", with: " ").replacing("\n", with: " ")
-        _ = writeAll(client, Array("HTTP/1.1 \(status) \(flat)\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".utf8))
+        // A client that did not send the credential is told how to: those that have it in their proxy address send it then.
+        let challenge = status == 407 ? "Proxy-Authenticate: Basic realm=\"ask\"\r\n" : ""
+        _ = writeAll(
+            client,
+            Array("HTTP/1.1 \(status) \(flat)\r\n\(challenge)Content-Length: 0\r\nConnection: close\r\n\r\n".utf8)
+        )
     }
 
     /// A connected socket to `target`, trying each of its addresses; nil when none answers.
@@ -64,6 +70,10 @@ enum ProxyTunnel {
         defer { freeaddrinfo(list) }
         var entry: UnsafeMutablePointer<addrinfo>? = list
         while let current = entry {
+            if let address = numeric(current.pointee), !follows(target.host, to: address) {
+                entry = current.pointee.ai_next
+                continue
+            }
             let candidate = socket(current.pointee.ai_family, current.pointee.ai_socktype, current.pointee.ai_protocol)
             if candidate >= 0 {
                 _ = fcntl(candidate, F_SETFD, FD_CLOEXEC)
@@ -126,5 +136,21 @@ enum ProxyTunnel {
         var timeout = timeval(tv_sec: seconds, tv_usec: 0)
         setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
         setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
+    }
+
+    /// Whether a tunnel to `host` may go to `address`, one it resolved to: a provider's name that leads inward is not followed
+    /// (security audit 2026-11-22, HIGH-07); a provider named by an inward address, as a local one is, is.
+    static func follows(_ host: String, to address: String) -> Bool {
+        InwardAddress.contains(host) || host == "localhost" || !InwardAddress.contains(address)
+    }
+
+    /// The numeric address of `entry`, as `getnameinfo` writes it.
+    private static func numeric(_ entry: addrinfo) -> String? {
+        var host = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+        guard getnameinfo(entry.ai_addr, entry.ai_addrlen, &host, socklen_t(host.count), nil, 0, NI_NUMERICHOST) == 0
+        else {
+            return nil
+        }
+        return String(decoding: host.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self)
     }
 }
