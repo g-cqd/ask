@@ -1,3 +1,4 @@
+import AskCore
 internal import TerminalKitCodecs
 internal import TerminalKitInput
 internal import TerminalKitRender
@@ -55,7 +56,7 @@ struct InputBoxTests {
         #expect(rig.controller.state.editor.cursor == 2)
     }
 
-    private func tinted(_ place: ScreenSessionTint) -> (status: Bool, box: Bool) {
+    private func tinted(_ place: SessionTint) -> (status: Bool, box: Bool) {
         var options = ScreenOptions()
         options.sessionTint = place
         let rig = rig(options, identity: "session-a")
@@ -77,7 +78,7 @@ struct InputBoxTests {
         #expect(tinted.buffer[top + 1, 0].style.fg == tinted.buffer[top, 0].style.fg, "the sides too")
         #expect(tinted.buffer[top + 1, 2].style.fg == .default, "the draft keeps the text colour")
         var none = ScreenOptions()
-        none.sessionTint = ScreenSessionTint.none
+        none.sessionTint = SessionTint.none
         let plain = rig()
         #expect(plain.buffer[top, 0].style == rig(none, identity: "session-a").buffer[top, 0].style)
         #expect(plain.buffer[top, 0].style.dim || plain.buffer[top, 0].style.fg != .default)

@@ -45,7 +45,7 @@ extension RunSettings {
                 ?? defaults.interruptSendsQueued
         )
         options.dim = ui.dim ?? defaults.dim
-        options.sessionTint = Self.word(ui.sessionTint, or: defaults.sessionTint)
+        options.sessionTint = ui.sessionTint ?? defaults.sessionTint
         options.appearance = appearance
         options.timeoutDisplay = Self.word(ui.timeout, or: defaults.timeoutDisplay)
         options.timeoutLabel = ui.timeoutLabel ?? defaults.timeoutLabel

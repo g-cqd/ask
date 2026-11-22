@@ -23,7 +23,7 @@ extension SettingCatalog {
         ),
         row(
             "ui.sessionTint",
-            words(SessionTintPreference.self),
+            words(SessionTint.self),
             #""both""#,
             "both",
             "Where the session's colour shows: the status line and the input's box, one of them, or none."
