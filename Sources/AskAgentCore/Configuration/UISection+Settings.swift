@@ -1,39 +1,66 @@
 internal import AskCore
 
 // The ui settings, first half of the catalog's order: what the page looks like and how ask behaves around it. The second half is in
-// UISetting+Layout.swift, so each file stays under the 250-line ceiling.
-extension UISetting {
+// UISection+LayoutSettings.swift, so each file stays under the 250-line ceiling.
+extension UISection: DeclaredSection {
     /// Every `ui` setting, in the catalog's order: the order of `docs/config.example.jsonc`, the `/config` editor and `ask config`.
-    static let all: [UISetting] = page + layout
-
-    /// The settings by their name under `ui`.
-    static let named: [String: UISetting] = Dictionary(uniqueKeysWithValues: all.map { ($0.name, $0) })
+    static let settings = SettingTable("ui", page + layout)
 
     // @dl:disable near-clone -- the rows below are the ui settings' data: a key, its field, a type, an example, a default and help each
     // @dl:disable structural-clone -- the same rows, matched by their shape
-    private static let page: [UISetting] = [
-        flag(row("ui.mouse", .boolean, "true", "true", "ask handles clicks, selection and the wheel."), \.mouse),
-        flag(
-            row("ui.copyOnSelect", .boolean, "true", "true", "A finished selection is copied at once."),
+    private static let page: [SettingDeclaration<UISection>] = [
+        .flag(
+            SettingCatalog.row("ui.mouse", .boolean, "true", "true", "ask handles clicks, selection and the wheel."),
+            \.mouse
+        ),
+        .flag(
+            SettingCatalog.row("ui.copyOnSelect", .boolean, "true", "true", "A finished selection is copied at once."),
             \.copyOnSelect
         ),
-        flag(
-            row("ui.tint", .boolean, "true", "true", "Tinted backgrounds for the input, your messages and tool calls."),
+        .flag(
+            SettingCatalog.row(
+                "ui.tint",
+                .boolean,
+                "true",
+                "true",
+                "Tinted backgrounds for the input, your messages and tool calls."
+            ),
             \.tint
         ),
-        flag(
-            row("ui.separator", .boolean, "true", "true", "A rule between the conversation and the input."),
+        .flag(
+            SettingCatalog.row(
+                "ui.separator",
+                .boolean,
+                "true",
+                "true",
+                "A rule between the conversation and the input."
+            ),
             \.separator
         ),
-        flag(row("ui.padding", .boolean, "true", "true", "A row of padding around each block."), \.padding),
-        flag(row("ui.markdown", .boolean, "true", "true", "Markdown drawn everywhere it can be."), \.markdown),
-        flag(
-            row("ui.highlight", .boolean, "true", "true", "Fenced code coloured by the language its fence names."),
+        .flag(
+            SettingCatalog.row("ui.padding", .boolean, "true", "true", "A row of padding around each block."),
+            \.padding
+        ),
+        .flag(
+            SettingCatalog.row("ui.markdown", .boolean, "true", "true", "Markdown drawn everywhere it can be."),
+            \.markdown
+        ),
+        .flag(
+            SettingCatalog.row(
+                "ui.highlight",
+                .boolean,
+                "true",
+                "true",
+                "Fenced code coloured by the language its fence names."
+            ),
             \.highlight
         ),
-        flag(row("ui.shimmer", .boolean, "true", "true", "A running block's header shimmers."), \.shimmer),
-        choice(
-            row(
+        .flag(
+            SettingCatalog.row("ui.shimmer", .boolean, "true", "true", "A running block's header shimmers."),
+            \.shimmer
+        ),
+        .choice(
+            SettingCatalog.row(
                 "ui.dim",
                 SettingCatalog.words(Dim.self),
                 #""normal""#,
@@ -42,8 +69,8 @@ extension UISetting {
             ),
             \.dim
         ),
-        choice(
-            row(
+        .choice(
+            SettingCatalog.row(
                 "ui.sessionTint",
                 SettingCatalog.words(SessionTint.self),
                 #""both""#,
@@ -52,8 +79,8 @@ extension UISetting {
             ),
             \.sessionTint
         ),
-        choice(
-            row(
+        .choice(
+            SettingCatalog.row(
                 "ui.paths",
                 SettingCatalog.words(PathsPreference.self),
                 #""short""#,
@@ -62,8 +89,8 @@ extension UISetting {
             ),
             \.paths
         ),
-        limit(
-            row(
+        .limit(
+            SettingCatalog.row(
                 "ui.pathAncestors",
                 .structured,
                 "2",
@@ -73,8 +100,8 @@ extension UISetting {
             \.pathAncestors,
             least: 0
         ),
-        limit(
-            row(
+        .limit(
+            SettingCatalog.row(
                 "ui.historyLimit",
                 .structured,
                 "2000",
@@ -84,9 +111,18 @@ extension UISetting {
             \.historyLimit,
             least: 1
         ),
-        flag(row("ui.hover", .boolean, "true", "true", "What a click acts on brightens under the pointer."), \.hover),
-        flag(
-            row(
+        .flag(
+            SettingCatalog.row(
+                "ui.hover",
+                .boolean,
+                "true",
+                "true",
+                "What a click acts on brightens under the pointer."
+            ),
+            \.hover
+        ),
+        .flag(
+            SettingCatalog.row(
                 "ui.leaveFinishedJob",
                 .boolean,
                 "true",
@@ -95,8 +131,8 @@ extension UISetting {
             ),
             \.jobAutoReturnWhenFocused
         ),
-        choice(
-            row(
+        .choice(
+            SettingCatalog.row(
                 "ui.sessionColor",
                 SettingCatalog.words(SessionColorPreference.self),
                 #""off""#,
@@ -105,8 +141,8 @@ extension UISetting {
             ),
             \.sessionColor
         ),
-        choice(
-            row(
+        .choice(
+            SettingCatalog.row(
                 "ui.notify",
                 SettingCatalog.words(NotifyStyle.self),
                 #""bell""#,
@@ -116,8 +152,14 @@ extension UISetting {
             \.notify
         ),
         // Stored the other way round: the field is whether lists leave the unusable models out.
-        field(
-            row("ui.listAllModels", .boolean, "false", "false", "Model lists also show models ask cannot use."),
+        .field(
+            SettingCatalog.row(
+                "ui.listAllModels",
+                .boolean,
+                "false",
+                "false",
+                "Model lists also show models ask cannot use."
+            ),
             \.onlyUsefulModels
         ) {
             !(try ConfigurationFile.decodeSwitch($0, key: $1, name: $2))
