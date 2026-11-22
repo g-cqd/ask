@@ -105,7 +105,7 @@ public struct SessionFile: ~Copyable {
     public mutating func append(_ payload: SessionPayload) throws(SessionFileError) -> EntryID {
         let checkpoint = tree.checkpoint
         let id: EntryID
-        do { id = try tree.append(payload) } catch { throw .tree(error) }
+        do { id = try tree.append(payload, recordedAt: SessionEntry.now()) } catch { throw .tree(error) }
         try persistEntry(id, undoingTo: checkpoint)
         return id
     }
@@ -120,7 +120,9 @@ public struct SessionFile: ~Copyable {
     ) throws(SessionFileError) -> EntryID {
         let checkpoint = tree.checkpoint
         let id: EntryID
-        do { id = try tree.continuing(from: parent, with: payload) } catch { throw .tree(error) }
+        do { id = try tree.continuing(from: parent, with: payload, recordedAt: SessionEntry.now()) } catch {
+            throw .tree(error)
+        }
         try persistEntry(id, undoingTo: checkpoint)
         return id
     }

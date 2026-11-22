@@ -87,7 +87,7 @@ struct SessionFileTests {
         var file = try SessionFile.create(at: path("s.jsonl"), durability: durability)
         _ = try file.append(.user("same"))
         var reference = SessionTree()
-        _ = try reference.append(.user("same"))
+        _ = try reference.append(.user("same"), recordedAt: file.tree.entries[0].recordedAt)
         let expected = try SessionLog.snapshot(SessionTree()) + SessionLog.line(for: reference.entries[0])
         #expect(try bytes("s.jsonl") == expected)
     }
