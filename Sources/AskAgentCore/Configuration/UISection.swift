@@ -78,7 +78,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     /// `ui.dim`: how faint secondary text is (note n13); nil for `normal`.
     public var dim: Dim?
     /// `ui.sessionTint`: where the session's colour shows, the status line and the input's box; nil for `both`.
-    public var sessionTint: SessionTintPreference?
+    public var sessionTint: SessionTint?
     /// `ui.paths` and `ui.pathAncestors` (roadmap 0215): how paths in replies are shown, and how many folders above the project a common
     /// one may be, ``noAncestorLimit`` for no limit; nil for the defaults, `short` and 2.
     public var paths: PathsPreference?

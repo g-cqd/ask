@@ -29,7 +29,7 @@ public struct ScreenOptions: Sendable, Equatable {
     /// How faint secondary text is (`ui.dim`, note n13).
     public var dim = Dim.normal
     /// Where the session's colour shows: the status line, the input's box, both or neither (`ui.sessionTint`).
-    public var sessionTint = ScreenSessionTint.both
+    public var sessionTint = SessionTint.both
     /// Whether what a click acts on brightens under the pointer (`ui.hover`, roadmap 0172): the terminal then reports motion.
     public var hover: Bool
     /// Whether the runner sidebar starts open (`ui.sidebar`). Ctrl+\ and `/sidebar` toggle it; it needs 70 columns.

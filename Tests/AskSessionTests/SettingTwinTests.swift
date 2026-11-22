@@ -17,7 +17,6 @@ struct SettingTwinTests {
 
     @Test func `every choice a ui setting offers names a case on the screen`() {
         let found: [String: [String]] = [
-            "sessionTint": orphans(SessionTintPreference.self, ScreenSessionTint.self),
             "appearance": orphans(AppearancePreference.self, ScreenAppearance.self),
             "spinner": orphans(SpinnerPreference.self, SpinnerStyle.self),
             "stopKeys": orphans(InterruptKeysPreference.self, InterruptKeys.self),

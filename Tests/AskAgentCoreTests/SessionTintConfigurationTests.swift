@@ -1,3 +1,4 @@
+import AskCore
 import Testing
 
 @testable import AskAgentCore
@@ -14,8 +15,8 @@ struct SessionTintConfigurationTests {
         let section = try #require(try ui(#"{"sessionTint": "status"}"#))
         #expect(section.sessionTint == .status && section.value(forKey: "sessionTint") == "status")
         var lower = UISection()
-        lower.sessionTint = SessionTintPreference.none
-        #expect(lower.layered(with: UISection()).sessionTint == SessionTintPreference.none)
+        lower.sessionTint = SessionTint.none
+        #expect(lower.layered(with: UISection()).sessionTint == SessionTint.none)
         #expect(lower.layered(with: section).sessionTint == .status)
         #expect(UISection.keys.contains("sessionTint") && UISection().sessionTint == nil)
         #expect(!UISection.keys.contains("inputBorder"))

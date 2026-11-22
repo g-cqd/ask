@@ -76,7 +76,7 @@ extension ConfigurationFile {
                 case "showTimeout": section.timeout = try word(TimeoutPreference.self)
                 case "sessionColor": section.sessionColor = try word(SessionColorPreference.self)
                 case "dim": section.dim = try word(Dim.self)
-                case "sessionTint": section.sessionTint = try word(SessionTintPreference.self)
+                case "sessionTint": section.sessionTint = try word(SessionTint.self)
                 case "paths": section.paths = try word(PathsPreference.self)
                 case "notify": section.notify = try word(NotifyPreference.self)
                 case "statusPath": section.statusPath = try word(StatusPathPreference.self)

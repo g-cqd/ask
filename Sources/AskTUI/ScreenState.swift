@@ -1,3 +1,4 @@
+public import AskCore
 internal import Foundation
 internal import TerminalKitCodecs
 internal import TerminalKitRender
@@ -160,7 +161,7 @@ public struct ScreenState: Sendable, Equatable {
     public var theme = ScreenTheme()
     public var separator = true
     /// Where the session's colour shows (`ui.sessionTint`): the status line, the input's box, both or neither.
-    public var sessionTint = ScreenSessionTint.both
+    public var sessionTint = SessionTint.both
     /// Whether blocks are padded, and the tints they take.
     public var blocks = BlockStyle()
 
