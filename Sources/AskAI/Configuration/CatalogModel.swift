@@ -65,6 +65,7 @@ public struct CatalogModel: Codable, Sendable, Equatable {
     /// The most levels kept for one model: far more than any provider offers, so a hostile list cannot grow the cache.
     static let levelLimit = 16
 
+    // @dl:accept -- a list of coding keys reads like any other; a task record's has the same shape over other fields
     private enum CodingKeys: String, CodingKey {
         case id, api, contextWindow, maxOutputTokens, reasoningLevels, defaultReasoningLevel, supportsThinking,
             thinkingModes, acceptsImages, imageLimits, unsuitable

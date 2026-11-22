@@ -3,7 +3,7 @@
 extension SessionTask: Codable {
     private enum Key: String, CodingKey {
         // @dl:accept -- the tasks and the ideas are two lists of one store (ADR-0141): their reads, inputs, tools and records share a shape over different fields
-        case id, title, detail, state, blockedBy, related, tags, made, closed
+        case id, title, detail, state, blockedBy, related, tags, made, closed, started, finished
     }
 
     public init(from decoder: any Decoder) throws {
@@ -17,7 +17,9 @@ extension SessionTask: Codable {
             related: try container.decode([Int].self, forKey: .related),
             tags: try container.decodeIfPresent([String].self, forKey: .tags) ?? [],
             made: try container.decodeIfPresent(Int.self, forKey: .made),
-            closed: try container.decodeIfPresent(Int.self, forKey: .closed)
+            closed: try container.decodeIfPresent(Int.self, forKey: .closed),
+            started: try container.decodeIfPresent(Int.self, forKey: .started),
+            finished: try container.decodeIfPresent(Int.self, forKey: .finished)
             // @dl:accept -- the tasks and the ideas are two lists of one store (ADR-0141): their reads, inputs, tools and records share a shape over different fields
         )
     }
@@ -34,5 +36,7 @@ extension SessionTask: Codable {
         if !tags.isEmpty { try container.encode(tags, forKey: .tags) }
         try container.encodeIfPresent(made, forKey: .made)
         try container.encodeIfPresent(closed, forKey: .closed)
+        try container.encodeIfPresent(started, forKey: .started)
+        try container.encodeIfPresent(finished, forKey: .finished)
     }
 }

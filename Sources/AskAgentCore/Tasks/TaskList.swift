@@ -58,7 +58,7 @@ public struct TaskList: ChangeList {
                     tasks[index].title = title
                 }
                 if let detail { tasks[index].detail = detail }
-            case .state(let id, let state, let time): try set(id, state, at: time)
+            case .state(let id, let state, let time, let moment): try set(id, state, at: time, precisely: moment)
             case .tags(let id, let tags): tasks[try place(id)].tags = tags
             case .batch(let changes): try make(batch: changes)
             case .place(let id, let next, let after): try move(id, to: try place(next), after: after)
@@ -88,10 +88,15 @@ public struct TaskList: ChangeList {
     }
 
     /// A task made done keeps when it was, if the record says; left done, it loses it.
-    private mutating func set(_ id: Int, _ state: TaskState, at time: Int?) throws(TaskListError) {
+    private mutating func set(_ id: Int, _ state: TaskState, at time: Int?, precisely moment: Int?)
+        throws(TaskListError)
+    {
         let index = try place(id)
-        if state == .done, tasks[index].state != .done { tasks[index].closed = time }
-        if state != .done { tasks[index].closed = nil }
+        if state == .done, tasks[index].state != .done { (tasks[index].closed, tasks[index].finished) = (time, moment) }
+        if state != .done { (tasks[index].closed, tasks[index].finished) = (nil, nil) }
+        // Its last start, kept once it is done; an older record has none, and a task reopened has none until it starts again.
+        if state == .inProgress, tasks[index].state != .inProgress { tasks[index].started = moment }
+        if state == .open { tasks[index].started = nil }
         tasks[index].state = state
     }
 

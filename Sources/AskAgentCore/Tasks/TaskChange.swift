@@ -2,8 +2,9 @@
 public enum TaskChange: Equatable, Sendable {
     case add(SessionTask)
     case edit(id: Int, title: String?, detail: String?)
-    /// `at`, when given, is when it was made done (ADR-0141).
-    case state(id: Int, TaskState, at: Int? = nil)
+    /// `at`, when given, is when it was made done, in seconds (ADR-0141); `precisely`, the moment it was made in progress or done, in
+    /// milliseconds since 1970, what its cost is read between (roadmap 0239).
+    case state(id: Int, TaskState, at: Int? = nil, precisely: Int? = nil)
     /// The task put just before `next`, or just after it.
     case place(id: Int, next: Int, after: Bool)
     case link(id: Int, TaskLink, target: Int)

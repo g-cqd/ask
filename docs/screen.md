@@ -25,6 +25,11 @@ next one starts: `last turn 4 requests, 6 tools · ↑45k ↓3.1k · 1:12, tools
 tokens, how long it took, and how much of that went to tools (and to waiting for your approval). It is the first thing to shorten
 when the line is narrow, then to go. A figure the provider did not report is left out rather than shown as zero.
 
+When the model marks a task done, a line says what was spent from when it went in progress to then, such as
+`t3 done: 4 requests, 6 tools · ↑45k ↓3.1k · 1:12, tools 0:30`, and `/tasks all` shows the same after its line. Everything spent
+meanwhile counts, so two tasks in progress at once both count it. A task marked done without going in progress first has nothing to
+show.
+
 ## Writing a prompt
 
 - **Enter** sends. **Shift+Enter** or **Ctrl+J** starts a new line; a paste keeps its line breaks.
@@ -179,7 +184,7 @@ when it ends. With no command running, Ctrl+B moves the cursor as usual.
 | `/resume` | Switch to another saved conversation. |
 | `/rewind`, `/fork` | Go back to an earlier prompt (also `/tree`), or continue in a copy. See [Sessions](sessions.md). |
 | `/encrypt` | Encrypt this session's file (`/encrypt on`), or write it back in clear (`/encrypt off`). See [Sessions](sessions.md#encrypted-sessions). |
-| `/tasks` | Show the session's task list, which the model keeps with its `tasks` tool: `/tasks all` with the done ones, `/tasks t3` for one task. |
+| `/tasks` | Show the session's task list, which the model keeps with its `tasks` tool: `/tasks all` with the done ones, `/tasks t3` for one task. A done task shows what was spent while it was in progress. |
 | `#t3`, `#n2` | In a message, point at a task or a note: the model gets its text with the message. Type `#` at the start of a word to pick one. |
 | `#123` | In a message, in a repository whose `origin` is on GitHub: the pull request's or issue's state, title and text go with the message (at most five; the text cut at 4,000 characters), marked as written by others. The `#` picker lists the open ones. Public repositories need nothing; for a private one, start ask with `GITHUB_TOKEN` set. |
 | `/goal` | `/goal CONDITION` sets a goal and starts working toward it. Each time a run would end, a small model of the same provider reads what the run showed and answers met, not yet (the run goes on with what is missing) or impossible. After 10 judged turns or an hour ask asks whether to keep going, and stops if you do not answer within two minutes. `/goal` shows it; `/goal clear` drops it. It allows nothing by itself: approvals ask as usual. |

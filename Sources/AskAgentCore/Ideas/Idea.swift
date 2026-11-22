@@ -34,6 +34,7 @@ extension Idea: Codable {
         let container = try decoder.container(keyedBy: Key.self)
         self.init(
             id: try container.decode(Int.self, forKey: .id),
+            // @dl:accept -- the tasks and the ideas are two lists of one store (ADR-0141): their records share a shape over different fields
             text: try container.decode(String.self, forKey: .text),
             made: try container.decode(Int.self, forKey: .made),
             edited: try container.decodeIfPresent(Int.self, forKey: .edited),

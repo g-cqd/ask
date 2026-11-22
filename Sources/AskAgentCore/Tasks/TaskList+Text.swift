@@ -12,12 +12,13 @@ extension TaskList {
         return "\(task.name) [\(state)] \(task.title)\(tags)\(related)"
     }
 
-    /// Every task not done, or every task with `all`; and how many done ones were left out.
-    public func listing(all: Bool) -> String {
+    /// Every task not done, or every task with `all`; and how many done ones were left out. `spent` says what a task cost, after
+    /// its line (roadmap 0239).
+    public func listing(all: Bool, spent: (SessionTask) -> String? = { _ in nil }) -> String {
         guard !tasks.isEmpty else { return "No tasks yet." }
         let shown = all ? tasks : tasks.filter { $0.state != .done }
         let hidden = tasks.count - shown.count
-        var lines = shown.map(line)
+        var lines = shown.map { task in spent(task).map { line(task) + " · " + $0 } ?? line(task) }
         if lines.isEmpty { lines.append("Every task is done.") }
         if hidden > 0 { lines.append("(\(hidden) done, not shown)") }
         return lines.joined(separator: "\n")

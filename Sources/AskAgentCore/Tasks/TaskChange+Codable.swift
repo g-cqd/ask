@@ -2,7 +2,7 @@
 /// know throws ``ListRecordError``.
 extension TaskChange: Codable {
     private enum Key: String, CodingKey {
-        case kind, task, id, title, detail, state, at, before, after, link, target, tags, changes
+        case kind, task, id, title, detail, state, at, ms, before, after, link, target, tags, changes
     }
 
     public init(from decoder: any Decoder) throws {
@@ -29,7 +29,8 @@ extension TaskChange: Codable {
                 return .state(
                     id: id,
                     try container.decode(TaskState.self, forKey: .state),
-                    at: try container.decodeIfPresent(Int.self, forKey: .at)
+                    at: try container.decodeIfPresent(Int.self, forKey: .at),
+                    precisely: try container.decodeIfPresent(Int.self, forKey: .ms)
                 )
             case "move":
                 if let before = try container.decodeIfPresent(Int.self, forKey: .before) {
@@ -52,16 +53,18 @@ extension TaskChange: Codable {
                 try container.encode("add", forKey: .kind)
                 try container.encode(task, forKey: .task)
             case .batch(let changes):
+                // @dl:accept -- a Codable record reads like any other: each key is written and read once, and the shape is the format
                 try container.encode("batch", forKey: .kind)
                 try container.encode(changes, forKey: .changes)
             case .edit(let id, let title, let detail):
                 try Self.head("edit", id, &container)
                 try container.encodeIfPresent(title, forKey: .title)
                 try container.encodeIfPresent(detail, forKey: .detail)
-            case .state(let id, let state, let time):
+            case .state(let id, let state, let time, let moment):
                 try Self.head("state", id, &container)
                 try container.encode(state, forKey: .state)
                 try container.encodeIfPresent(time, forKey: .at)
+                try container.encodeIfPresent(moment, forKey: .ms)
             case .place(let id, let next, let after):
                 try Self.head("move", id, &container)
                 try container.encode(next, forKey: after ? .after : .before)

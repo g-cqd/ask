@@ -4,7 +4,8 @@
 Scripts/probe-turn-spend.py .build/release/ask
 
 Turn one: the model reads a file, then answers after 1.5 s. Its end must show `last turn 2 requests, 1 tool`, its tokens and a time of at
-least a second. While turn two runs the figure is gone; when it ends, it says turn two's one request. pyte, not a physical terminal.
+least a second. While turn two runs the figure is gone; when it ends, it says turn two's one request. Turn three starts a task, reads,
+and marks it done: a line says what the task cost, and `/tasks all` says it after the task's line. pyte, not a physical terminal.
 """
 import importlib.util
 import json
@@ -70,6 +71,12 @@ def main():
             (0, agent.turn([("call", "c1", "read", {"path": "notes.txt"})], "tool_use", input_tokens=1200)),
             (1.5, agent.turn([("text", "FIRST DONE")], "end_turn", input_tokens=1300)),
             ("hold", agent.turn([("text", "SECOND DONE")], "end_turn", input_tokens=40)),
+            (0, agent.turn([("call", "c2", "tasks", {"changes": [{"op": "add", "title": "Read the notes", "state": "in_progress"}]})],
+                           "tool_use", input_tokens=50)),
+            (1.2, agent.turn([("call", "c3", "read", {"path": "notes.txt"})], "tool_use", input_tokens=60)),
+            (0, agent.turn([("call", "c4", "tasks", {"changes": [{"op": "state", "ids": "t1", "state": "done"}]})],
+                           "tool_use", input_tokens=70)),
+            (0, agent.turn([("text", "THIRD DONE")], "end_turn", input_tokens=80)),
         ])
         environment = agent.environment(root + "/state", server.url, config=config)
         environment.update(TERM="xterm-256color", TERM_PROGRAM="ghostty", LANG="en_US.UTF-8", COLUMNS="200")
@@ -96,6 +103,17 @@ def main():
             line = status_line(terminal)
             print("after turn two:", line.strip())
             check("then it says the new turn's, one request, no tool", "last turn 1 request ·" in line)
+            terminal.send(b"Do the task\r")
+            terminal.until(lambda: "THIRD DONE" in terminal.text())
+            said = next((row for row in terminal.text().splitlines() if "t1 done:" in row), "")
+            print("task done:", said.strip())
+            check("a task made done says what it cost: two requests, two tools, a second or more",
+                  "t1 done: 2 requests, 2 tools" in said and any(f"0:0{second}" in said for second in range(1, 10)))
+            terminal.send(b"/tasks all\r")
+            terminal.until(lambda: "[done] Read the notes ·" in terminal.text())
+            row = next(row for row in terminal.text().splitlines() if "[done] Read the notes" in row)
+            print("/tasks all:", row.strip())
+            check("/tasks all says it after the task's line", "· 2 requests, 2 tools" in row)
         except (AssertionError, StopIteration):
             print(terminal.text(), file=sys.stderr)
             raise

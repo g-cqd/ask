@@ -17,4 +17,7 @@ public enum ListTime {
     }
 
     public static var now: Int { Int(Date().timeIntervalSince1970) }
+
+    /// Now in milliseconds, for a task's start and end (roadmap 0239).
+    public static var nowMilliseconds: Int { Int(Date().timeIntervalSince1970 * 1_000) }
 }
