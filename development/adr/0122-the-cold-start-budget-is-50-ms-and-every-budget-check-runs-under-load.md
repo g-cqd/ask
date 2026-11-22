@@ -33,6 +33,10 @@ time to the first usable frame may be 50 ms.
 Not run for this ADR: the harness change is exercised by `Scripts/test-measurements.py`, and the loaded numbers are recorded in
 the diary entry of the same day.
 
+## Amendment (2026-11-22)
+
+The cold-start number is replaced by ADR-0167: 100 ms. Checking under load stands.
+
 ## Amendment (2026-11-14)
 
 The memory numbers below are replaced by ADR-0151 (24 MiB idle, 30 MiB active). The rest stands.

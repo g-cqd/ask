@@ -17,8 +17,9 @@ public enum Budget {
     ///
     /// Measured 11.06 ms median, 13.77 p95 on an idle machine. Set at 25 ms, then raised to 50 ms by the owner
     /// (ADR-0122), who asked that every budget check run with the machine loaded: under load the median was 27 to
-    /// 45 ms (roadmap 0054, 0079), so 25 ms measured idle-machine luck, not what a person feels.
-    public static let coldStartMilliseconds: Double = 50
+    /// 45 ms (roadmap 0054, 0079), so 25 ms measured idle-machine luck, not what a person feels. Raised to 100 ms by the owner
+    /// on 2026-11-22 (ADR-0167), when 53.9 to 76.2 ms under load refused builds that were no slower than the one installed.
+    public static let coldStartMilliseconds: Double = 100
 
     /// Resident memory once the prompt is up and the process is idle, in mebibytes.
     ///
