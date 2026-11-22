@@ -8,23 +8,20 @@ public struct JobsSection: Sendable, Equatable, CustomStringConvertible, Layered
 
     public init() {}
 
-    /// The keys, in the order they are shown.
-    public static let keys = ["keepFinished"]
+    /// The keys, in the order they are shown, from their declarations (``JobsSection/settings``).
+    public static let keys = settings.all.map(\.name)
 
     /// The most finished jobs kept; nil for all of them, the default.
     public var limit: Int? { keepFinished.flatMap { $0 == Self.noLimit ? nil : $0 } }
 
     /// `self` with every key `section` sets replaced.
     public func layered(with section: JobsSection) -> JobsSection {
-        var merged = self
-        merged.keepFinished = section.keepFinished ?? keepFinished
-        return merged
+        declaredLayered(with: section)
     }
 
     /// The value of `key` (one of `keys`) as a file writes it, or nil when this section does not set it.
     public func value(forKey key: String) -> String? {
-        guard key == "keepFinished" else { return nil }
-        return keepFinished.map { $0 == Self.noLimit ? "null" : String($0) }
+        declaredValue(forKey: key)
     }
 
     public var description: String { SectionText.describe(Self.keys, value(forKey:)) }

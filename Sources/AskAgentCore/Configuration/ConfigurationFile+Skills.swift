@@ -7,13 +7,7 @@ extension ConfigurationFile {
         // @dl:accept -- the key walk is shared; each section names its own keys
         init(from decoder: any Decoder) throws {
             try ConfigurationFile.eachKey(of: decoder) { key, container in
-                switch key.stringValue {
-                    // @dl:accept -- typed key tables decoded by the shared walk; the keys are the data
-                    case "enabled": section.enabled = try decodeSwitch(container, key: key, name: "skills.enabled")
-                    case "maxListed": section.maxAdvertised = try container.decode(Int.self, forKey: key)
-                    case "sources": section.sources = try container.decode([String].self, forKey: key)
-                    default: throw UnknownKey(key: "skills." + key.stringValue)
-                }
+                try section.read(key.stringValue, at: key, in: container)
             }
         }
     }

@@ -5,16 +5,7 @@ extension ConfigurationFile {
         var section = JobsSection()
         init(from decoder: any Decoder) throws {
             try ConfigurationFile.eachKey(of: decoder) { key, container in
-                switch key.stringValue {
-                    case "keepFinished":
-                        section.keepFinished = try decodeCount(
-                            container,
-                            key: key,
-                            named: "jobs.keepFinished",
-                            least: 0
-                        )
-                    default: throw UnknownKey(key: "jobs." + key.stringValue)
-                }
+                try section.read(key.stringValue, at: key, in: container)
             }
         }
     }

@@ -172,24 +172,7 @@ enum SettingCatalog {
         )
     ]
 
-    static let skills: [Setting] = [
-        row(
-            "skills.enabled",
-            .boolean,
-            "true",
-            "true",
-            "Whether skills are offered; a project's file may only turn them off."
-        ),
-        row("skills.maxListed", .integer, "32", "32", user: true, "How many skills are listed to the model."),
-        row(
-            "skills.sources",
-            .structured,
-            #"["agents", "user"]"#,
-            "every harness",
-            user: true,
-            "Where to look, by harness."
-        )
-    ]
+    static let skills: [Setting] = SkillsSection.settings.all.map(\.row)
 
     static let environment: [Setting] = [
         row(

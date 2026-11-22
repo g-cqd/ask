@@ -7,18 +7,7 @@ extension ConfigurationFile {
 
         init(from decoder: any Decoder) throws {
             try ConfigurationFile.eachKey(of: decoder) { key, container in
-                switch key.stringValue {
-                    // @dl:accept -- key table rows, as every section decodes them
-                    case "enabled": section.enabled = try container.decode(Bool.self, forKey: key)
-                    // @dl:accept -- every configuration section is decoded, layered and compared by the same idiom; the keys are the data
-                    case "allowWrites": section.allowWrites = try container.decode(Bool.self, forKey: key)
-                    // @dl:accept -- every configuration section is decoded, layered and compared by the same idiom; the keys are the data
-                    case "maxTurns": section.maxTurns = try container.decode(Int.self, forKey: key)
-                    case "otherHarnesses": section.otherHarnesses = try container.decode(Bool.self, forKey: key)
-                    // @dl:accept -- key table rows, as every section decodes them
-                    case "resolveWithModel": section.resolveWithModel = try container.decode(Bool.self, forKey: key)
-                    default: throw UnknownKey(key: "agents." + key.stringValue)
-                }
+                try section.read(key.stringValue, at: key, in: container)
             }
         }
     }
