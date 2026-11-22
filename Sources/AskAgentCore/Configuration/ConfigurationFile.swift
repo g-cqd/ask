@@ -8,6 +8,7 @@ internal import Foundation
 /// configuration file a repeated key is a typo that would silently override. Unknown keys are refused too.
 public struct ConfigurationFile: Sendable, Equatable {
     public var model: String?
+    // @dl:accept -- two records' stored settings (this file's and the ui section's), each a run of optional fields: alike in shape only
     public var provider: String?
     public var thinking: ThinkingLevel?
     public var maxTurns: Int?
