@@ -1,19 +1,25 @@
 internal import AskCore
 
 // The ui settings, second half of the catalog's order: folds, the input, the sidebar, the status line and stopping a turn.
-extension UISetting {
+extension UISection {
     // @dl:disable near-clone -- the rows below are the ui settings' data: a key, its field, a type, an example, a default and help each
     // @dl:disable structural-clone -- the same rows, matched by their shape
-    static let layout: [UISetting] = [
-        flag(row("ui.fold.tools", .boolean, "true", "true", "Tool calls start folded."), \.foldTools),
-        flag(row("ui.fold.thinking", .boolean, "true", "true", "The model's reasoning starts folded."), \.foldThinking),
-        flag(row("ui.fold.code", .boolean, "true", "true", "Long code blocks start folded."), \.foldCode),
-        number(
-            row("ui.fold.codeLines", .integer, "20", "20", "How many lines make a code block long."),
+    static let layout: [SettingDeclaration<UISection>] = [
+        .flag(SettingCatalog.row("ui.fold.tools", .boolean, "true", "true", "Tool calls start folded."), \.foldTools),
+        .flag(
+            SettingCatalog.row("ui.fold.thinking", .boolean, "true", "true", "The model's reasoning starts folded."),
+            \.foldThinking
+        ),
+        .flag(
+            SettingCatalog.row("ui.fold.code", .boolean, "true", "true", "Long code blocks start folded."),
+            \.foldCode
+        ),
+        .number(
+            SettingCatalog.row("ui.fold.codeLines", .integer, "20", "20", "How many lines make a code block long."),
             \.codeFoldLines
         ),
-        number(
-            row(
+        .number(
+            SettingCatalog.row(
                 "ui.fold.outputLines",
                 .integer,
                 "200",
@@ -22,8 +28,8 @@ extension UISetting {
             ),
             \.outputFoldLines
         ),
-        number(
-            row(
+        .number(
+            SettingCatalog.row(
                 "ui.fold.outputBytes",
                 .integer,
                 "32768",
@@ -32,13 +38,19 @@ extension UISetting {
             ),
             \.outputFoldBytes
         ),
-        number(row("ui.scrollLines", .integer, "3", "3", "Lines per wheel step."), \.scrollLines),
-        number(
-            row("ui.inputRows", .integer, "6", "6", "How many rows the input grows to before it scrolls."),
+        .number(SettingCatalog.row("ui.scrollLines", .integer, "3", "3", "Lines per wheel step."), \.scrollLines),
+        .number(
+            SettingCatalog.row(
+                "ui.inputRows",
+                .integer,
+                "6",
+                "6",
+                "How many rows the input grows to before it scrolls."
+            ),
             \.promptRows
         ),
-        either(
-            row(
+        .either(
+            SettingCatalog.row(
                 "ui.sidebar",
                 .choice(["closed", "open"]),
                 #""closed""#,
@@ -49,8 +61,8 @@ extension UISetting {
             "open",
             "closed"
         ),
-        either(
-            row(
+        .either(
+            SettingCatalog.row(
                 "ui.sidebarJobs",
                 .choice(["tree", "section"]),
                 #""tree""#,
@@ -61,8 +73,8 @@ extension UISetting {
             "tree",
             "section"
         ),
-        field(
-            row(
+        .field(
+            SettingCatalog.row(
                 "ui.sidebarLayout",
                 .choice(UISection.sidebarLayouts),
                 #""adaptive""#,
@@ -75,14 +87,17 @@ extension UISetting {
         } write: {
             $0
         },
-        text(row("ui.inputPrefix", .text, #""> ""#, "none", "Text the input line starts with."), \.prompt) {
+        .text(
+            SettingCatalog.row("ui.inputPrefix", .text, #""> ""#, "none", "Text the input line starts with."),
+            \.prompt
+        ) {
             container,
             key,
             _ in
             try container.decode(String.self, forKey: key)
         },
-        choice(
-            row(
+        .choice(
+            SettingCatalog.row(
                 "ui.appearance",
                 SettingCatalog.words(Appearance.self),
                 #""auto""#,
@@ -91,8 +106,8 @@ extension UISetting {
             ),
             \.appearance
         ),
-        either(
-            row(
+        .either(
+            SettingCatalog.row(
                 "ui.durations",
                 .choice(["words", "clock"]),
                 #""words""#,
@@ -103,12 +118,18 @@ extension UISetting {
             "words",
             "clock"
         ),
-        choice(
-            row("ui.spinner", SettingCatalog.words(SpinnerStyle.self), #""line""#, "line", "The spinner."),
+        .choice(
+            SettingCatalog.row(
+                "ui.spinner",
+                SettingCatalog.words(SpinnerStyle.self),
+                #""line""#,
+                "line",
+                "The spinner."
+            ),
             \.spinner
         ),
-        choice(
-            row(
+        .choice(
+            SettingCatalog.row(
                 "ui.statusPath",
                 SettingCatalog.words(StatusPathForm.self),
                 #""home""#,
@@ -117,8 +138,8 @@ extension UISetting {
             ),
             \.statusPath
         ),
-        choice(
-            row(
+        .choice(
+            SettingCatalog.row(
                 "ui.statusPathSide",
                 SettingCatalog.words(StatusPathSide.self),
                 #""trailing""#,
@@ -127,8 +148,8 @@ extension UISetting {
             ),
             \.statusPathSide
         ),
-        choice(
-            row(
+        .choice(
+            SettingCatalog.row(
                 "ui.showTimeout",
                 SettingCatalog.words(TimeoutDisplay.self),
                 #""auto""#,
@@ -137,8 +158,8 @@ extension UISetting {
             ),
             \.timeout
         ),
-        text(
-            row(
+        .text(
+            SettingCatalog.row(
                 "ui.timeoutLabel",
                 .text,
                 #""timeout""#,
@@ -147,8 +168,8 @@ extension UISetting {
             ),
             \.timeoutLabel
         ) { try ConfigurationFile.decodeLabel($0, key: $1, named: $2) },
-        choice(
-            row(
+        .choice(
+            SettingCatalog.row(
                 "ui.stopKeys",
                 SettingCatalog.words(InterruptKeys.self),
                 #""both""#,
@@ -158,8 +179,8 @@ extension UISetting {
             \.interruptKeys
         ),
         stopTwice,
-        choice(
-            row(
+        .choice(
+            SettingCatalog.row(
                 "ui.queuedOnStop",
                 SettingCatalog.words(QueuedAfterInterrupt.self),
                 #""all""#,
@@ -174,14 +195,15 @@ extension UISetting {
 
     /// `ui.stopTwice`: the keys that must be pressed twice to stop a turn, `"esc"` and `"ctrl-c"`, kept as two fields. Written back as
     /// the pair, the field a file did not set at its default (Esc twice, Ctrl+C once).
-    private static let stopTwice = UISetting(
-        row: row(
+    private static let stopTwice = SettingDeclaration<UISection>(
+        row: SettingCatalog.row(
             "ui.stopTwice",
             .structured,
             #"["esc"]"#,
             #"["esc"]"#,
             "The keys that must be pressed twice to stop a turn."
         ),
+        merge: .replaces,
         read: { section, container, key, name in
             let keys = try container.decode([String].self, forKey: key)
             for key in keys where key != "esc" && key != "ctrl-c" {

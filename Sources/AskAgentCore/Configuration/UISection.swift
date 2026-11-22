@@ -175,7 +175,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
 
     /// The keys, in the order they are shown, as a file writes them (roadmap 0154); `fold.*` are the keys of the `fold` object. The
     /// catalog's order, as `docs/config.example.jsonc` and the `/config` editor show them.
-    public static let keys = UISetting.all.map(\.name)
+    public static let keys = settings.all.map(\.name)
 
     /// The keys this section sets, as a file writes them: `inputRows 4, fold.tools false`.
     public var description: String {

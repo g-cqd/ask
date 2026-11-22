@@ -2,21 +2,18 @@ internal import AskCore
 
 extension ConfigurationFile {
     /// The `ui` keys the screen implements, under the names roadmap 0154 settled (``SettingRenames`` reads the old ones), each read by
-    /// its own declaration (``UISetting``, roadmap 0209); `fold` is an object of `fold.*` keys. Unknown keys are refused.
+    /// its own declaration (``SettingDeclaration``, roadmap 0209); `fold` is an object of `fold.*` keys. Unknown keys are refused.
     struct UIDecoded: Decodable {
         var section = UISection()
 
         init(from decoder: any Decoder) throws {
             try ConfigurationFile.eachKey(of: decoder) { key, container in
-                guard key.stringValue == "fold" else { return try read(key.stringValue, key, container) }
+                guard key.stringValue == "fold" else {
+                    return try section.read(key.stringValue, at: key, in: container)
+                }
                 let fold = try container.nestedContainer(keyedBy: Key.self, forKey: key)
-                for inner in fold.allKeys { try read("fold." + inner.stringValue, inner, fold) }
+                for inner in fold.allKeys { try section.read("fold." + inner.stringValue, at: inner, in: fold) }
             }
-        }
-
-        private mutating func read(_ name: String, _ key: Key, _ container: KeyedDecodingContainer<Key>) throws {
-            guard let setting = UISetting.named[name] else { throw UnknownKey(key: "ui." + name) }
-            try setting.read(&section, container, key, "ui." + name)
         }
     }
 
