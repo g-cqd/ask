@@ -3,8 +3,8 @@ internal import AskCore
 // The ui settings, first half of the catalog's order: what the page looks like and how ask behaves around it. The second half is in
 // UISection+LayoutSettings.swift, so each file stays under the 250-line ceiling.
 extension UISection: DeclaredSection {
-    /// A section that sets nothing.
-    init() { self.init(mouse: nil) }
+    /// A section that sets nothing, for another target: the memberwise initializer Swift writes is internal.
+    public static var empty: UISection { UISection() }
 
     /// Every `ui` setting, in the catalog's order: the order of `docs/config.example.jsonc`, the `/config` editor and `ask config`.
     static let settings = SettingTable("ui", page + layout)

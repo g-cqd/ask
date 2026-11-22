@@ -47,39 +47,38 @@ extension RunSettings {
     /// The `ui` section as the screen uses it: each key a file set, and the screen's own default for the rest.
     var effectiveUI: UISection {
         let options = screenOptions
-        var ui = UISection(
-            mouse: options.mouse,
-            copyOnSelect: options.copyOnSelect,
-            foldTools: options.foldTools,
-            foldThinking: options.foldThinking,
-            scrollLines: options.scrollLines,
-            promptRows: options.promptRows,
-            foldCode: options.foldCode,
-            codeFoldLines: options.codeFoldLines,
-            sidebarOpen: options.sidebar,
-            prompt: options.prompt,
-            tint: options.tint,
-            separator: options.separator,
-            padding: options.padding,
-            markdown: options.markdown,
-            localizedDurations: options.localizedDurations,
-            spinner: SpinnerStyle(rawValue: options.spinner.rawValue),
-            jobAutoReturnWhenFocused: options.jobAutoReturnWhenFocused,
-            abortTurnRequiresConfirmation: options.abortTurnRequiresConfirmation,
-            interruptKeys: InterruptKeys(rawValue: options.interruptKeys.rawValue),
-            escapeInterruptRequiresConfirmation: options.escapeInterruptRequiresConfirmation,
-            interruptSendsQueued: QueuedAfterInterrupt(rawValue: options.interruptSendsQueued.rawValue),
-            onlyUsefulModels: configuration.ui.value.onlyUsefulModels ?? true,
-            appearance: Appearance(rawValue: options.appearance.rawValue),
-            timeout: TimeoutDisplay(rawValue: options.timeoutDisplay.rawValue),
-            timeoutLabel: options.timeoutLabel,
-            sessionColor: configuration.ui.value.sessionColor ?? .off
-        )
+        var ui = UISection.empty
+        ui.mouse = options.mouse
+        ui.copyOnSelect = options.copyOnSelect
+        ui.foldTools = options.foldTools
+        ui.foldThinking = options.foldThinking
+        ui.scrollLines = options.scrollLines
+        ui.promptRows = options.promptRows
+        ui.foldCode = options.foldCode
+        ui.codeFoldLines = options.codeFoldLines
+        ui.sidebarOpen = options.sidebar
+        ui.prompt = options.prompt
+        ui.tint = options.tint
+        ui.separator = options.separator
+        ui.padding = options.padding
+        ui.markdown = options.markdown
+        ui.localizedDurations = options.localizedDurations
+        ui.spinner = options.spinner
+        ui.jobAutoReturnWhenFocused = options.jobAutoReturnWhenFocused
+        ui.abortTurnRequiresConfirmation = options.abortTurnRequiresConfirmation
+        ui.interruptKeys = options.interruptKeys
+        ui.escapeInterruptRequiresConfirmation = options.escapeInterruptRequiresConfirmation
+        ui.interruptSendsQueued = options.interruptSendsQueued
+        ui.onlyUsefulModels = configuration.ui.value.onlyUsefulModels ?? true
+        ui.appearance = options.appearance
+        ui.timeout = options.timeoutDisplay
+        ui.timeoutLabel = options.timeoutLabel
+        ui.sessionColor = configuration.ui.value.sessionColor ?? .off
         ui.outputFoldLines = options.outputFoldLines
         ui.outputFoldBytes = options.outputFoldBytes
-        ui.notify = NotifyStyle(rawValue: options.notify.rawValue)
-        ui.statusPath = StatusPathForm(rawValue: options.statusPath.rawValue)
-        ui.statusPathSide = StatusPathSide(rawValue: options.statusPathSide.rawValue)
+        ui.notify = options.notify
+        ui.statusPath = options.statusPath
+        ui.statusPathSide = options.statusPathSide
         ui.historyLimit = options.historyLimit ?? UISection.noHistoryLimit
         return ui
     }
