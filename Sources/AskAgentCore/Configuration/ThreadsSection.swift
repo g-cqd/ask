@@ -50,8 +50,8 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
 
     /// The keys, in the order they are shown.
     public static let keys = [
-        "max", "depth", "names", "mergedShownFor", "questions", "questionsAfter", "namesModel", "summaryInstructions",
-        "model"
+        "max", "depth", "names", "namesModel", "model", "summaryInstructions", "mergedShownFor", "questions",
+        "questionsAfter"
     ]
 
     public var atOnce: Int { max ?? Self.defaultMax }
