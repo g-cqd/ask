@@ -1,7 +1,7 @@
 /// One persisted line. Internal so the wire format can evolve independently of the domain types.
 ///
 /// Shapes, keys sorted on encode:
-/// `{"type":"session","version":1}`, `{"id":…,"parent":…,"payload":{…},"type":"entry"}`,
+/// `{"type":"session","version":1}`, `{"id":…,"parent":…,"payload":{…},"time":…,"type":"entry"}`,
 /// `{"id":…|null,"type":"leaf"}`, `{"network":…,"type":"sandbox","write":[…]}`.
 enum SessionLogRecord: Sendable, Equatable {
     case header(version: Int)
@@ -15,7 +15,7 @@ enum SessionLogRecord: Sendable, Equatable {
 }
 
 extension SessionLogRecord: Codable {
-    private enum CodingKeys: String, CodingKey { case type, version, id, parent, payload }
+    private enum CodingKeys: String, CodingKey { case type, version, id, parent, payload, time }
     /// The sandbox record's own key set, so every other line matches no more keys than before. It repeats `type` so
     /// the record is written through one container: one encoder, one keyed container.
     private enum SandboxKeys: String, CodingKey { case type, write, read, network }
@@ -74,7 +74,8 @@ extension SessionLogRecord: Codable {
                     SessionEntry(
                         id: EntryID(try container.decode(String.self, forKey: .id)),
                         parentID: try container.decodeIfPresent(String.self, forKey: .parent).map(EntryID.init),
-                        payload: try container.decode(WirePayload.self, forKey: .payload).value
+                        payload: try container.decode(WirePayload.self, forKey: .payload).value,
+                        recordedAt: try container.decodeIfPresent(Int.self, forKey: .time)
                     )
                 )
             case .leaf:
@@ -150,6 +151,8 @@ extension SessionLogRecord: Codable {
                 try container.encode(entry.id.description, forKey: .id)
                 try container.encodeIfPresent(entry.parentID?.description, forKey: .parent)
                 try container.encode(WirePayload(value: entry.payload), forKey: .payload)
+                // When it was recorded (roadmap 0239); an older ask reads past it, as a keyed container ignores a key it does not know.
+                try container.encodeIfPresent(entry.recordedAt, forKey: .time)
             case .sandbox, .thread: break  // written above
             case .leaf(let id):
                 try container.encode(Kind.leaf, forKey: .type)

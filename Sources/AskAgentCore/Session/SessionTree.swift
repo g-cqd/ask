@@ -68,11 +68,11 @@ public struct SessionTree: Sendable, Equatable {
     /// - Returns: the new entry's identifier.
     /// - Throws: `invalidCompactionBoundary` when a compaction keeps an entry off its ancestry.
     @discardableResult
-    public mutating func append(_ payload: SessionPayload) throws(SessionTreeError) -> EntryID {
+    public mutating func append(_ payload: SessionPayload, recordedAt: Int? = nil) throws(SessionTreeError) -> EntryID {
         try validate(payload, under: leaf)
         let id = try freshIdentifier()
         positions[id] = entries.count
-        entries.append(SessionEntry(id: id, parentID: leaf, payload: payload))
+        entries.append(SessionEntry(id: id, parentID: leaf, payload: payload, recordedAt: recordedAt))
         leaf = id
         return id
     }
@@ -83,14 +83,15 @@ public struct SessionTree: Sendable, Equatable {
     @discardableResult
     public mutating func continuing(
         from parent: EntryID,
-        with payload: SessionPayload
+        with payload: SessionPayload,
+        recordedAt: Int? = nil
     ) throws(SessionTreeError) -> EntryID {
         guard positions[parent] != nil else { throw .unknownEntry(parent) }
         // One restore path for every failure `append` can raise, rather than validating twice.
         let previous = leaf
         leaf = parent
         do {
-            return try append(payload)
+            return try append(payload, recordedAt: recordedAt)
         } catch {
             leaf = previous
             throw error

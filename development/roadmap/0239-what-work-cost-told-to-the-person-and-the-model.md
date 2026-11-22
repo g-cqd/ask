@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-11-22
 ---
@@ -37,3 +37,18 @@ report, not yet refined with the owner): the steps below and their order.
 
 Decided per step with the owner; for steps 0 and 1: the totals agree with an independent count on the same session log, and the
 cost of recording is measured on the action-to-action budget.
+
+## The owner's answers (2026-11-22)
+
+- **Money:** tokens and time only for now. Each release of ask should carry the latest known prices, and the feedback should hold as
+  much as can be known, with a comparison between two compactions. (Read as: no money on screen yet; a price table that ships with each
+  release is owed, with how it is kept current still to settle.)
+- **A turn's cost:** in the status line, until the next turn.
+- **A task's cost:** a line when it is marked done, and beside it in `/tasks`.
+- **Two tasks in progress at once:** each counts everything spent while it was open; the totals overlap.
+
+## Step 0, built so far
+
+- Each session entry records when it was written (`"time"`, milliseconds since 1970). A turn's wall time, its model time and its tool
+  time are read from these, with no other record; an entry an older ask wrote has none.
+

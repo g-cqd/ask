@@ -22,6 +22,9 @@ public struct SessionEntry: Sendable, Equatable {
     public let parentID: EntryID?
     /// Which case the payload is.
     public let kind: Kind
+    /// When the entry was recorded, in milliseconds since 1970 (roadmap 0239): what a turn's or a task's time is read from. Nil for an
+    /// entry an older ask wrote. Not part of equality: two entries are the same conversation whenever they were written.
+    public let recordedAt: Int?
     private let content: Content
 
     /// What shows where a payload left in the file cannot be read back (the file was changed or truncated under the session).
@@ -50,10 +53,12 @@ public struct SessionEntry: Sendable, Equatable {
     ///   - id: identifier unique in the archive.
     ///   - parentID: an earlier entry, or nil.
     ///   - payload: message or compaction content.
-    public init(id: EntryID, parentID: EntryID?, payload: SessionPayload) {
+    ///   - recordedAt: when it was recorded, in milliseconds since 1970, or nil when that is not known.
+    public init(id: EntryID, parentID: EntryID?, payload: SessionPayload, recordedAt: Int? = nil) {
         self.id = id
         self.parentID = parentID
         kind = payload.kind
+        self.recordedAt = recordedAt
         content = .held(payload)
     }
 
@@ -61,7 +66,15 @@ public struct SessionEntry: Sendable, Equatable {
         id = entry.id
         parentID = parent
         kind = entry.kind
+        recordedAt = entry.recordedAt
         self.content = content
+    }
+
+    /// Now, in milliseconds since 1970, as ``recordedAt`` holds it.
+    static func now() -> Int {
+        var time = timespec()
+        clock_gettime(CLOCK_REALTIME, &time)
+        return time.tv_sec * 1_000 + time.tv_nsec / 1_000_000
     }
 
     /// This entry with its payload left in the file, at `line`, or itself when that saves nothing: a prompt (a branch picker lists
@@ -96,7 +109,7 @@ public struct SessionEntry: Sendable, Equatable {
     func holding() -> SessionEntry? {
         guard case .inFile = content else { return self }
         guard let payload = readablePayload else { return nil }
-        return SessionEntry(id: id, parentID: parentID, payload: payload)
+        return SessionEntry(id: id, parentID: parentID, payload: payload, recordedAt: recordedAt)
     }
 
     /// This entry under another parent, the payload as it was: a repair of a session's ancestry is no reason to read one.
