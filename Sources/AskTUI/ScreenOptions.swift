@@ -1,3 +1,5 @@
+public import AskCore
+
 /// How the screen treats the pointer. The defaults are ADR-0046's; the composition root fills them from `ui.*` configuration.
 public struct ScreenOptions: Sendable, Equatable {
     /// Whether the terminal reports the mouse to ask. Off leaves the terminal's own selection and wheel alone.
@@ -25,7 +27,7 @@ public struct ScreenOptions: Sendable, Equatable {
     /// Whether a running block's header shimmers, a brighter stretch moving along it on the spinner's tick (`ui.shimmer`, roadmap 0171).
     public var shimmer: Bool
     /// How faint secondary text is (`ui.dim`, note n13).
-    public var dim = ScreenDim.normal
+    public var dim = Dim.normal
     /// Where the session's colour shows: the status line, the input's box, both or neither (`ui.sessionTint`).
     public var sessionTint = ScreenSessionTint.both
     /// Whether what a click acts on brightens under the pointer (`ui.hover`, roadmap 0172): the terminal then reports motion.

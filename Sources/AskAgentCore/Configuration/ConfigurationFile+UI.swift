@@ -1,3 +1,5 @@
+internal import AskCore
+
 extension ConfigurationFile {
     /// The `ui` keys the screen implements, under the names roadmap 0154 settled (``SettingRenames`` reads the old ones); unknown keys
     /// are refused.
@@ -73,7 +75,7 @@ extension ConfigurationFile {
                 case "queuedOnStop": section.interruptSendsQueued = try word(QueuedAfterInterruptPreference.self)
                 case "showTimeout": section.timeout = try word(TimeoutPreference.self)
                 case "sessionColor": section.sessionColor = try word(SessionColorPreference.self)
-                case "dim": section.dim = try word(DimPreference.self)
+                case "dim": section.dim = try word(Dim.self)
                 case "sessionTint": section.sessionTint = try word(SessionTintPreference.self)
                 case "paths": section.paths = try word(PathsPreference.self)
                 case "notify": section.notify = try word(NotifyPreference.self)

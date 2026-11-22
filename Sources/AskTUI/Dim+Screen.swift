@@ -1,9 +1,8 @@
+internal import AskCore
 internal import TerminalKitCodecs
 
 /// How faint secondary text is drawn (`ui.dim`, note n13): the share of the way from the page to its text its grey sits at.
-public enum ScreenDim: String, Sendable, Equatable {
-    case normal, faint, fainter
-
+extension Dim {
     /// How far from the page toward the text the grey sits.
     var share: Double {
         switch self {

@@ -130,6 +130,8 @@ let package = Package(
             name: "AskAgentCore",
             dependencies: [
                 "AskAI", .product(name: "AemiJSON", package: "AemiJSON"), .product(name: "AemiIO", package: "aemi"),
+                // The settings' value types, declared once (ADR-0166).
+                "AskCore",
                 // Openers' patterns (roadmap 0216).
                 .product(name: "AemiRegex", package: "aemiregex"),
                 .product(name: "AemiText", package: "aemi"), .product(name: "AemiDiff", package: "aemi"),
@@ -187,6 +189,8 @@ let package = Package(
         .target(
             name: "AskTUI",
             dependencies: [
+                // The settings' value types, declared once (ADR-0166): AskCore is the one target of ask's it may import.
+                "AskCore",
                 .product(name: "TerminalKitCodecs", package: "TerminalKit"),
                 .product(name: "TerminalKitIO", package: "TerminalKit"),
                 .product(name: "TerminalKitInput", package: "TerminalKit"),
@@ -273,7 +277,7 @@ let package = Package(
         .testTarget(
             name: "AskAgentCoreTests",
             dependencies: [
-                "AskAgentCore", "AskAI", .product(name: "AemiIO", package: "aemi"),
+                "AskAgentCore", "AskAI", "AskCore", .product(name: "AemiIO", package: "aemi"),
                 .product(name: "AemiJSON", package: "AemiJSON"), .product(name: "AemiTesting", package: "aemi"),
                 .product(name: "AemiSearch", package: "AemiSearch")
             ],
@@ -342,7 +346,7 @@ let package = Package(
         .testTarget(
             name: "AskTUITests",
             dependencies: [
-                "AskTUI", .product(name: "AemiLexers", package: "aemi"),
+                "AskTUI", "AskCore", .product(name: "AemiLexers", package: "aemi"),
                 .product(name: "TerminalKitIO", package: "TerminalKit"),
                 .product(name: "TerminalKitCore", package: "TerminalKit"),
                 .product(name: "TerminalKitCodecs", package: "TerminalKit"),

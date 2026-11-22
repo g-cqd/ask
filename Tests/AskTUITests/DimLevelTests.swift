@@ -1,3 +1,4 @@
+import AskCore
 import TerminalKitCodecs
 import TerminalKitStyle
 import Testing
@@ -10,7 +11,7 @@ import Testing
 struct DimLevelTests {
     private static let page = TerminalPage(background: SIMD3(255, 255, 255), foreground: SIMD3(0, 0, 0))
 
-    private func grey(_ dim: ScreenDim, page: TerminalPage = Self.page) -> Double? {
+    private func grey(_ dim: Dim, page: TerminalPage = Self.page) -> Double? {
         let theme = ScreenTheme(page: page, dim: dim)
         guard case .rgb(let r, _, _) = theme.legible(Style(dim: true)).fg else { return nil }
         return Double(r)
@@ -24,7 +25,7 @@ struct DimLevelTests {
     }
 
     @Test func `the shimmer's faint header stays below the chosen dim`() throws {
-        for dim in [ScreenDim.normal, .faint, .fainter] {
+        for dim in [Dim.normal, .faint, .fainter] {
             let theme = ScreenTheme(page: Self.page, dim: dim)
             guard case .rgb(let base, _, _) = theme.shimmerBase, let shown = grey(dim) else {
                 Issue.record("not a colour")

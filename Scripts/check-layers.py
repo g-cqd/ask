@@ -21,7 +21,7 @@ ALLOWED = {
     "AskAgentCore": {"AskAI", "AskCore"},
     "AskApple": {"AskAI", "AskAgentCore", "AskCore"},
     "AskTools": {"AskAgentCore", "AskAI", "AskMCP", "AskCore", "AskCodemode"},
-    "AskTUI": set(),
+    "AskTUI": {"AskCore"},  # ADR-0166: the settings' value types
     # Codemode's VM and its bridge's messages (ADR-0156): it knows none of ask's libraries.
     "AskCodemode": set(),
     # The Agent Client Protocol on a connection (ADR-0153): a second driver of the screen's `Conversation` (ADR-0154).

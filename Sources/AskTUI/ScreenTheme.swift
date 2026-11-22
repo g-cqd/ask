@@ -1,3 +1,4 @@
+internal import AskCore
 internal import Foundation
 internal import TerminalKitCodecs
 internal import TerminalKitStyle
@@ -11,7 +12,7 @@ public struct ScreenTheme: Sendable, Equatable {
     /// The page the tints were mixed from.
     private(set) var page: TerminalPage
     /// How faint secondary text is (`ui.dim`).
-    private(set) var dim: ScreenDim
+    private(set) var dim: Dim
 
     /// A shimmering header's own text (roadmap 0187), drawn dim as well: three quarters of the way from the page to the text, so with dim
     /// on top it is fainter than a dim header, and the bright stretch stands out.
@@ -44,7 +45,7 @@ public struct ScreenTheme: Sendable, Equatable {
     }
 
     /// The tints mixed from `page`. `known` says the page is the terminal's own or one the person chose, not a guess.
-    init(tinted: Bool = true, page: TerminalPage, known: Bool = true, dim: ScreenDim = .normal) {
+    init(tinted: Bool = true, page: TerminalPage, known: Bool = true, dim: Dim = .normal) {
         self.tinted = tinted
         self.page = page
         self.dim = dim
