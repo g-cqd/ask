@@ -16,4 +16,22 @@ extension Configuration {
         for key in file.keysSet { next.requiredKeys[key] = path }
         return next
     }
+
+    /// `self` with each MCP server the organisation's `policy.mcpServers` does not list switched off, and a notice for each.
+    func applyingServerPolicy() -> (Configuration, [String]) {
+        let policy = self.policy
+        guard policy.value.mcpServers != nil else { return (self, []) }
+        var next = self
+        var notices: [String] = []
+        next.mcp.value.servers = mcp.value.servers.map { server in
+            guard server.enabled, !policy.value.permits(server) else { return server }
+            notices.append(
+                "MCP server \(server.name) is not allowed by your organisation (\(policy.source)); it is off."
+            )
+            var off = server
+            off.enabled = false
+            return off
+        }
+        return (next, notices)
+    }
 }

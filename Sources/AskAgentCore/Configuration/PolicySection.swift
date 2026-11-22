@@ -9,6 +9,9 @@ public struct PolicySection: Sendable, Equatable, CustomStringConvertible, Layer
     public var providers: [String]?
     /// `policy.models`: the models ask may use, by id; `*` in a name matches anything.
     public var models: [String]?
+    /// `policy.mcpServers`: the MCP servers ask may start or reach, by what they are, not the name a person gives them: a server's
+    /// URL, or its command and arguments separated by blanks; `*` matches anything. A server none matches is switched off.
+    public var mcpServers: [String]?
 
     /// The keys, in the order they are shown, from their declarations (``PolicySection/settings``).
     public static let keys = settings.all.map(\.name)
@@ -27,6 +30,16 @@ public struct PolicySection: Sendable, Equatable, CustomStringConvertible, Layer
             return "the model \(model); it allows \(models?.joined(separator: ", ") ?? "")"
         }
         return nil
+    }
+
+    /// Whether the organisation lets ask use `server`: always without a list, else when one entry matches what it is.
+    public func permits(_ server: MCPServerSetting) -> Bool {
+        Self.allows(mcpServers, Self.identity(of: server))
+    }
+
+    /// What a server is, for the allowlist: its URL, else its command and arguments separated by blanks.
+    static func identity(of server: MCPServerSetting) -> String {
+        server.url ?? ([server.command ?? ""] + server.args).joined(separator: " ")
     }
 
     /// Whether `name` is allowed by `list`: always when there is no list, else when one entry matches it, `*` matching any run of

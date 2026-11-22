@@ -45,6 +45,16 @@ extension PolicySection: DeclaredSection {
                     "The models ask may use, by id; * matches anything."
                 ),
                 \.models
+            ),
+            .list(
+                SettingCatalog.row(
+                    "policy.mcpServers",
+                    .structured,
+                    #"["https://mcp.example.com/*", "npx -y @example/*"]"#,
+                    "any",
+                    "The MCP servers ask may use, by URL or by command and arguments; * matches anything. Others are switched off."
+                ),
+                \.mcpServers
             )
         ]
     )

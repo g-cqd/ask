@@ -120,7 +120,8 @@ public struct ConfigurationLoader: Sendable {
             applied.append(path)
             notices += file.notices
         }
-        return Result(configuration: configuration, applied: applied, notices: notices)
+        let (permitted, refusedServers) = configuration.applyingServerPolicy()
+        return Result(configuration: permitted, applied: applied, notices: notices + refusedServers)
     }
 
     /// Refuses a file other than an organisation's requirements that sets `policy` (ADR-0168): it is theirs alone to decide.

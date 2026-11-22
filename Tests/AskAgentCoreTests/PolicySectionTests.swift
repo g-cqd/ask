@@ -76,4 +76,30 @@ struct PolicySectionTests {
         #expect(policy.value.allowYes == false && policy.value.models == ["claude-opus-*"], "a later drop-in replaces")
         #expect(policy.source == .managed(root + "/managed/requirements.d/10-team.json", required: true))
     }
+
+    @Test func `an MCP server the organisation does not list is switched off, by what it is and not its name`() throws {
+        defer { try? FileManager.default.removeItem(atPath: root) }
+        try write(
+            root + "/config/config.json",
+            #"""
+            {"mcp": {
+              "docs": {"url": "https://mcp.example.com/docs"},
+              "elsewhere": {"url": "https://other.example.net/mcp"},
+              "tool": {"command": "npx", "args": ["-y", "@example/tool"]},
+              "renamed": {"command": "/usr/bin/sneaky"}
+            }}
+            """#
+        )
+        try write(
+            root + "/managed/requirements.json",
+            #"{"policy": {"mcpServers": ["https://mcp.example.com/*", "npx -y @example/*"]}}"#
+        )
+        let loaded = try loader().load()
+        let enabled = Set(loaded.configuration.mcp.value.servers.filter(\.enabled).map(\.name))
+        #expect(enabled == ["docs", "tool"])
+        #expect(loaded.notices.filter { $0.hasPrefix("MCP server") }.count == 2)
+        #expect(loaded.notices.contains { $0.hasPrefix("MCP server elsewhere is not allowed by your organisation") })
+        try FileManager.default.removeItem(atPath: root + "/managed/requirements.json")
+        #expect(try loader().load().configuration.mcp.value.servers.allSatisfy(\.enabled), "no policy, every server")
+    }
 }
