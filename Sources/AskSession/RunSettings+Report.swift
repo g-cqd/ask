@@ -48,6 +48,7 @@ extension RunSettings {
     var effectiveUI: UISection {
         let options = screenOptions
         var ui = UISection.empty
+        // @dl:accept -- one assignment per key, from what the screen uses: the keys are the data
         ui.mouse = options.mouse
         ui.copyOnSelect = options.copyOnSelect
         ui.foldTools = options.foldTools

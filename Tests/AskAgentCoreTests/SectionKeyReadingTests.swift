@@ -73,4 +73,18 @@ struct SectionKeyReadingTests {
         let unset = ConfigurationFile.keys.filter { !file.sets($0) }
         #expect(unset.isEmpty, "the example sets these, and the file says it does not: \(unset)")
     }
+
+    @Test func `a file that sets one top-level key reads it, and no other`() throws {
+        let table = ConfigurationFile.settings
+        for setting in table.all {
+            let file = try ConfigurationFile.parse(
+                Array("{\"\(setting.name)\": \(setting.row.example)}".utf8),
+                path: setting.name
+            )
+            #expect(setting.write(file) != nil, "\(setting.name) reads nothing back")
+            let others = table.all.filter { $0.name != setting.name && $0.write(file) != nil }.map(\.name)
+            #expect(others.isEmpty, "setting \(setting.name) shows a value for \(others)")
+        }
+        #expect(SettingCatalog.all.filter { $0.path.count == 1 } == table.all.map(\.row))
+    }
 }

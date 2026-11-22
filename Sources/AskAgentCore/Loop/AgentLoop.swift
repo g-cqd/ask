@@ -63,7 +63,9 @@ public struct AgentLoop: Sendable {
         clock: any Clock<Duration> = ContinuousClock(),
         hooks: [any AgentHook] = [],
         network: (any NetworkPath)? = nil,
+        // @dl:accept -- three types' defaulted inputs and their assignments (the loop's, its settings', a tool's context): no shared contract
         networkWait: Duration = .seconds(300),
+        // @dl:accept -- the same initializer tails, matched against AgentSettings' and ToolContext's
         handover: LoopHandover? = nil
     ) {
         self.handover = handover

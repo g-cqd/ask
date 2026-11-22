@@ -126,70 +126,20 @@ public struct ConfigurationFile: Sendable, Equatable {
         _ body: (Key, KeyedDecodingContainer<Key>) throws -> Void
     ) throws {
         let container = try decoder.container(keyedBy: Key.self)
-        // @dl:accept -- the walk the key tables share; the analyzer matches it against their closing lines
         for key in container.allKeys { try body(key, container) }
     }
 
-    // @dl:accept -- three key tables decoded the same way; the tables are the data, and the walk is already shared
     private struct Decoded: Decodable {
         var file = ConfigurationFile()
         init(from decoder: any Decoder) throws {
             try ConfigurationFile.eachKey(of: decoder) { key, container in
-                /// A section whose settings are each declared once (roadmap 0209), read through its table.
-                func declared<Section: DeclaredSection>(_: Section.Type) throws -> Section {
-                    try container.decode(SectionDecoded<Section>.self, forKey: key).section
+                if let setting = ConfigurationFile.settings.named[key.stringValue] {
+                    return try setting.read(&file, container, key, key.stringValue)
                 }
-                switch key.stringValue {
-                    case "model": file.model = try container.decode(String.self, forKey: key)
-                    // @dl:accept -- the key tables are the data, and the walk over them is already shared
-                    case "provider": file.provider = try container.decode(String.self, forKey: key)
-                    case "thinking":
-                        file.thinking = try ConfigurationFile.decodeChoice(container, key: key, as: ThinkingLevel.self)
-                    case "maxTurns": file.maxTurns = try ConfigurationFile.decodeMaxTurns(container, key: key)
-                    case "compactAt": file.compactAt = try ConfigurationFile.decodeCompactAt(container, key: key)
-                    case "keepAwake":
-                        file.keepAwake = try ConfigurationFile.decodeChoice(container, key: key, as: KeepAwakeMode.self)
-                    case "sessionEncryption", "sessionCompression", "sessionPassword", "taskScope":
-                        try file.decodeSessionKey(key, in: container)
-                    case "codemode":
-                        file.codemode = try ConfigurationFile.decodeSwitch(container, key: key, name: "codemode")
-                    case "keepDisplayAwake":
-                        file.keepDisplayAwake = try ConfigurationFile.decodeSwitch(
-                            container,
-                            key: key,
-                            name: "keepDisplayAwake"
-                        )
-                    case "credentials":
-                        file.credentials = try ConfigurationFile.decodeChoice(
-                            container,
-                            key: key,
-                            // @dl:accept -- each key decodes its own choice through the shared helper; the rows are the data
-                            as: CredentialStorage.self
-                        )
-                    // @dl:accept -- the key tables are the data, and the walk over them is already shared
-                    case "sandbox":
-                        file.sandbox = try declared(SandboxSection.self)
-                    case "ui": file.ui = try declared(UISection.self)
-                    case "skills":
-                        file.skills = try declared(SkillsSection.self)
-                    // @dl:accept -- the key tables are the data, and the walk over them is already shared
-                    case "mcp": file.mcp = try container.decode(MCPDecoded.self, forKey: key).section
-                    case "presets": file.presets = try container.decode([String].self, forKey: key)
-                    case "approvals": file.approvals = try declared(ApprovalsSection.self)
-                    case "hooks":
-                        file.hooks = try declared(HooksSection.self)
-                    case "threads":
-                        file.threads = try declared(ThreadsSection.self)
-                    case "agents":
-                        file.agents = try declared(AgentsSection.self)
-                    case "openers": file.openers = try declared(OpenersSection.self)
-                    case "jobs": file.jobs = try declared(JobsSection.self)
-                    case "modelScopes":
-                        file.modelScopes = try container.decode([ModelScopeDecoded].self, forKey: key).map(\.scope)
-                    case "environment":
-                        file.environment = try declared(EnvironmentSection.self)
-                    default: throw UnknownKey(key: key.stringValue)
+                guard let section = ConfigurationFile.sections[key.stringValue] else {
+                    throw UnknownKey(key: key.stringValue)
                 }
+                try section.read(&file, container, key)
             }
         }
     }
