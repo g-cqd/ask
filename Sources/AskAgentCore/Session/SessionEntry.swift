@@ -1,3 +1,4 @@
+internal import AskAI
 internal import Darwin
 
 /// An immutable archive entry. Parents must precede children in archive order.
@@ -25,6 +26,9 @@ public struct SessionEntry: Sendable, Equatable {
     /// When the entry was recorded, in milliseconds since 1970 (roadmap 0239): what a turn's or a task's time is read from. Nil for an
     /// entry an older ask wrote. Not part of equality: two entries are the same conversation whenever they were written.
     public let recordedAt: Int?
+    /// A response's tokens and model, held beside a payload left in the file, so what work cost is read without reading payloads
+    /// (roadmap 0239); nil for every other kind.
+    public let spent: ResponseSpend?
     private let content: Content
 
     /// What shows where a payload left in the file cannot be read back (the file was changed or truncated under the session).
@@ -59,6 +63,10 @@ public struct SessionEntry: Sendable, Equatable {
         self.parentID = parentID
         kind = payload.kind
         self.recordedAt = recordedAt
+        spent =
+            if case .response(let response, _) = payload {
+                ResponseSpend(usage: response.usage, model: response.model)
+            } else { nil }
         content = .held(payload)
     }
 
@@ -67,6 +75,7 @@ public struct SessionEntry: Sendable, Equatable {
         parentID = parent
         kind = entry.kind
         recordedAt = entry.recordedAt
+        spent = entry.spent
         self.content = content
     }
 

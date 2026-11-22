@@ -51,4 +51,10 @@ cost of recording is measured on the action-to-action budget.
 
 - Each session entry records when it was written (`"time"`, milliseconds since 1970). A turn's wall time, its model time and its tool
   time are read from these, with no other record; an entry an older ask wrote has none.
+- A turn's cost (`WorkSpend`, read from the entries after the leaf it began at): its requests, tool calls, tokens, wall time, and the
+  time before each response (the model's) and each tool result (the tools', with any approval). The status line shows it until the next
+  turn (`TurnSpend`). Each entry holds its response's tokens beside it (`ResponseSpend`, a reference: 8 bytes an entry rather than 80
+  inline), so an entry left in the file is not read back for them.
+- Left for steps 0 and 1: a task's cost from in progress to done, kept in its record, said when it is done and shown in `/tasks`; the
+  comparison between two compactions; the price table that ships with each release.
 

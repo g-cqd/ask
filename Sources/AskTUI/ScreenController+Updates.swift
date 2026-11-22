@@ -23,8 +23,8 @@ extension ScreenController {
                 state.transcript.addChoiceSummary(HomePath.abbreviate(text, home: options.home))
             case .detail(let text): receive(detail: HomePath.abbreviate(text, home: options.home))
             case .requestExit(let exit): state.exitRequest = exit
-            case .label, .labelVariants, .sandboxActive, .sessionIdentity, .conversationName, .status, .context,
-                .gitStatus, .branchPullRequest, .referencesResolved:
+            case .label, .labelVariants, .sandboxActive, .sessionIdentity, .conversationName, .status, .turnSpent,
+                .context, .gitStatus, .branchPullRequest, .referencesResolved:
                 applyStatusLine(update)
             case .runners(let list): setRunners(list)
             case .runnerActivity(let seen): state.runnerActivity.merge(seen) { Swift.max($0, $1) }
@@ -120,6 +120,7 @@ extension ScreenController {
             case .sessionIdentity(let seed): state.sessionIdentity = seed
             case .conversationName(let name): state.conversationName = name
             case .status(let text): state.detail = text
+            case .turnSpent(let spend): state.turnSpend = spend
             case .context(let text, _, _): state.context = text
             case .gitStatus(let forms): state.gitStatus = forms
             case .branchPullRequest(let number): state.branchPullRequest = number

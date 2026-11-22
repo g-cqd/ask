@@ -67,6 +67,8 @@ struct SessionInFileTests {
         for (index, entry) in branch.enumerated() {
             let big = entry.kind == .response || entry.kind == .toolResult
             #expect(entry.isInFile == (big && index < firstKept), "\(index) \(entry.kind)")
+            // What it cost is held beside it (roadmap 0239): a response's tokens are read without reading the file back.
+            if entry.kind == .response { #expect(entry.spent?.usage == TokenUsage(input: 1, output: 1)) }
         }
         #expect(tree.inFileCount == 4, "the responses and results of turns 1 and 2")
         let (shown, earlier) = tree.sinceLastCompaction()
