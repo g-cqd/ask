@@ -68,7 +68,7 @@ extension ConfigurationFile {
             }
             switch key.stringValue {
                 // @dl:accept -- one row per choice key, each naming its own enumeration; the rows are data
-                case "appearance": section.appearance = try word(AppearancePreference.self)
+                case "appearance": section.appearance = try word(Appearance.self)
                 // @dl:accept -- the same table of choice keys, one row each
                 case "spinner": section.spinner = try word(SpinnerPreference.self)
                 case "stopKeys": section.interruptKeys = try word(InterruptKeysPreference.self)
