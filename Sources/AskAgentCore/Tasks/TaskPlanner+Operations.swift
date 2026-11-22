@@ -31,7 +31,8 @@ extension TaskPlanner {
             related: related,
             tags: tags,
             made: time,
-            closed: draft.state == .done ? time : nil
+            closed: draft.state == .done ? time : nil,
+            started: draft.state == .inProgress ? moment : nil
         )
         try make(.add(task))
         report.added.append(task.id)
@@ -65,7 +66,8 @@ extension TaskPlanner {
                 report.already.append(id)
                 continue
             }
-            try make(.state(id: id, state, at: state == .done ? time : nil))
+            // The moment it was started or done: what its cost is read between (roadmap 0239).
+            try make(.state(id: id, state, at: state == .done ? time : nil, precisely: state == .open ? nil : moment))
             report.states[state, default: []].append(id)
         }
     }

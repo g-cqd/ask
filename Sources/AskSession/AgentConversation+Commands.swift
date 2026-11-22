@@ -196,7 +196,9 @@ extension AgentConversation {
                 case "logout": await self.logout(arguments: arguments, update: update)
                 case "notes", "notes:all", "notes:show", "notes:edit", "notes:add", "notes:delete", "notes:search":
                     self.notes(command: name, arguments: arguments, update: update)
-                case "tasks": update(.notice(lists.answer(to: arguments), isError: false))
+                case "tasks":
+                    let tree = session.withLock { $0?.tree }
+                    update(.notice(lists.answer(to: arguments, tree: tree), isError: false))
                 case "btw": await self.aside(arguments, update: update)
                 case "thread": await self.startThread(arguments, update: update)
                 case "threads": self.showThreads(arguments, update: update)

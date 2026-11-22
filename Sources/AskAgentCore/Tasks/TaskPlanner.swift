@@ -12,17 +12,21 @@ public struct TaskPlanner {
     private var adds: [Int] = []
     private var resolvedCount = 0
     let time: Int
+    /// The same moment in milliseconds, for a task's start and end (roadmap 0239).
+    let moment: Int
 
-    private init(list: TaskList, time: Int) {
+    private init(list: TaskList, time: Int, moment: Int) {
         self.list = list
         self.time = time
+        self.moment = moment
     }
 
     /// The change to keep for `edits` on `list` at `time` (nil when everything was already so), and what to answer.
     public static func plan(
         _ edits: [TaskEdit],
         on list: TaskList,
-        at time: Int
+        at time: Int,
+        precisely moment: Int? = nil
             // @dl:accept -- the tasks and the ideas are two lists of one store (ADR-0141): their reads, inputs, tools and records share a shape over different fields
     ) throws(ListPlanError) -> (change: TaskChange?, report: TaskReport) {
         guard !edits.isEmpty, edits.count <= ListLimits.changesPerCall else {
@@ -32,7 +36,7 @@ public struct TaskPlanner {
                 reason: "a call holds 1 to \(ListLimits.changesPerCall) changes."
             )
         }
-        var planner = TaskPlanner(list: list, time: time)
+        var planner = TaskPlanner(list: list, time: time, moment: moment ?? time * 1_000)
         for (offset, edit) in edits.enumerated() {
             do {
                 try planner.plan(edit)

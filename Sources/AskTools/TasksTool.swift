@@ -68,13 +68,20 @@ public struct TasksTool: ArgumentTool {
     private let board: TaskBoard
     private let notes: IdeaBoard
     private let now: @Sendable () -> Int
+    /// The same in milliseconds, for a task's start and end (roadmap 0239).
+    private let preciseNow: @Sendable () -> Int
 
     /// `notes`: the person's notes; a board that is not attached answers that none are open.
-    public init(board: TaskBoard, notes: IdeaBoard = IdeaBoard(), now: @escaping @Sendable () -> Int = { ListTime.now })
-    {
+    public init(
+        board: TaskBoard,
+        notes: IdeaBoard = IdeaBoard(),
+        preciseNow: @escaping @Sendable () -> Int = { ListTime.nowMilliseconds },
+        now: @escaping @Sendable () -> Int = { ListTime.now }
+    ) {
         self.board = board
         self.notes = notes
         self.now = now
+        self.preciseNow = preciseNow
     }
 
     public func run(_ request: ListsRequest, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
@@ -85,13 +92,13 @@ public struct TasksTool: ArgumentTool {
     }
 
     private func run(_ request: TaskRequest) throws(ToolFailure) -> ToolOutput {
-        let time = now()
+        let (time, moment) = (now(), preciseNow())
         return try ListToolRun.run(
             board,
             missing: "No task list is open for this session; the person can see why with /tasks.",
             plan: request.changes.map { edits in
                 { list in
-                    let plan = try TaskPlanner.plan(edits, on: list, at: time)
+                    let plan = try TaskPlanner.plan(edits, on: list, at: time, precisely: moment)
                     return (plan.change, plan.report.summary)
                 }
             },

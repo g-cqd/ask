@@ -55,6 +55,8 @@ cost of recording is measured on the action-to-action budget.
   time before each response (the model's) and each tool result (the tools', with any approval). The status line shows it until the next
   turn (`TurnSpend`). Each entry holds its response's tokens beside it (`ResponseSpend`, a reference: 8 bytes an entry rather than 80
   inline), so an entry left in the file is not read back for them.
-- Left for steps 0 and 1: a task's cost from in progress to done, kept in its record, said when it is done and shown in `/tasks`; the
-  comparison between two compactions; the price table that ships with each release.
+- A task's cost: each task keeps the moment it last went in progress and the moment it was done (`started`, `finished`, milliseconds),
+  its cost is what the session recorded between them, said in a line when it is done (once each time) and after its line in `/tasks
+  all` and `/tasks t3`. The model's `tasks` tool does not say it, so its reads cost no more.
+- Left: the comparison between two compactions; the price table that ships with each release.
 

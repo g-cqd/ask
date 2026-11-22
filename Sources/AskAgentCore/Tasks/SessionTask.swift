@@ -14,6 +14,10 @@ public struct SessionTask: Sendable, Equatable {
     /// When it was made and last done, in seconds since 1970; nil in records from before ADR-0141.
     public var made: Int?
     public var closed: Int?
+    /// When it last went in progress, and when it was then done, in milliseconds since 1970: its cost is what the session recorded
+    /// between them (roadmap 0239). Nil when it never went in progress, in records from before it, and once it is open again.
+    public var started: Int?
+    public var finished: Int?
 
     public init(
         id: Int,
@@ -25,7 +29,9 @@ public struct SessionTask: Sendable, Equatable {
         tags: [String] = [],
         // @dl:accept -- a memberwise initialiser or a field table reads like any other of its kind; the fields are the data
         made: Int? = nil,
-        closed: Int? = nil
+        closed: Int? = nil,
+        started: Int? = nil,
+        finished: Int? = nil
     ) {
         self.id = id
         self.title = title
@@ -36,6 +42,8 @@ public struct SessionTask: Sendable, Equatable {
         self.tags = tags
         self.made = made
         self.closed = closed
+        self.started = started
+        self.finished = finished
     }
 
     /// How the task is named: `t5`.

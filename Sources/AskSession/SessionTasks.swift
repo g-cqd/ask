@@ -1,4 +1,5 @@
 internal import AskAgentCore
+internal import AskTUI
 internal import Synchronization
 
 /// The task list and the notes of a conversation's session (ADR-0140, roadmaps 0179 and 0180): their tools and commands read them,
@@ -11,18 +12,29 @@ final class SessionTasks: Sendable {
     let ideas = IdeaBoard()
     /// Why the session's lists could not be opened, for `/tasks` and `/notes` to say.
     let problem = Mutex<String?>(nil)
+    /// The done tasks whose cost was said, by the moment they were done, so each is said once a time it is done (roadmap 0239).
+    let costSaid = Mutex<[Int: Int]>([:])
 
     /// Uses `recorder`'s lists, or none; why they could not be opened, when they could not.
     func follow(_ recorder: SessionRecorder?, scope: TaskScope) -> String? {
         let reason = Self.attach(board, to: recorder, scope: scope) ?? Self.attach(ideas, to: recorder, scope: scope)
         problem.withLock { $0 = reason }
+        // The tasks already done were done before this list was followed: their cost is not said again (roadmap 0239).
+        let done =
+            ((try? board.current()) ?? nil)?.tasks
+            .compactMap { task in (task.finished ?? task.closed).map { (task.id, $0) } } ?? []
+        costSaid.withLock { $0 = Dictionary(done) { first, _ in first } }
         return reason
     }
 
-    /// The task list of the session in use, or why there is none.
-    func answer(to arguments: String) -> String {
+    /// The task list of the session in use, or why there is none; a done task with what it cost, read from `tree` (roadmap 0239).
+    func answer(to arguments: String, tree: SessionTree? = nil) -> String {
+        let spent = { (task: SessionTask) -> String? in
+            guard let tree, let spend = WorkSpend.of(task, in: tree), !spend.isEmpty else { return nil }
+            return TurnSpend(spend).summary(localized: false)
+        }
         do {
-            if let list = try board.current() { return list.answer(to: arguments) }
+            if let list = try board.current() { return list.answer(to: arguments, spent: spent) }
         } catch {
             return "The task list could not be read: \(error)"
         }
