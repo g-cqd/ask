@@ -1,70 +1,8 @@
-internal import AskCore
-
 extension UISection {
     /// The value of `key` as a configuration file writes it (`true`, `words`, `3`; free text in quotes), or nil when this section does not set it. The
-    /// names are those of ``keys``, so `ask config` can show each key under the name a person types (roadmaps 0103 and 0154).
+    /// names are those of ``keys``, so `ask config` can show each key under the name a person types (roadmaps 0103 and 0154). Each
+    /// setting's own declaration writes it (``UISetting``, roadmap 0209).
     public func value(forKey key: String) -> String? {
-        let flag = Self.flag
-        switch key {
-            // @dl:accept -- one line per key, each reading its own setting: the table is the data
-            case "mouse": return flag(mouse)
-            case "copyOnSelect": return flag(copyOnSelect)
-            case "fold.tools": return flag(foldTools)
-            case "fold.thinking": return flag(foldThinking)
-            case "fold.code": return flag(foldCode)
-            case "fold.codeLines": return codeFoldLines.map(String.init)
-            case "fold.outputLines": return outputFoldLines.map(String.init)
-            case "fold.outputBytes": return outputFoldBytes.map(String.init)
-            case "scrollLines": return scrollLines.map(String.init)
-            case "inputRows": return promptRows.map(String.init)
-            case "sidebar": return sidebarOpen.map { $0 ? "open" : "closed" }
-            case "sidebarJobs": return sidebarJobsInTree.map { $0 ? "tree" : "section" }
-            case "sidebarLayout": return sidebarLayout
-            case "inputPrefix": return prompt.map { "\"\($0)\"" }
-            case "tint": return flag(tint)
-            case "appearance": return appearance?.rawValue
-            case "separator": return flag(separator)
-            case "padding": return flag(padding)
-            case "markdown": return flag(markdown)
-            case "highlight": return flag(highlight)
-            case "shimmer": return flag(shimmer)
-            case "hover": return flag(hover)
-            case "durations": return localizedDurations.map { $0 ? "words" : "clock" }
-            case "spinner": return spinner?.rawValue
-            case "showTimeout": return timeout?.rawValue
-            case "timeoutLabel": return timeoutLabel.map { "\"\($0)\"" }
-            default: return behaviorValue(forKey: key)
-        }
-    }
-
-    private static func flag(_ value: Bool?) -> String? { value.map { $0 ? "true" : "false" } }
-
-    private func behaviorValue(forKey key: String) -> String? {
-        switch key {
-            case "leaveFinishedJob": return Self.flag(jobAutoReturnWhenFocused)
-            case "stopKeys": return interruptKeys?.rawValue
-            case "stopTwice":
-                guard escapeInterruptRequiresConfirmation != nil || abortTurnRequiresConfirmation != nil else {
-                    return nil
-                }
-                let keys = [
-                    ("esc", escapeInterruptRequiresConfirmation ?? true),
-                    ("ctrl-c", abortTurnRequiresConfirmation ?? false)
-                ]
-                let pressedTwice = keys.filter(\.1).map(\.0)
-                return pressedTwice.isEmpty ? "none" : pressedTwice.joined(separator: ", ")
-            case "queuedOnStop": return interruptSendsQueued?.rawValue
-            case "listAllModels": return Self.flag(onlyUsefulModels.map { !$0 })
-            case "sessionColor": return sessionColor?.rawValue
-            case "dim": return dim?.rawValue
-            case "sessionTint": return sessionTint?.rawValue
-            case "paths": return paths?.rawValue
-            case "notify": return notify?.rawValue
-            case "statusPath": return statusPath?.rawValue
-            case "statusPathSide": return statusPathSide?.rawValue
-            case "historyLimit": return historyLimit.map { $0 == Self.noHistoryLimit ? "null" : String($0) }
-            case "pathAncestors": return pathAncestors.map { $0 == Self.noAncestorLimit ? "null" : String($0) }
-            default: return nil
-        }
+        UISetting.named[key]?.write(self)
     }
 }
