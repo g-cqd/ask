@@ -1,3 +1,5 @@
+internal import AskCore
+
 /// Commands typed while a turn runs (roadmap 0113): beside it when they apply at once, after it when they need its end.
 extension ScreenController {
     /// Runs a conversation command: as the screen's run when idle; beside a running turn when it applies at once; after the turn when

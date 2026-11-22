@@ -1,5 +1,6 @@
 /// What happens to the messages queued behind a turn the person interrupted (`ui.interruptSendsQueued`, roadmap 0083).
-public enum QueuedAfterInterruptPreference: String, Sendable, CaseIterable {
+/// Declared once for the setting and the screen (ADR-0166).
+public enum QueuedAfterInterrupt: String, Sendable, CaseIterable {
     /// They go back to the input to be edited.
     case none
     /// The next one starts a turn; the others wait their turn, one per turn.

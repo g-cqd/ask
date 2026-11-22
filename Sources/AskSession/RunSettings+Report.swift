@@ -68,7 +68,7 @@ extension RunSettings {
             abortTurnRequiresConfirmation: options.abortTurnRequiresConfirmation,
             interruptKeys: InterruptKeys(rawValue: options.interruptKeys.rawValue),
             escapeInterruptRequiresConfirmation: options.escapeInterruptRequiresConfirmation,
-            interruptSendsQueued: QueuedAfterInterruptPreference(rawValue: options.interruptSendsQueued.rawValue),
+            interruptSendsQueued: QueuedAfterInterrupt(rawValue: options.interruptSendsQueued.rawValue),
             onlyUsefulModels: configuration.ui.value.onlyUsefulModels ?? true,
             appearance: Appearance(rawValue: options.appearance.rawValue),
             timeout: TimeoutPreference(rawValue: options.timeoutDisplay.rawValue),

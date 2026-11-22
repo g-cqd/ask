@@ -72,7 +72,7 @@ extension ConfigurationFile {
                 // @dl:accept -- the same table of choice keys, one row each
                 case "spinner": section.spinner = try word(SpinnerPreference.self)
                 case "stopKeys": section.interruptKeys = try word(InterruptKeys.self)
-                case "queuedOnStop": section.interruptSendsQueued = try word(QueuedAfterInterruptPreference.self)
+                case "queuedOnStop": section.interruptSendsQueued = try word(QueuedAfterInterrupt.self)
                 case "showTimeout": section.timeout = try word(TimeoutPreference.self)
                 case "sessionColor": section.sessionColor = try word(SessionColorPreference.self)
                 case "dim": section.dim = try word(Dim.self)
