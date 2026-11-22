@@ -4,18 +4,9 @@ extension ConfigurationFile {
     struct EnvironmentDecoded: Decodable {
         var section = EnvironmentSection()
         init(from decoder: any Decoder) throws {
-            var pass: [String] = []
-            var withhold: [String] = []
-            var shell: String?
             try ConfigurationFile.eachKey(of: decoder) { key, container in
-                switch key.stringValue {
-                    case "pass": pass = try container.decode([String].self, forKey: key)
-                    case "withhold": withhold = try container.decode([String].self, forKey: key)
-                    case "shell": shell = try container.decode(String.self, forKey: key)
-                    default: throw UnknownKey(key: "environment." + key.stringValue)
-                }
+                try section.read(key.stringValue, at: key, in: container)
             }
-            section = EnvironmentSection(pass: pass, withhold: withhold, shell: shell)
         }
     }
 
