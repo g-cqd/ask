@@ -16,14 +16,18 @@ package final class CodemodeHost: Sendable {
 
     /// The connection to the parent, which is made after this and so given once it exists.
     private let parent = Mutex<JSONRPCConnection?>(nil)
+    /// The watch over the host's memory, told when each script begins and ends; none in tests that host in-process.
+    private let watch: CodemodeMemoryWatch?
 
-    private init() {}
+    private init(watch: CodemodeMemoryWatch?) { self.watch = watch }
 
-    /// Serves the parent whose bytes are `chunks`, writing to `sink`, until they end.
-    package static func serve(reading chunks: some AsyncSequence<[UInt8], any Error>, writing sink: any JSONRPCSink)
-        async
-    {
-        let host = CodemodeHost()
+    /// Serves the parent whose bytes are `chunks`, writing to `sink`, until they end, telling `watch` when each script runs.
+    package static func serve(
+        reading chunks: some AsyncSequence<[UInt8], any Error>,
+        writing sink: any JSONRPCSink,
+        watch: CodemodeMemoryWatch? = nil
+    ) async {
+        let host = CodemodeHost(watch: watch)
         let connection = JSONRPCConnection(serving: sink, framing: .lines) { request in host.admit(request) }
         host.parent.withLock { $0 = connection }
         await connection.run(reading: chunks)
@@ -32,7 +36,7 @@ package final class CodemodeHost: Sendable {
     /// Serves the parent on the process's standard streams, and ends the process when it has gone or when the host has taken
     /// more than `memoryLimit` bytes.
     package static func serveStandardStreams(memoryLimit: Int) async {
-        CodemodeMemory.watch(limit: memoryLimit) { exit(memoryExit) }
+        let watch = CodemodeMemoryWatch(limit: memoryLimit) { exit(memoryExit) }
         let reader = BlockingOffloadPool(width: 1)
         let (chunks, feed) = AsyncThrowingStream<[UInt8], any Error>.makeStream()
         Task {
@@ -45,7 +49,7 @@ package final class CodemodeHost: Sendable {
             // The parent has gone, or has what it asked for: a script still running has nobody to answer.
             exit(0)
         }
-        await serve(reading: chunks, writing: CodemodeOutput())
+        await serve(reading: chunks, writing: CodemodeOutput(), watch: watch)
     }
 
     private func admit(_ request: JSONRPCRequest) -> JSONRPCConnection.RequestWork {
@@ -72,6 +76,8 @@ package final class CodemodeHost: Sendable {
                 try? await listener?.notify(CodemodeWire.said, CodemodeWire.saidParameters(item))
             }
         }
+        watch?.began()
+        defer { watch?.ended() }
         let result = await CodemodeVM.run(
             run.code,
             tools: run.tools,
