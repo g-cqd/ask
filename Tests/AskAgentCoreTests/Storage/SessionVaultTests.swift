@@ -27,6 +27,21 @@ struct SessionVaultTests {
         #expect(throws: SessionVaultError.keysExist) { _ = try vault.create(password: "again") }
     }
 
+    /// Security audit 2026-11-22, MED-09: the keys were written through a fixed `keys.json.tmp`, which a link placed there redirected.
+    @Test
+    func `a link placed at the old temporary name is not written through, and leaves no file beside the keys`() throws {
+        let stateRoot = (vault.keysPath as NSString).deletingLastPathComponent
+        try FileManager.default.createDirectory(atPath: stateRoot, withIntermediateDirectories: true)
+        let elsewhere = stateRoot + "-elsewhere"
+        try FileManager.default.createSymbolicLink(atPath: vault.keysPath + ".tmp", withDestinationPath: elsewhere)
+        let made = try vault.create(password: "a long passphrase")
+        #expect(!FileManager.default.fileExists(atPath: elsewhere), "nothing written where the link pointed")
+        #expect(try vault.unlock(password: "a long passphrase").userKey == made.keyring.userKey)
+        let beside = try FileManager.default.contentsOfDirectory(atPath: stateRoot)
+            .filter { $0.hasSuffix(".tmp") && $0 != "keys.json.tmp" }
+        #expect(beside.isEmpty, "\(beside)")
+    }
+
     @Test
     func `changing the password keeps every session readable`() throws {
         let made = try vault.create(password: "first")
