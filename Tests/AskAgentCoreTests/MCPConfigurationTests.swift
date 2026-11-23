@@ -131,7 +131,14 @@ struct MCPConfigurationTests {
             project: true
         )
         let lines = try #require(file.mcp).consent
-        #expect(lines == ["a: runs bunx rea-agents@6.5.0 mcp", "b: connects to https://h.test/m", "c: runs y (off)"])
+        // A project's servers run sandboxed (security audit 2026-11-22, MED-10), and trusting says so.
+        let inside = ", inside ask's sandbox with the network open"
+        #expect(
+            lines == [
+                "a: runs bunx rea-agents@6.5.0 mcp" + inside, "b: connects to https://h.test/m",
+                "c: runs y" + inside + " (off)"
+            ]
+        )
         #expect(!lines.joined().contains("secret") && !lines.joined().contains("token"))
     }
 

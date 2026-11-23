@@ -4,7 +4,7 @@ public import AskAI
 public import AskAgentCore
 internal import AskMCP
 
-/// `dispatch_call`: calls a tool found with `search_catalog` (ADR-0100). It runs outside ask's sandbox like every server's tool, so it refuses a
+/// `dispatch_call`: calls a tool found with `search_catalog` (ADR-0100). It runs where its server does, outside the session's narrowing, so it refuses a
 /// narrowed session. Not `mcp_call`: Anthropic refuses a Claude subscription request that offers a tool called `mcp_call` or `mcp_search`,
 /// with an "out of extra usage" message (roadmap 0144); these names were checked live to pass.
 // @dl:accept -- a tool declares its arguments and what each says through one builder: the lists are data

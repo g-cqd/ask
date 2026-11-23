@@ -3,8 +3,9 @@ public import AskAI
 public import AskAgentCore
 internal import AskMCP
 
-/// One tool of an MCP server, as ask's own kind of tool (ADR-0099). It runs outside ask's sandbox, as the server does, so it refuses a
-/// session that has been narrowed: that narrowing is a promise the server could not keep.
+/// One tool of an MCP server, as ask's own kind of tool (ADR-0099). It runs where the server does, outside the session's narrowing
+/// (and outside ask's sandbox, unless the server is sandboxed), so it refuses a session that has been narrowed: that narrowing is a
+/// promise the server could not keep.
 struct MCPToolAdapter: Tool {
     let definition: ToolDefinition
     private let server: String

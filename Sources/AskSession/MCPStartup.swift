@@ -15,7 +15,7 @@ func startMCPServers(
         environment: environment,
         connectsOnFirstNeed: connectsOnFirstNeed,
         also: also,
-        transport: MCPHub.standardTransport(inheriting: environment, jobs: jobs)
+        transport: MCPHub.standardTransport(inheriting: environment, jobs: jobs, sandbox: settings.sandbox)
     )
     hub.apply(settings.configuration.mcp.value.servers)
     return hub
