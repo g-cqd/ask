@@ -1,4 +1,5 @@
 internal import AskAgentCore
+internal import AskTools
 
 /// What an interactive loop asks the person through (roadmaps 0019, 0134, 0117, 0192): the sandbox's approver, the session's narrowing, a
 /// server's destructive tools, the calls that change things, the model's own questions, how far a running call has got, and events
@@ -21,4 +22,7 @@ struct LoopHooks: Sendable {
     var currentSession: (@Sendable () -> SessionRecorder?)?
     /// Hooks of the conversation's own, after the configured ones: the goal's (roadmap 0227), for the main loop only.
     var extraHooks: [any AgentHook] = []
+    /// The conversation's skills, which the `skill` tool serves and the conversation refreshes when the person trusts more; nil
+    /// serves what was read when the loop was made.
+    var skillShelf: SkillShelf?
 }

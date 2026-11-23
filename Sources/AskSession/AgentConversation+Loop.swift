@@ -65,7 +65,8 @@ extension AgentConversation {
                 guard let self, let ask = self.approvals.withLock({ $0.ask }) else { return }
                 self.deliver(event, to: ask)
             },
-            currentSession: { [weak self] in self?.session.withLock { $0 } }
+            currentSession: { [weak self] in self?.session.withLock { $0 } },
+            skillShelf: skillTrust.shelf
         )
     }
 
@@ -130,7 +131,8 @@ func conversationLoop(
             keepTools: hooks.keepTools,
             currentSession: hooks.currentSession,
             extraHooks: hooks.extraHooks,
-            reportEvent: hooks.reportEvent
+            reportEvent: hooks.reportEvent,
+            skillShelf: hooks.skillShelf
         )
     }
 }
