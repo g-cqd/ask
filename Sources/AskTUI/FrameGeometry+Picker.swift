@@ -21,6 +21,7 @@ extension FrameGeometry {
                 top: top
             )
             geometry.questionTabs = ScreenComposer.questionTabColumns(pending, columns: columns)
+            geometry.questionChoiceRows = layout.choiceRows
             return geometry
         }
         guard let picker = state.picker else { return self }

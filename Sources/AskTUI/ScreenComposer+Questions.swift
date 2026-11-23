@@ -11,21 +11,23 @@ extension ScreenComposer {
         questionLayout(pending, columns: columns, rows: rows).lines
     }
 
-    /// The section's rows, which of them are the choices (or the review's answers), and the row of the tabs when it is shown, so a
-    /// click can act (roadmap 0117).
-    static func questionLayout(_ pending: PendingQuestions, columns: Int, rows: Int)
-        -> (lines: [Line], choices: Range<Int>, tabs: Int?)
-    {
-        guard columns > 0, rows >= 1 else { return ([], 0 ..< 0, nil) }
+    /// The section's rows, which of them are the choices and note (or the review's answers), which choice each of those rows belongs
+    /// to (nil for the note), and the row of the tabs when it is shown, so a click can act (roadmap 0117, note n5).
+    static func questionLayout(_ pending: PendingQuestions, columns: Int, rows: Int) -> QuestionLayout {
+        guard columns > 0, rows >= 1 else {
+            return QuestionLayout(lines: [], choices: 0 ..< 0, choiceRows: [], tabs: nil)
+        }
         let margin = "  "
         let width = Swift.max(1, columns - margin.count)
         let blank = Line(text: "", style: .default)
         var top: [Line] = pending.isSeries ? [tabLine(pending, columns: columns), blank] : []
         var body: [Line]
+        var choiceRows: [Int?]
         if pending.reviewing {
             body = pending.questions.indices.map { index in
                 Line(text: clipped(margin + review(pending, index), to: columns), style: .default)
             }
+            choiceRows = Array(repeating: nil, count: body.count)
         } else {
             let question = pending.questions[pending.current]
             top += TextWrap.rows(question.question, width: width)
@@ -34,15 +36,31 @@ extension ScreenComposer {
                 top.append(Line(text: clipped(margin + problem, to: columns), style: Style(fg: .indexed(1))))
             }
             top.append(blank)
-            body = choiceLines(pending, columns: columns) + noteLines(pending, columns: columns)
+            let choices = choiceLines(pending, columns: columns)
+            let note = noteLines(pending, columns: columns)
+            body = choices.lines + note
+            choiceRows = choices.owners + Array(repeating: nil, count: note.count)
         }
         let hint = Line(text: clipped(margin + keys(pending), to: columns), style: Style(dim: true))
         let choiceCount = body.count
         body += [blank, hint]
-        guard body.count < rows else { return (Array(body.prefix(rows)), 0 ..< Swift.min(rows, choiceCount), nil) }
+        guard body.count < rows else {
+            let shown = Swift.min(rows, choiceCount)
+            return QuestionLayout(
+                lines: Array(body.prefix(rows)),
+                choices: 0 ..< shown,
+                choiceRows: Array(choiceRows.prefix(shown)),
+                tabs: nil
+            )
+        }
         let kept = Array(top.suffix(rows - body.count))
         let tabs = pending.isSeries && kept.count == top.count ? 0 : nil
-        return (kept + body, kept.count ..< kept.count + choiceCount, tabs)
+        return QuestionLayout(
+            lines: kept + body,
+            choices: kept.count ..< kept.count + choiceCount,
+            choiceRows: choiceRows,
+            tabs: tabs
+        )
     }
 
     /// The columns of each tab on the tab row, in order, the review last; empty for a tab the row slid past or clipped.
@@ -118,34 +136,66 @@ extension ScreenComposer {
         return line
     }
 
-    /// One row per choice: cursor, mark, number, words, and what it means. The highlighted choice is marked only while the choices have
-    /// the focus.
-    private static func choiceLines(_ pending: PendingQuestions, columns: Int) -> [Line] {
+    /// The choices, and which choice each row belongs to (note n5): cursor, mark, number, words, and what it means. When the terminal
+    /// has room beside the labels, the explanation starts in a shared column and wraps under it; on a narrow screen it wraps on the
+    /// rows below the label, aligned with the label, so nothing is lost.
+    private static func choiceLines(_ pending: PendingQuestions, columns: Int) -> (lines: [Line], owners: [Int]) {
         let question = pending.questions[pending.current]
         let cursor = pending.focus == .choices ? pending.cursors[pending.current] : -1
         let widest = question.choices.map { UnicodeWidth.displayWidth(of: $0.label) }.max() ?? 0
-        return question.choices.enumerated()
-            .map { index, choice in
-                let checked = pending.chosen[pending.current].contains(index)
-                let box = question.multiple ? (checked ? "[✓]" : "[ ]") : (checked ? "(•)" : "( )")
-                let lead = index == cursor ? "›" : " "
-                let start = "  \(lead)  \(box)  \(index + 1)   \(choice.label)"
-                let gap = String(repeating: " ", count: widest - UnicodeWidth.displayWidth(of: choice.label))
-                var line = Line(
-                    text: clipped(start + (choice.detail.map { gap + "   " + $0 } ?? ""), to: columns),
-                    style: index == cursor ? Style(fg: .indexed(5), bold: true) : .default
-                )
-                if choice.detail != nil {
-                    let from = Swift.min(
-                        UnicodeWidth.displayWidth(of: start + gap),
-                        UnicodeWidth.displayWidth(of: line.text)
-                    )
-                    line.accents = [
-                        Accent(columns: from ..< UnicodeWidth.displayWidth(of: line.text), style: Style(dim: true))
-                    ]
-                }
-                return line
+        // The column of the label (`  ›  ( )  1   `), and the shared column of explanations beside the widest label.
+        let numberWidth = String(Swift.max(1, question.choices.count)).count
+        let labelColumn = 10 + numberWidth + 3
+        let detailColumn = labelColumn + widest + 3
+        let beside = columns - detailColumn >= 20
+        var lines: [Line] = []
+        var owners: [Int] = []
+        for (index, choice) in question.choices.enumerated() {
+            let checked = pending.chosen[pending.current].contains(index)
+            let box = question.multiple ? (checked ? "[✓]" : "[ ]") : (checked ? "(•)" : "( )")
+            let lead = index == cursor ? "›" : " "
+            let start = "  \(lead)  \(box)  \(index + 1)   \(choice.label)"
+            let style = index == cursor ? Style(fg: .indexed(5), bold: true) : .default
+            guard let detail = choice.detail, !detail.isEmpty else {
+                lines.append(Line(text: clipped(start, to: columns), style: style))
+                owners.append(index)
+                continue
             }
+            if beside {
+                let gap = String(
+                    repeating: " ",
+                    count: Swift.max(0, detailColumn - UnicodeWidth.displayWidth(of: start))
+                )
+                let wrapped = TextWrap.rows(detail, width: columns - detailColumn)
+                let firstText = start + gap + (wrapped.first?.text ?? "")
+                let firstEnd = UnicodeWidth.displayWidth(of: firstText)
+                lines.append(
+                    Line(
+                        text: firstText,
+                        style: style,
+                        accents: [
+                            Accent(columns: Swift.min(detailColumn, firstEnd) ..< firstEnd, style: Style(dim: true))
+                        ]
+                    )
+                )
+                owners.append(index)
+                let pad = String(repeating: " ", count: detailColumn)
+                for extra in wrapped.dropFirst() {
+                    lines.append(Line(text: pad + extra.text, style: Style(dim: true)))
+                    owners.append(index)
+                }
+            } else {
+                lines.append(Line(text: clipped(start, to: columns), style: style))
+                owners.append(index)
+                let indent = Swift.min(labelColumn, Swift.max(0, columns - 1))
+                let pad = String(repeating: " ", count: indent)
+                for extra in TextWrap.rows(detail, width: Swift.max(1, columns - indent)) {
+                    lines.append(Line(text: pad + extra.text, style: Style(dim: true)))
+                    owners.append(index)
+                }
+            }
+        }
+        return (lines, owners)
     }
 
     /// `Scope: Only the parser; note: keep the API`.
