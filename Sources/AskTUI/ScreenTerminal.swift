@@ -23,8 +23,9 @@ func modes(for options: ScreenOptions) -> TerminalModes {
     var modes = TerminalModes.fullScreen
     modes.mouse = options.mouse
     modes.mouseMotion = options.mouse && options.hover
-    // Focus decides whether to notify (note n62): asked for only while notifications are on.
-    modes.focusEvents = options.notify != .off
+    // Focus decides whether to notify (note n62), whether a header shimmers, and the process's role (energy audit 2026-11-22):
+    // always asked for. A terminal that cannot report it ignores the request, and ask then behaves as if in focus.
+    modes.focusEvents = true
     return modes
 }
 

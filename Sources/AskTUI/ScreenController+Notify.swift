@@ -9,9 +9,10 @@ extension ScreenController {
         return [.notify("\(tabTitle): \(what)")]
     }
 
-    /// What the terminal says of its focus (`?1004`), which it reports only while notifications are on.
+    /// What the terminal says of its focus (`?1004`): it decides notifications, the shimmer, and the process's role.
     mutating func noteFocus(_ focused: Bool) -> [Effect] {
+        guard state.focused != focused else { return [] }
         state.focused = focused
-        return []
+        return [.focus(focused)]
     }
 }
