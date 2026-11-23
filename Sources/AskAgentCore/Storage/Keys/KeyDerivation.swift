@@ -8,9 +8,11 @@ struct KeyDerivation: Codable, Equatable, Sendable {
     let passes: Int
     let lanes: Int
 
-    /// OWASP's Argon2id minimum, 19 MiB and 2 passes, on 4 lanes that run on 4 threads: about 4 ms on an M3. Its memory is wiped and
-    /// released as soon as the key is made.
-    static let standard = KeyDerivation(memoryKiB: 19 * 1024, passes: 2, lanes: 4)
+    /// RFC 9106's second recommended choice, 64 MiB and 3 passes, on 4 lanes that run on 4 threads: 21 ms on an M3, against 3.6 ms
+    /// for OWASP's minimum (19 MiB, 2 passes) it replaces, so a guess costs about six times as much (ADR-0169;
+    /// 128 MiB took 46 ms). It is paid after the person types the password, never at start otherwise. Keys made before keep
+    /// their own parameters, stored with them. Its memory is wiped and released as soon as the key is made.
+    static let standard = KeyDerivation(memoryKiB: 64 * 1024, passes: 3, lanes: 4)
 
     /// Whether the parameters are within what ask accepts from a file: at most 256 MiB, 10 passes and 16 lanes, and at least what
     /// RFC 9106 requires.
