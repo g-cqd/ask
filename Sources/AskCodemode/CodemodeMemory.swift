@@ -19,13 +19,4 @@ package enum CodemodeMemory {
 
     /// This process's physical footprint in bytes. 0 when unknown.
     package static func footprint() -> Int { usage(of: getpid())?.footprint ?? 0 }
-
-    /// Calls `exceeded` once, from a thread of its own, when the footprint passes `limit` bytes. Looked at every 2 ms: a script
-    /// can take 10 MB a millisecond.
-    package static func watch(limit: Int, exceeded: @escaping @Sendable () -> Void) {
-        Thread.detachNewThread {
-            while footprint() <= limit { usleep(2000) }
-            exceeded()
-        }
-    }
 }
