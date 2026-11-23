@@ -28,6 +28,12 @@ enum StandardProtections {
         "Library/HTTPStorages/com.apple.Safari", "Library/WebKit/com.apple.Safari", "Library/Caches/com.apple.Safari"
     ]
 
+    /// Other apps' files in the user's temporary folder, by how their names start (security audit 2026-11-22, MED-07): Sunset's
+    /// extension downloads, notification icons, imports and content-blocking lists. The folder itself stays open: xcrun and every
+    /// Foundation-based tool write there whatever `TMPDIR` says (probed, diary 2026-11-22-05).
+    // @dl:accept -- a table of names (programs or paths) reads like any list of strings; the entries are the content
+    static let temporaryPrefixes = ["sunset-", "SunsetBlocking"]
+
     /// Single secret files: netrc, registries' tokens, git's stored credentials, Docker's, and ssh private keys (not
     /// `~/.ssh/config` or `known_hosts`, which `git` over ssh reads).
     static let secretFiles =
