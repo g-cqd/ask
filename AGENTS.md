@@ -77,6 +77,9 @@ and SHA-256 in the family's lock, `Scripts/analyzers.lock` in Aemi-Studio/aemi a
 (a session record, a saved credential, a copied list, a file written) either becomes a failure said to the person, or carries
 `// try?: why` on its line or the one above.
 
+**A test's temporary folder is gated too (t126).** `TestTemporaryFoldersTests`: a test file that makes an `ask-` folder in the
+temporary directory and writes into it removes it (`removeItem`, or AemiTestKit's `cleanup()`). Its `leaking` list is a ratchet.
+
 **Mutation testing, on changed files (roadmap 0166).** `Scripts/mutate-changed.sh [BASE]` runs litmus, the family's own
 (`g-cqd/litmus`, pinned by version and SHA-256 in the script), on the `Sources` files changed against `BASE`, and fails on a surviving
 or unreached mutant not in `development/mutation-baseline.json`: kill it with a test. **CI only** (the owner, 2026-11-10 and

@@ -2,8 +2,9 @@ import AskAI
 import AskAgentCore
 import Foundation
 
-/// A throwaway home directory with the things the default policy protects, a workspace, and the policy over them.
-struct SandboxWorld {
+/// A throwaway home directory with the things the default policy protects, a workspace, and the policy over them; removed with
+/// the world, so a test leaves nothing in the temporary folder (t126).
+final class SandboxWorld: Sendable {
     let home: String
     let workspace: String
     let config: String
@@ -15,7 +16,7 @@ struct SandboxWorld {
     ///   - extraDenyRead: directories under the home kept unreadable as well.
     ///   - allowRead: default protections lifted, relative to the home.
     ///   - outsideScratch: put the home in /Users/Shared rather than the temporary directory, which a
-    ///     restricted-read policy keeps readable as scratch space; the caller removes it.
+    ///     restricted-read policy keeps readable as scratch space.
     ///   - existingRepository: make the workspace a git repository before the policy is made.
     /// - Throws: when the directories or files cannot be made.
     init(
@@ -59,6 +60,8 @@ struct SandboxWorld {
             workspace: real + "/work"
         )
     }
+
+    deinit { try? FileManager.default.removeItem(atPath: home) }
 
     var context: ToolContext { ToolContext(workingDirectory: workspace, sandbox: policy) }
 

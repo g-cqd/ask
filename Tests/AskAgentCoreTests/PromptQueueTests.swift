@@ -10,6 +10,7 @@ import Testing
 struct PromptQueueTests {
     @Test func `input arriving during persistence remains queued behind the recorded message`() async throws {
         let path = FileManager.default.temporaryDirectory.appending(path: "ask-queue-\(UUID().uuidString).jsonl").path
+        defer { try? FileManager.default.removeItem(atPath: path) }
         _ = try SessionFile.create(at: FilePath(path), durability: .none)
         let input = PromptQueue()
         let first = QueuedPrompt(id: 1, text: "First")
@@ -31,6 +32,7 @@ struct PromptQueueTests {
 
     @Test func `a message not yet taken can be withdrawn, and one being recorded cannot (roadmap 0174)`() async throws {
         let path = FileManager.default.temporaryDirectory.appending(path: "ask-queue-\(UUID().uuidString).jsonl").path
+        defer { try? FileManager.default.removeItem(atPath: path) }
         _ = try SessionFile.create(at: FilePath(path), durability: .none)
         let input = PromptQueue()
         input.append(QueuedPrompt(id: 1, text: "First"))
@@ -57,6 +59,7 @@ struct PromptQueueTests {
 
     @Test func `the recorded message leaves the queue by its id, not its place`() async throws {
         let path = FileManager.default.temporaryDirectory.appending(path: "ask-queue-\(UUID().uuidString).jsonl").path
+        defer { try? FileManager.default.removeItem(atPath: path) }
         _ = try SessionFile.create(at: FilePath(path), durability: .none)
         let input = PromptQueue()
         let later = QueuedPrompt(id: 1, text: "Later", delivery: .followUp)
@@ -72,6 +75,7 @@ struct PromptQueueTests {
         async throws
     {
         let path = FileManager.default.temporaryDirectory.appending(path: "ask-queue-\(UUID().uuidString).jsonl").path
+        defer { try? FileManager.default.removeItem(atPath: path) }
         _ = try SessionFile.create(at: FilePath(path), durability: .none)
         let prepared = Mutex<[String]>([])
         let input = PromptQueue { text in
@@ -97,6 +101,7 @@ struct PromptQueueTests {
         async throws
     {
         let path = FileManager.default.temporaryDirectory.appending(path: "ask-queue-\(UUID().uuidString).jsonl").path
+        defer { try? FileManager.default.removeItem(atPath: path) }
         _ = try SessionFile.create(at: FilePath(path), durability: .none)
         let during = Mutex<Bool?>(nil)
         let box = Mutex<PromptQueue?>(nil)

@@ -211,6 +211,7 @@ struct FileToolsRaceTests {
         async throws
     {
         let running = Atomic<Bool>(true)
+        let stopped = Atomic<Bool>(false)
         let racer = Thread {
             while running.load(ordering: .relaxed) {
                 rename(work + "/d", work + "/d.real")
@@ -218,9 +219,14 @@ struct FileToolsRaceTests {
                 unlink(work + "/d")
                 rename(work + "/d.real", work + "/d")
             }
+            stopped.store(true, ordering: .releasing)
         }
         racer.start()
-        defer { running.store(false, ordering: .relaxed) }
+        // Waited for, so the world is removed after the racer's last rename, not raced by it (t126).
+        defer {
+            running.store(false, ordering: .relaxed)
+            while !stopped.load(ordering: .acquiring) { usleep(1_000) }
+        }
         for _ in 0 ..< 2_000 {
             _ = await WriteTool().run(world.input(#"{"path":"d/pwn.txt","content":"x"}"#), in: world.context)
         }

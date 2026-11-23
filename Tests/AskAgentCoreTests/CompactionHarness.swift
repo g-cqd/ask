@@ -4,9 +4,11 @@ import System
 
 @testable import AskAgentCore
 
-/// A loop over a scripted provider and a fresh session file, for the compaction and window suites.
-struct CompactionHarness {
+/// A loop over a scripted provider and a fresh session file, for the compaction and window suites; its folder goes with it (t126).
+final class CompactionHarness: Sendable {
     let directory = FileManager.default.temporaryDirectory.appending(path: "ask-compact-\(UUID().uuidString)")
+
+    deinit { try? FileManager.default.removeItem(at: directory) }
 
     func newFile() throws -> SessionRecorder {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)

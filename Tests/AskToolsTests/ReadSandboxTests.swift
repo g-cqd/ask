@@ -13,8 +13,6 @@ final class ReadSandboxTests {
     private let world: SandboxWorld
     private let policy: SandboxPolicy
 
-    deinit { try? FileManager.default.removeItem(atPath: world.home) }
-
     init() throws {
         // Not under the temporary directory: that is scratch space a restricted-read policy keeps readable.
         world = try SandboxWorld(outsideScratch: true)
