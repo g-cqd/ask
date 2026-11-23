@@ -1,4 +1,5 @@
 internal import AemiArgon2
+internal import AemiIO
 internal import AemiJSON
 public import AskAI
 internal import Darwin
@@ -83,7 +84,7 @@ public struct SessionVault: Sendable {
         return try SessionKeys(decoding: Array(data))
     }
 
-    /// `bytes` at `path`, private, replacing it whole or not at all: written beside it, flushed, then renamed over it.
+    /// `bytes` at `path`, private, replacing it whole or not at all.
     private func write(_ bytes: [UInt8], to path: String) throws {
         do {
             try FileManager.default.createDirectory(
@@ -94,16 +95,12 @@ public struct SessionVault: Sendable {
         } catch {
             throw SessionVaultError.write(errno: EACCES)
         }
-        let temporary = path + ".tmp"
-        let descriptor = open(temporary, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0o600)
-        guard descriptor >= 0 else { throw SessionVaultError.write(errno: errno) }
-        let written = bytes.withUnsafeBytes { Darwin.write(descriptor, $0.baseAddress, $0.count) }
-        let flushed = fsync(descriptor)
-        close(descriptor)
-        guard written == bytes.count, flushed == 0, rename(temporary, path) == 0 else {
-            let failure = errno
-            unlink(temporary)
-            throw SessionVaultError.write(errno: failure)
+        // Beside it under a new random name, created exclusively, synced, renamed over it, and the folder synced (security audit
+        // 2026-11-22, MED-09): a fixed `.tmp` name could be a link someone placed, and the rename alone was not made durable.
+        do {
+            try AtomicFile.replace(at: path, with: bytes, durability: .full, permissions: 0o600)
+        } catch {
+            throw SessionVaultError.write(errno: error.errno)
         }
     }
 }
