@@ -4,6 +4,8 @@ struct ToolContext {
     var progress: BlockProgress?
     var toolInput: ShownToolInput?
     var command: Bool
+    /// Whether syntax highlighting (`ui.highlight`) is on: colours an open command block's shell and heredoc bodies (t128).
+    var highlight: Bool = true
     var output: String?
     /// The occurrences an edit reported replacing, counted on the header's right instead of its acknowledgement's line.
     var replacements: Int?
