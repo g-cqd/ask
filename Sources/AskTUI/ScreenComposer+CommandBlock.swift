@@ -89,7 +89,8 @@ extension ScreenComposer {
                 inset: inset,
                 style: style,
                 context: (context.progress, context.toolInput, shownOutput),
-                look: outputLook(context.code, style: style)
+                look: outputLook(context.code, style: style),
+                highlight: context.highlight
             )
         }
         if !input.isEmpty {
@@ -128,13 +129,15 @@ extension ScreenComposer {
         inset: Int,
         style: BlockStyle,
         context: (progress: BlockProgress?, toolInput: ShownToolInput?, output: String),
-        look: (code: FileCode?, diff: DiffLook?) = (nil, nil)
+        look: (code: FileCode?, diff: DiffLook?) = (nil, nil),
+        highlight: Bool = true
     ) -> [Line] {
         guard case .tool(let name, let parameters, let status, let output, let input) = item else { return [] }
+        let shownCommand = context.toolInput?.text ?? input
         let header = Transcript.Item.commandHeader(
             name: name,
             parameters: parameters,
-            command: context.toolInput?.text ?? input,
+            command: shownCommand,
             folded: false
         )
         let metadata = blockMetadata(
@@ -144,9 +147,9 @@ extension ScreenComposer {
             localizedDurations: style.localizedDurations,
             toolName: name
         )
-        let lead = Transcript.Item.commandHeader(name: name, parameters: parameters, command: "", folded: false).count
+        let leadText = Transcript.Item.commandHeader(name: name, parameters: parameters, command: "", folded: false)
         let commandLines = TranscriptContent.hardLineCount(of: header)
-        return openBlock(
+        let built = openBlock(
             header,
             metadata: metadata,
             item: item.showing(context.output),
@@ -155,7 +158,11 @@ extension ScreenComposer {
             inset: inset,
             output: look
         )
-        .map { brightened($0, block: block, lead: lead, commandLines: commandLines) }
+        guard highlight, !shownCommand.isEmpty else {
+            return built.map { brightened($0, block: block, lead: leadText.count, commandLines: commandLines) }
+        }
+        var accents = CommandAccents(command: shownCommand, lead: leadText)
+        return built.map { accents.applying(to: $0, block: block, commandLines: commandLines) }
     }
 
     /// Open, the command is the block's subject, so it is drawn at full brightness, not in the dim of the lead and the status. Only the
@@ -215,5 +222,14 @@ extension ScreenComposer {
     static func outputLook(_ code: FileCode?, style: BlockStyle) -> (code: FileCode?, diff: DiffLook?) {
         guard let code, code.part == .output else { return (nil, nil) }
         return (code, code.diff == .unified ? DiffLook(theme: style.theme, format: .unified) : nil)
+    }
+
+    /// Whether the item is one of the kinds set apart by a blank row from a neighbour of the same sort.
+    static func isSpaced(_ item: Transcript.Item) -> Bool {
+        switch item {
+            case .user, .tool: true
+            case .notice(_, let isError): !isError
+            default: false
+        }
     }
 }

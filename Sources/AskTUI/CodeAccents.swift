@@ -113,9 +113,19 @@ struct CodeAccents {
 
     /// The byte offset of grapheme `offset` in hard line `line`, walking on from the cursor when it is on the same line.
     private mutating func byte(at line: Int, offset: Int) -> Int {
+        Self.byte(at: line, offset: offset, text: lines[line].text, ascii: lines[line].ascii, cursor: &cursor)
+    }
+
+    /// Walks `cursor` forward to grapheme `offset` in `text`, returning its UTF-8 byte offset; shared with `CommandAccents`.
+    static func byte(
+        at line: Int,
+        offset: Int,
+        text: Substring,
+        ascii: Bool,
+        cursor: inout (line: Int, offset: Int, byte: Int)
+    ) -> Int {
         if cursor.line != line || cursor.offset > offset { cursor = (line, 0, 0) }
-        let text = lines[line].text
-        if lines[line].ascii {
+        if ascii {
             cursor = (line, offset, offset)
             return offset
         }
@@ -131,7 +141,7 @@ struct CodeAccents {
 
     /// A function from a byte offset in `text` to the column it starts at: the byte count itself for printable ASCII, else a table
     /// of each grapheme's first byte and column.
-    private static func columns(of text: String) -> (Int) -> Int {
+    static func columns(of text: String) -> (Int) -> Int {
         if text.utf8.allSatisfy({ $0 >= 0x20 && $0 < 0x7F }) { return { $0 } }
         var starts: [(byte: Int, column: Int)] = []
         var byte = 0

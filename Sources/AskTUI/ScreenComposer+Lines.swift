@@ -15,6 +15,7 @@ extension ScreenComposer {
         progress: BlockProgress? = nil,
         toolInput: ShownToolInput? = nil,
         command: Bool = false,
+        highlight: Bool = true,
         interrupted: Bool = false,
         aside: Bool = false,
         toolOutput: String? = nil,
@@ -27,6 +28,7 @@ extension ScreenComposer {
             progress: progress,
             toolInput: toolInput,
             command: command,
+            highlight: highlight,
             output: toolOutput,
             replacements: replacements,
             code: code,
@@ -99,15 +101,6 @@ extension ScreenComposer {
         // The place written after a path, for the click (roadmap 0216).
         if !line.links.isEmpty { line.links = PathLinks.located(line.links, in: line.text) }
         return line
-    }
-
-    /// Whether the item is one of the kinds set apart by a blank row from a neighbour of the same sort.
-    static func isSpaced(_ item: Transcript.Item) -> Bool {
-        switch item {
-            case .user, .tool: true
-            case .notice(_, let isError): !isError
-            default: false
-        }
     }
 
     private static func contentLines(

@@ -68,6 +68,7 @@ extension ScreenComposer {
                 progress: transcript.progress[index],
                 toolInput: transcript.shownToolInput(at: index),
                 command: transcript.commandBlocks.contains(index),
+                highlight: transcript.highlight,
                 interrupted: interrupted,
                 aside: aside,
                 toolOutput: output?.text,
