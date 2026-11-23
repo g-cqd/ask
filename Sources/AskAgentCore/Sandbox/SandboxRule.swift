@@ -16,17 +16,22 @@ public struct SandboxRule: Sendable, Equatable, Hashable {
     /// Canonical, as ``CanonicalPath/of(_:relativeTo:)`` makes it.
     public let path: String
     public let kind: Kind
+    /// `path` in lower case, made once: a policy checks every path against each of its rules (PERF-04).
+    let folded: String
 
     /// A rule for `path`, which must already be canonical.
     public init(_ path: String, _ kind: Kind) {
         self.path = path
         self.kind = kind
+        folded = path.lowercased()
     }
 
     /// Whether `candidate`, a canonical path, is the rule's path, under it for a subpath, or starts with it for a prefix.
-    public func matches(_ candidate: String) -> Bool {
-        let rule = path.lowercased()
-        let other = candidate.lowercased()
+    public func matches(_ candidate: String) -> Bool { matches(folded: candidate.lowercased()) }
+
+    /// ``matches(_:)`` for a candidate already in lower case, so a caller checking it against many rules lowers it once.
+    func matches(folded other: String) -> Bool {
+        let rule = folded
         switch kind {
             case .literal: return other == rule
             case .subpath: return other == rule || rule == "/" || other.hasPrefix(rule + "/")
