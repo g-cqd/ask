@@ -8,7 +8,9 @@ internal import TerminalKitText
 /// row between blocks, and a long fenced block folded to one dim line as it is with Markdown off (ADR-0046).
 extension ScreenComposer {
     /// GitHub's Markdown without math: a reply that mentions two prices is not a formula.
-    static let markdownExtensions: MarkdownExtensions = [.gfm, .alerts]
+    // `.pathWords` (AemiMarkdown ADR-0012, t119): a path a model writes without backticks keeps its `_`, `*` and `~`, so it reads as
+    // written and still opens; probe-openers lost one to emphasis.
+    static let markdownExtensions: MarkdownExtensions = [.gfm, .alerts, .pathWords]
 
     /// The rows of the assistant message `text`, item `index` of `transcript`, drawn as Markdown at `columns`. `firstBlockWidth`, when
     /// given, is the width the first top-level block wraps at instead, so its first row leaves room beside it (a thinking block's status).
