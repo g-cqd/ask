@@ -22,6 +22,8 @@ extension SandboxPolicy {
     ///   - workspace: the run's workspace, whose git hooks and configuration are protected from writing; nil protects none.
     ///   - allowWrite: places protected from writing that the user has chosen to allow, which lift a rule that is exactly one of them.
     ///   - otherSecrets: more secret directories and files under the home, other agents' sign-ins, which the composition root names.
+    ///   - temporaryDirectory: the user's own temporary folder, where other apps' files named in ``StandardProtections/temporaryPrefixes``
+    ///     are kept from reading and writing; nil names none.
     /// - Returns: the policy. Every protection but ask's own two directories is askable: a call's request for it is put to the person.
     public static func standard(
         home: String,
@@ -31,7 +33,8 @@ extension SandboxPolicy {
         denyRead: [String] = [],
         workspace: String? = nil,
         allowWrite: [String] = [],
-        otherSecrets: (directories: [String], files: [String]) = ([], [])
+        otherSecrets: (directories: [String], files: [String]) = ([], []),
+        temporaryDirectory: String? = userTemporaryDirectory
     ) -> SandboxPolicy {
         func canonical(_ path: String) -> String { CanonicalPath.of(path, relativeTo: "/") ?? path }
         func rules(_ base: String, _ subpaths: [String], _ literals: [String]) -> [SandboxRule] {
@@ -51,7 +54,10 @@ extension SandboxPolicy {
                 StandardProtections.secretDirectories + otherSecrets.directories,
                 StandardProtections.secretFiles + otherSecrets.files
             )
-            + StandardProtections.secretPrefixes.map { SandboxRule(canonical(home + "/" + $0), .prefix) })
+            + StandardProtections.secretPrefixes.map { SandboxRule(canonical(home + "/" + $0), .prefix) }
+            + (temporaryDirectory.map { folder in
+                StandardProtections.temporaryPrefixes.map { SandboxRule(canonical(folder + "/" + $0), .prefix) }
+            } ?? []))
             .filter { !readable.contains($0.path.lowercased()) }
         let runsLater =
             (rules(home, StandardProtections.runningDirectories, StandardProtections.runningFiles)
@@ -68,5 +74,18 @@ extension SandboxPolicy {
             denyWrite: [SandboxRule(canonical(stateDirectory), .subpath)] + runsLater,
             askable: secrets + runsLater
         )
+    }
+
+    /// The user's own temporary folder, as the system names it (`confstr(_CS_DARWIN_USER_TEMP_DIR)`): where apps that are not
+    /// sandboxed keep their temporary files, and `TMPDIR` points by default. Nil where the system names none.
+    public static var userTemporaryDirectory: String? {
+        #if os(macOS)
+            var buffer = [CChar](repeating: 0, count: Int(PATH_MAX) + 1)
+            let length = confstr(_CS_DARWIN_USER_TEMP_DIR, &buffer, buffer.count)
+            guard length > 0, length <= buffer.count else { return nil }
+            return String(decoding: buffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self)
+        #else
+            return nil
+        #endif
     }
 }

@@ -78,6 +78,20 @@ struct BashSandboxTests {
         #expect(await run("cat '\(world.home)/Library/HTTPStorages/swift-build/x'") == ToolOutput("data\n[exit 0]"))
     }
 
+    /// Security audit 2026-11-22, MED-07: Seatbelt keeps Sunset's files in the real temporary folder, by name, and not the rest.
+    @Test func `a file of Sunset's in the user's temporary folder cannot be read by a command; one beside it can`()
+        async throws
+    {
+        let folder = try #require(SandboxPolicy.userTemporaryDirectory)
+        let token = UUID().uuidString
+        let theirs = folder + "sunset-store-asktest-\(token).crx"
+        let other = folder + "asktest-\(token).txt"
+        defer { for path in [theirs, other] { try? FileManager.default.removeItem(atPath: path) } }
+        for path in [theirs, other] { try Data("data".utf8).write(to: URL(filePath: path)) }
+        #expect((await run("cat '\(theirs)'")).isError)
+        #expect(await run("cat '\(other)'") == ToolOutput("data\n[exit 0]"))
+    }
+
     @Test
     func `a shell startup file, a launch agent and a git hook cannot be written by a command (audit findings 1 and 3)`()
         async

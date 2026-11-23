@@ -8,8 +8,9 @@ sandbox with the same policy. It costs a few milliseconds per command.
 By default the model can read anywhere you can, write in the project (and temporary directories, and the caches builds write such as
 `~/Library/Caches`), and reach the network, **except**:
 
-- ask's own files (`~/.config/ask`, its sessions and credentials);
-- `~/.aws`, `~/.gnupg`, your Keychains, `~/.netrc` and ssh private keys.
+- ask's own files (`~/.config/ask`, its sessions, keys and log, every project's), apart from a long command's whole output, which the
+  model reads back;
+- `~/.aws`, `~/.gnupg`, your Keychains, `~/.netrc`, ssh private keys, and browsers' and password managers' data.
 
 When something is refused, the model is told so, plainly, so it does not look for a way round it. `ask config` shows the sandbox in force.
 
@@ -55,7 +56,9 @@ Besides ask's own files, the sandbox keeps commands and tools away from two kind
   repository, its `.git/hooks` and `.git/config`.
 - **Other tools' credentials**, which cannot be read: `~/.aws`, `~/.gnupg`, keychains, ssh private keys, `~/.config/gh`, `~/.kube`,
   `~/.docker/config.json`, `~/.npmrc`, `~/.pypirc`, `~/.git-credentials`, gcloud's and Azure's, other agents' sign-ins (Codex,
-  Gemini, Claude Code, Copilot), and browsers' profiles and cookies.
+  Gemini, Claude Code, Copilot), browsers' profiles, cookies and site data (Sunset's and Safari's included, and Sunset's files in
+  your temporary folder), password managers' stores (1Password, Bitwarden, `pass`), `~/.pgpass`, `~/.my.cnf`, `~/.vault-token`,
+  Terraform's, Cargo's, RubyGems' and Composer's credentials, your shell histories, and Messages and Mail.
 
 A call that needs one of them asks you, like any request for more (below); allowed, the protection is lifted for that call or for the
 session. `sandbox.readable` and `sandbox.writable` open one for good. A command that runs into one fails with the system's own error,
