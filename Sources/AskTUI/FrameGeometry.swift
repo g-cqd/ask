@@ -43,6 +43,9 @@ struct FrameGeometry: Sendable {
     var approvalDetail = 0 ..< 0
     /// The columns of the model's questions' tabs, on the ``approvalDetail`` row, the review last (roadmap 0117).
     var questionTabs: [Range<Int>] = []
+    /// For each row of ``approvalAnswers`` in a question section, which choice it belongs to, or nil for the note (note n5): a choice
+    /// whose explanation wraps takes more than one row, so a click on any of its rows checks that choice.
+    var questionChoiceRows: [Int?] = []
     var pickerWindow = 0 ..< 0
     var pickerTrigger: CompletionTrigger?
     /// The strip's rows as drawn: the screen row of the first, and the runner each shows, so a click means what the user saw.

@@ -42,8 +42,11 @@ def main():
     os.makedirs(config + "/ask")
     with open(config + "/ask/config.json", "w") as file:
         json.dump({"ui": {"inputPrefix": "ask> "}}, file)
-    questions = {"questions": [{"question": f"Pick for {word}?", "header": word, "choices": [{"label": "yes"}, {"label": "no"}]}
-                               for word in WORDS]}
+    explanation = "keeps the existing public contract unchanged and isolates the rewrite to the internal scanner"
+    questions = {"questions": [
+        {"question": f"Pick for {word}?", "header": word,
+         "choices": [{"label": "yes", "description": explanation} if word == "Alpha" else {"label": "yes"}, {"label": "no"}]}
+        for word in WORDS]}
     turn = probe.agent.turn
     server = probe.agent.Server([turn([("call", "q1", "question", questions)], "tool_use"),
                                  turn([("text", "NOTED ALL")], "end_turn")])
@@ -59,6 +62,9 @@ def main():
               "[Alpha]" in row and " B " in row and "Bravo" not in row, row)
         check("and, too many for the row, a › marks those left out", row.rstrip().endswith("›"), row)
         check("the row fits the screen", len(row.rstrip()) <= 60, row)
+        # Note n5: a long choice explanation wraps across rows instead of clipping at column 60.
+        screen = terminal.text()
+        check("a long choice explanation wraps so its tail still shows", "internal scanner" in screen, screen)
         terminal.draw(lambda: terminal.send(b"\x1b[Z"))  # Shift+Tab, as back-tab: from the choices back to the tabs
         terminal.draw(lambda: terminal.send(b"\x1b[C"))
         row = tab_row(terminal)

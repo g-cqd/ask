@@ -121,15 +121,19 @@ extension ScreenController {
             case (true, true):
                 if let tab = frame.questionTabs.firstIndex(where: { $0.contains(cell.col) }) { clickQuestionTab(tab) }
             case (false, false): checkApproval(answer: row)
-            case (false, true): clickQuestion(choice: row)
+            case (false, true): clickQuestion(row: row)
         }
     }
 
-    /// A click on row `index` under the question shown: a choice is checked, as Space would; a row of the note focuses it (roadmap 0117).
-    mutating func clickQuestion(choice index: Int) {
-        guard var pending = state.pendingQuestions, !pending.reviewing, index >= 0 else { return }
+    /// A click on row `row` under the question shown: any row of a choice (its label or wrapped explanation) checks that choice, as
+    /// Space would; a row of the note focuses it (roadmap 0117, note n5).
+    mutating func clickQuestion(row: Int) {
+        guard var pending = state.pendingQuestions, !pending.reviewing, frame.questionChoiceRows.indices.contains(row)
+        else {
+            return
+        }
         let question = pending.questions[pending.current]
-        if question.choices.indices.contains(index) {
+        if let index = frame.questionChoiceRows[row], question.choices.indices.contains(index) {
             pending.cursors[pending.current] = index
             pending.focus = .choices
             check(index, in: &pending)
