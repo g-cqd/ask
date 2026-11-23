@@ -162,6 +162,7 @@ final class ScreenSession {
             case .runCommand(let name, let arguments):
                 run = conversation.command(name, arguments: arguments) { sink.yield(.update($0)) }
             case .notify(let text): titles.send(notification.sequence(text))
+            case .focus(let focused): ProcessRole.become(focused: focused)
             case .runShell(let command, let sends):
                 // Not the screen's run: the person's command goes on beside the turn, and Ctrl+C stops the turn, not it.
                 _ = conversation.shell(command, sends: sends) { sink.yield(.update($0)) }

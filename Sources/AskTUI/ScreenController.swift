@@ -18,6 +18,8 @@ public struct ScreenController: Sendable {
         case runShell(String, sends: Bool)
         /// Tell the person, who looks elsewhere, with this text (`ui.notify`, note n62).
         case notify(String)
+        /// The terminal gained or lost focus: take the role of the app in focus, or give it up (energy audit 2026-11-22, ENG-06).
+        case focus(Bool)
         case cancelRun
         /// Put this text on the clipboard.
         case copy(String)

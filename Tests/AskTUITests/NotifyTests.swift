@@ -54,11 +54,26 @@ struct NotifyTests {
         )
     }
 
-    @Test func `focus is reported only when notifications are on`() {
+    /// Focus decides the shimmer and the process's role too (energy audit 2026-11-22, ENG-06 and ENG-07), so it is always asked.
+    @Test func `focus is always reported`() {
         var options = ScreenOptions()
-        #expect(!modes(for: options).focusEvents)
+        #expect(modes(for: options).focusEvents)
         options.notify = .bell
         #expect(modes(for: options).focusEvents)
+    }
+
+    @Test func `losing focus stops the shimmer and gives up the role, once; regaining it takes them back`() {
+        var controller = ScreenController(label: "m")
+        controller.handle(.thinkingText("why"))
+        #expect(controller.isShimmering, "in focus, or not said: it shimmers")
+        #expect(controller.handle(.focusOut, pageRows: 10) == [.focus(false)])
+        #expect(
+            !controller.isShimmering && controller.hasLiveProgress,
+            "unfocused: the spinner goes on, the shimmer does not"
+        )
+        #expect(controller.handle(.focusOut, pageRows: 10).isEmpty, "said once")
+        #expect(controller.handle(.focusIn, pageRows: 10) == [.focus(true)])
+        #expect(controller.isShimmering)
     }
 
     @Test(arguments: [

@@ -14,6 +14,9 @@ enum ProcessRole {
     /// `PRIO_DARWIN_ROLE` and `PRIO_DARWIN_ROLE_UI_FOCAL` from `<sys/resource.h>`, which Swift does not import.
     private static let roleWhich: Int32 = 6
     private static let focal: Int32 = 1
+    /// `PRIO_DARWIN_ROLE_DEFAULT`, any command-line process's: measured, its `userInteractive` threads run at 31, as before the
+    /// role was taken; `PRIO_DARWIN_ROLE_UI_NON_FOCAL` (4) left them at 46.
+    private static let unfocused: Int32 = 0
 
     /// Takes the role of the app in focus. Nothing happens where there are no roles, or when the system refuses, as it does for a
     /// process outside a person's login session (a CI runner's).
@@ -22,6 +25,18 @@ enum ProcessRole {
     static func becomeInteractive() -> Bool {
         #if os(macOS)
             return setpriority(roleWhich, 0, focal) == 0 && isInteractive
+        #else
+            return false
+        #endif
+    }
+
+    /// Takes the role of the app in focus, or, when the terminal says it lost focus, gives it up (energy audit 2026-11-22, ENG-06):
+    /// kept, an ask in a tab behind others had its threads raised over the work in front.
+    /// - Returns: whether the process has the role it was asked for.
+    @discardableResult
+    static func become(focused: Bool) -> Bool {
+        #if os(macOS)
+            return setpriority(roleWhich, 0, focused ? focal : unfocused) == 0
         #else
             return false
         #endif

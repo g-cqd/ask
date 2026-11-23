@@ -14,7 +14,9 @@ extension ScreenController {
     /// Whether a running header shimmers (roadmap 0187), which wants the progress timer's faster tick.
     var isShimmering: Bool {
         let transcript = state.lane?.stashed ?? state.transcript
-        return transcript.shimmer && transcript.hasLiveProgress
+        // Not while the terminal says it is not in focus (energy audit 2026-11-22, ENG-07): nobody watches it glide, and each tick
+        // wakes ask, the terminal and the window server 16 times a second. The spinners keep their 200 ms step.
+        return transcript.shimmer && transcript.hasLiveProgress && state.focused != false
     }
 
     /// A tick: the spinners step when `advancingFrames`; live blocks are redrawn either way, for the shimmer.
