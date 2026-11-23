@@ -10,12 +10,14 @@ package struct SkillBook {
     let catalog: SkillCatalog
     let knownSources: [String]
 
-    /// The skills `configuration` offers, its organisation's policy applied (``SkillOrigins``).
-    init(_ configuration: Configuration, workingDirectory: String) {
+    /// The skills `configuration` offers, its organisation's policy applied (``SkillOrigins``), a project's as trusted in the
+    /// store at `trustPath` (the running configuration's when nil).
+    init(_ configuration: Configuration, workingDirectory: String, trustPath: String? = nil) {
         self.init(
             configuration.skills.value,
             workingDirectory: workingDirectory,
-            origins: .of(configuration.policy.value)
+            origins: .of(configuration.policy.value),
+            trustPath: trustPath
         )
     }
 
@@ -23,7 +25,8 @@ package struct SkillBook {
     ///   - section: the `skills` configuration. Off means no block and no tool: the model is not told skills exist.
     ///   - workingDirectory: where the project is.
     ///   - origins: where skills may come from; under the organisation's policy, its folder alone.
-    init(_ section: SkillsSection, workingDirectory: String, origins: SkillOrigins) {
+    ///   - trustPath: the trust store a project's skills are checked against; the running configuration's when nil.
+    init(_ section: SkillsSection, workingDirectory: String, origins: SkillOrigins, trustPath: String? = nil) {
         let known = origins.sources.map(\.id)
         guard section.enabled != false else {
             self.init(block: nil, tool: nil, catalog: SkillCatalog(), knownSources: known)
@@ -39,7 +42,7 @@ package struct SkillBook {
                 tokens: origins.imposed ?? ["user", "project", "bundled"] + (section.sources ?? []),
                 knownSources: known
             ),
-            trust: Self.trust()
+            trust: Self.trust(at: trustPath)
         )
         let block = SkillAdvertisement.block(
             for: catalog,
@@ -54,8 +57,8 @@ package struct SkillBook {
     }
 
     /// What the user has trusted. A store that cannot be read trusts nothing: the project's skills are then not loaded, which is the safe way to be wrong.
-    package static func trust() -> ProjectTrust {
-        (try? ProjectTrust.load(ConfigurationSource.here.loader.trustPath)) ?? ProjectTrust()
+    package static func trust(at path: String? = nil) -> ProjectTrust {
+        (try? ProjectTrust.load(path ?? ConfigurationSource.here.loader.trustPath)) ?? ProjectTrust()
     }
 
     private init(block: String?, tool: SkillTool?, catalog: SkillCatalog, knownSources: [String]) {

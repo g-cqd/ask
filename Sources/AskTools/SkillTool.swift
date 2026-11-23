@@ -42,19 +42,23 @@ public struct SkillTool: ArgumentTool {
             .described("Only these sources or scopes, space-separated.").optional
     }
 
-    private let catalog: SkillCatalog
-    private let knownSources: [String]
+    private let shelf: SkillShelf
 
     /// - Parameters:
     ///   - catalog: the skills found, which this tool serves and never adds to.
     ///   - knownSources: the harness ids that exist, so a word in `from` can be told from a mistake.
     public init(catalog: SkillCatalog, knownSources: [String]) {
-        self.catalog = catalog
-        self.knownSources = knownSources
+        shelf = SkillShelf(catalog: catalog, knownSources: knownSources)
+    }
+
+    /// A tool serving what `shelf` holds when it is called, which the session replaces as the person trusts more.
+    public init(shelf: SkillShelf) {
+        self.shelf = shelf
     }
 
     public func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
-        let selection = SkillSelection(tokens: arguments.from?.list ?? [], knownSources: knownSources)
+        let catalog = shelf.catalog
+        let selection = SkillSelection(tokens: arguments.from?.list ?? [], knownSources: shelf.knownSources)
         guard let name = arguments.name else {
             let found = catalog.search(arguments.query ?? "", selection: selection)
             guard !found.isEmpty else {

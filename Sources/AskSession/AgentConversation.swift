@@ -38,7 +38,7 @@ final class AgentConversation: Conversation {
     let usage = Mutex(UsageTotals())
     let promptInput = Mutex<PromptQueue?>(nil)
     /// Whether the user was told about project skills waiting for trust: once, on the first prompt.
-    let skillNoticeGiven = Mutex(false)
+    let skillNoticeGiven = Mutex(false), skillTrust = SessionSkills()
     /// Jobs outlive turns, not a reload: `/reload` refuses while any run, or stops them when told to.
     let jobs: JobTable
     /// The MCP servers, which outlive the loop and follow the configuration (ADR-0099).
@@ -165,10 +165,12 @@ final class AgentConversation: Conversation {
             do {
                 await self.refreshSettings(update: update)
                 self.noticeUntrustedSkills(update: update)
-                guard let expanded = self.expandingSkill(prompt, update: update) else {
+                guard let asked = self.expandingSkill(prompt, update: update) else {
                     update(.runEnded)
                     return
                 }
+                // After the expansion, which reads a `skill:name` at the prompt's start.
+                let expanded = self.attachingNewlyTrustedSkills(asked, update: update)
                 try await self.connectMCP(update: update)
                 // Each @server:uri read from its server once it is connected (roadmap 0067), then #t3 and #i2 (0186).
                 // A thread that ended since the last message: its answer goes with this one (roadmap 0194).

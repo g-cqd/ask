@@ -106,7 +106,8 @@ func makeLoop(
     keepTools: Set<String>? = nil,
     currentSession: (@Sendable () -> SessionRecorder?)? = nil,
     extraHooks: [any AgentHook] = [],
-    reportEvent: (@Sendable (AgentEvent) -> Void)? = nil
+    reportEvent: (@Sendable (AgentEvent) -> Void)? = nil,
+    skillShelf: SkillShelf? = nil
 ) throws -> AgentLoop {
     // The agent tool only where agents.enabled is on and something can start one (roadmap 0063): off, no request carries it.
     let startSubagent = run.configuration.agents.value.isEnabled ? startSubagent : nil
@@ -115,6 +116,10 @@ func makeLoop(
     let limits = run.limits
     let sandbox = run.sandbox
     let skills = SkillBook(run.configuration, workingDirectory: workingDirectory)
+    // The conversation's shelf holds what was read now, and the tool serves it, so a skill trusted later loads (AgentConversation
+    // +SkillTrust).
+    skillShelf?.replace(skills.catalog, knownSources: skills.knownSources)
+    let skillTool = skills.tool.map { tool in skillShelf.map { SkillTool(shelf: $0) } ?? tool }
     let agent = settings(
         for: resolved,
         workingDirectory: workingDirectory,
@@ -135,7 +140,7 @@ func makeLoop(
         FileTools.all + [
             BashTool(jobs: jobs, commandEnvironment: run.commandEnvironment), JobActionTool(jobs: jobs),
             TasksTool(board: lists.board, notes: lists.ideas), FetchTool()
-        ] + (currentSession.map { [SessionSearchTool(currentSession: $0)] } ?? []) + (skills.tool.map { [$0] } ?? [])
+        ] + (currentSession.map { [SessionSearchTool(currentSession: $0)] } ?? []) + (skillTool.map { [$0] } ?? [])
         + (askPerson == nil ? [] : [QuestionTool()]) + codemodeTools(run.configuration)
         + (startSubagent == nil ? [] : [AgentTool(definitions: definitions)])
     // A definition's subagent keeps only the tools it names, and no server's unless named.
