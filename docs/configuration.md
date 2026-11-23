@@ -104,7 +104,8 @@ Inside a section such as `ui`, a layer replaces only the keys it sets. A later f
 - the settings marked "Your own file only" come from your file alone, so a project can neither add to nor replace them.
 
 **A project's file is ignored until you trust it.** It comes from a repository, so it could have been written by anyone. Run `ask trust` in
-the project, at a terminal, to trust it as it is now; if it changes, it is ignored again until you trust it again. `ask untrust` stops
+the project, at a terminal (not through ask's `!`, which has none, as the model's commands do not), to trust it as it is now; a
+running ask reads it at your next message; if it changes, it is ignored again until you trust it again. `ask untrust` stops
 trusting it. Some settings can only come from your own file, as the tables below say.
 
 `docs/config.example.jsonc` holds every setting below with an example value and its default, generated from the code so it never
