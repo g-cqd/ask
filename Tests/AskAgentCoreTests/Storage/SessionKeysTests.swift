@@ -99,10 +99,19 @@ struct SessionKeysTests {
     }
 
     @Test
-    func `the standard derivation is Argon2id at 19 MiB, 2 passes and 4 lanes`() throws {
-        #expect(KeyDerivation.standard == KeyDerivation(memoryKiB: 19 * 1024, passes: 2, lanes: 4))
+    func `the standard derivation is Argon2id at 64 MiB, 3 passes and 4 lanes, and keys made at 19 MiB still open`()
+        throws
+    {
+        #expect(KeyDerivation.standard == KeyDerivation(memoryKiB: 64 * 1024, passes: 3, lanes: 4))
         let made = try SessionKeys.create(password: Self.password, derivation: .standard)
         #expect(try made.keys.unlock(password: Self.password) == made.userKey)
+        // ADR-0169: keys made before keep the parameters stored with them, and open as they did.
+        let earlier = try SessionKeys.create(
+            password: Self.password,
+            derivation: KeyDerivation(memoryKiB: 19 * 1024, passes: 2, lanes: 4)
+        )
+        let reread = try SessionKeys(decoding: earlier.keys.encoded())
+        #expect(try reread.unlock(password: Self.password) == earlier.userKey)
     }
 
     @Test
