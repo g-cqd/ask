@@ -14,8 +14,6 @@ final class CallSandboxTests {
     // Not under the temporary directory, which every sandbox keeps writable and readable as scratch.
     init() throws { world = try SandboxWorld(outsideScratch: true) }
 
-    deinit { try? FileManager.default.removeItem(atPath: world.home) }
-
     private func bash(_ command: String, sandbox: String) async throws -> ToolOutput {
         let registry = try ToolRegistry([BashTool(), WriteTool()])
         let quoted = command.replacingOccurrences(of: "\"", with: "\\\"")

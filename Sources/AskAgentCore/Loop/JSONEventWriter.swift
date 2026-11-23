@@ -45,6 +45,7 @@ public final class JSONEventWriter: Sendable {
             case .model(.thinkingDelta): "thinking"
             case .model(.notice): "notice"
             case .toolStarted: "tool_call"
+            // @dl:accept -- an event kind to its wire name: the test harness maps session payloads to theirs
             case .toolFinished: "tool_result"
             case .responded: "response"
             case .retrying: "retry"

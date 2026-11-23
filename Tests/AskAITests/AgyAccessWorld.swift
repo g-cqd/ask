@@ -2,14 +2,15 @@ internal import Foundation
 
 @testable import AskAI
 
-/// What the Antigravity access tests share: a credential file, stored records, and the server's replies.
-struct AgyAccessWorld {
-    let file = CredentialFile(
-        url: FileManager.default.temporaryDirectory.appending(
-            path: "ask-agy-access-\(UUID().uuidString)/ask/credentials.json"
-        ),
-        lockWait: .milliseconds(50)
-    )
+/// What the Antigravity access tests share: a credential file, stored records, and the server's replies; its folder goes with it
+/// (t126).
+final class AgyAccessWorld: Sendable {
+    let folder = FileManager.default.temporaryDirectory.appending(path: "ask-agy-access-\(UUID().uuidString)")
+    let file: CredentialFile
+
+    init() { file = CredentialFile(url: folder.appending(path: "ask/credentials.json"), lockWait: .milliseconds(50)) }
+
+    deinit { try? FileManager.default.removeItem(at: folder) }
     static let refreshed = #"{"access_token":"at-2","expires_in":3599,"token_type":"Bearer","scope":"s"}"#
     static let rotated = #"{"access_token":"at-2","refresh_token":"rt-2","expires_in":3599,"token_type":"Bearer"}"#
     static let onboarding =
