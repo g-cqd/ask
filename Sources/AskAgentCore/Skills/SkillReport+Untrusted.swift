@@ -3,7 +3,7 @@ extension SkillReport {
     var untrustedLines: [String] {
         guard !catalog.untrusted.isEmpty else { return [] }
         var lines = [
-            "project skills not loaded, because they are not trusted as they are now (read each file, then run ask trust --skills in a terminal):"
+            "project skills not loaded, because they are not trusted as they are now (read each file, then run ask trust --skills in another terminal):"
         ]
         for item in catalog.untrusted {
             let why = item.standing == .changed ? "changed since trusted" : "never trusted"

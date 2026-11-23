@@ -21,7 +21,7 @@ extension AgentConversation {
         let waiting = book.catalog.untrusted.map {
             SlashCommand(
                 name: "skill:" + $0.skill.name,
-                summary: "project skill, not trusted · look at it, then ask trust --skills in a terminal",
+                summary: "project skill, not trusted · look at it, then ask trust --skills in another terminal",
                 category: .tools
             )
         }
@@ -43,7 +43,7 @@ extension AgentConversation {
         guard count > 0 else { return }
         update(
             .notice(
-                "\(count) project skill\(count == 1 ? " is" : "s are") not loaded: not trusted as \(count == 1 ? "it is" : "they are") now. ask skills lists \(count == 1 ? "it" : "them"); ask trust --skills, in a terminal, trusts what you have read.",
+                "\(count) project skill\(count == 1 ? " is" : "s are") not loaded: not trusted as \(count == 1 ? "it is" : "they are") now. ask skills lists \(count == 1 ? "it" : "them"); ask trust --skills, in another terminal, trusts what you have read, offered at your next message.",
                 isError: false
             )
         )

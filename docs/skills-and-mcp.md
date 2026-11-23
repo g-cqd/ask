@@ -12,8 +12,10 @@ use, so the ones you wrote for Claude Code, Codex, pi, opencode, Mistral Vibe or
   like a link so you can see it will be: type `/` at the start of any word to pick one. Each skill named is attached once; a name ask
   does not know stays text.
 - A skill only gives instructions; it grants no permission.
-- **A project's skills load only once you trust them**: run `ask trust --skills` at a terminal. Trust covers
-  the `SKILL.md` file: when it changes, it needs trusting again. The files beside it (scripts, references) are not covered; the model reads
+- **A project's skills load only once you trust them**: run `ask trust --skills` at a terminal, another one than ask's (its `!`
+  commands have no terminal, as the model's do not, so `ask trust` refuses there). A running ask offers the skills you trusted at
+  your next message, naming them to the model once, with no restart. Trust covers the `SKILL.md` file: when it changes, it needs
+  trusting again. The files beside it (scripts, references) are not covered; the model reads
   or runs them only as it would any file in the repository, under the sandbox and your approvals.
 
 On a managed machine, skills an organisation puts in `/Library/Application Support/ask/skills` (`/etc/ask/skills` on Linux) are offered

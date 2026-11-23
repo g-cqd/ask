@@ -27,13 +27,18 @@ struct TrustCommand: ParsableCommand {
     @Argument(help: "With --skills or --agents: only these, by name. Default: every one the project has.")
     var names: [String] = []
 
+    /// Why it refused, and what to do instead: inside ask, a `!` command runs as the model's do, with no terminal, so a person who
+    /// typed it there is told where it works.
+    static let noTerminal = """
+        ask: trust is for a person at a terminal, and this has none. A script, the model's commands and ask's own ! commands run \
+        without one. Open another terminal in this project and run it there; a running ask takes it up at your next message.
+        """
+
     func run() {
         // A project's file is text from a repository, and the agent has a bash tool: a prompt-injected README
         // could tell it to run this. The agent's bash has no terminal, a person does. This is a speed bump, not
         // a wall (a pty can be allocated); denying the trust store's path to the agent is the sandbox's job.
-        guard isatty(STDIN_FILENO) != 0 else {
-            fail("ask: trust is for a person at a terminal; it will not run from a script or a tool.", code: 77)
-        }
+        guard isatty(STDIN_FILENO) != 0 else { fail(Self.noTerminal, code: 77) }
         let loader = ConfigurationSource.here.loader
         if skills {
             return TrustedFile.trust(

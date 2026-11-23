@@ -96,7 +96,7 @@ public enum SkillInvocation {
             let why = waiting.standing == .changed ? "has changed since you trusted it" : "is not trusted"
             return
                 "The project skill \"\(waiting.skill.name)\" \(why), so it is not loaded. Look at \(waiting.skill.file), then run "
-                + "ask trust --skills in a terminal."
+                + "ask trust --skills in another terminal; it is offered at your next message."
         }
         let hint =
             suggestions.isEmpty ? "No skills are available." : "Available: \(suggestions.joined(separator: ", "))."
