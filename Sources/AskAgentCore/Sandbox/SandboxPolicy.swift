@@ -123,8 +123,8 @@ public struct SandboxPolicy: Sendable, Equatable {
         switch capability {
             case .read:
                 if let refused = Self.refusal(.read, by: denyRead, for: canonical, verb: "read") { return refused }
-                return read.contains(canonical)
-                    || Self.systemReadRoots.contains { SandboxRule($0, .subpath).matches(canonical) }
+                let folded = canonical.lowercased()
+                return read.contains(canonical) || Self.systemReadRules.contains { $0.matches(folded: folded) }
                     ? .allowed : .denied(.read, "\(canonical) is outside the places this run may read.")
             case .write:
                 if let refused = Self.refusal(.write, by: denyWrite, for: canonical, verb: "written") { return refused }
@@ -134,6 +134,9 @@ public struct SandboxPolicy: Sendable, Equatable {
                 return .allowed
         }
     }
+
+    /// ``systemReadRoots`` as rules, made once.
+    static let systemReadRules = systemReadRoots.map { SandboxRule($0, .subpath) }
 
     /// What a restricted-read run can always read: the system, the developer tools it ships with, Homebrew, and scratch
     /// space. Canonical spellings (`/etc` is `/private/etc`). Probed with SwiftPM, git, Python, curl, cc and make.
@@ -150,7 +153,8 @@ public struct SandboxPolicy: Sendable, Equatable {
         for canonical: String,
         verb: String
     ) -> SandboxDecision? {
-        rules.first { $0.matches(canonical) }
+        let folded = canonical.lowercased()
+        return rules.first { $0.matches(folded: folded) }
             .map {
                 .denied(capability, "\(canonical) is protected: \(describe($0)) cannot be \(verb).")
             }
