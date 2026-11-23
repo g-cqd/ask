@@ -34,4 +34,19 @@ struct TerminalGraphicsTests {
         #expect(!TerminalGraphics.mayDraw(environment: ["TERM": "xterm-kitty", "TMUX": "/tmp/tmux-501/default,1,0"]))
         #expect(!TerminalGraphics.mayDraw(environment: ["TERM": "xterm-kitty", "SSH_TTY": "/dev/ttys004"]))
     }
+
+    /// Sunset draws the placeholders from 0.1.0 (its roadmap 0010 E); before, it set no version and drew them as nothing.
+    @Test func `asked in Sunset from 0.1.0, not before, not through ssh`() {
+        let sunset = ["TERM": "xterm-256color", "TERM_PROGRAM": "sunset"]
+        #expect(!TerminalGraphics.mayDraw(environment: sunset), "an older Sunset sets no version")
+        for (version, asked) in [
+            ("0.1.0", true), ("0.1", true), ("0.2.3", true), ("1.0.0", true), ("0.0.1", false), ("0.0.9", false),
+            ("", false), ("0.1.0-dev", false), ("x", false)
+        ] {
+            let environment = sunset.merging(["TERM_PROGRAM_VERSION": version]) { $1 }
+            #expect(TerminalGraphics.mayDraw(environment: environment) == asked, "\(version)")
+        }
+        let remote = sunset.merging(["TERM_PROGRAM_VERSION": "0.1.0", "SSH_TTY": "/dev/ttys004"]) { $1 }
+        #expect(!TerminalGraphics.mayDraw(environment: remote))
+    }
 }

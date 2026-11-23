@@ -41,7 +41,8 @@ message is yours, and a stretch can span a night. The first compaction of a sess
 - **A picture** goes with your message: copy one and paste it with Ctrl+V or Command+V (when the terminal passes the key on), or drop
   an image file on the window, or paste its path. It shows as `[image 1]` where it was pasted, with its kind and size above the
   input; one Backspace removes it. It is sent after your text, made smaller first when it is past 2000 pixels, and shows under your
-  message, as a tool's pictures do. A model that takes no images refuses it, and says so.
+  message, as a tool's pictures do. A model that takes no images refuses it, and says so. Pictures are drawn in kitty, Ghostty and
+  Sunset 0.1.0 or later, not through tmux or ssh; elsewhere each shows as its kind and size.
 - **A copied file** that is not a picture pastes as its full path with Ctrl+V or Command+V (when the terminal passes the key on), quoted
   when it holds a blank; several files paste as their paths, separated by a blank. A terminal that pastes the key itself decides what is
   pasted: some paste only the file's name.
