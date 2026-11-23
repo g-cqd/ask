@@ -114,6 +114,12 @@ public struct SandboxPolicy: Sendable, Equatable {
         guard let canonical = CanonicalPath.of(path, relativeTo: directory) else {
             return .denied(capability, "\(path) cannot be resolved to a real location, so it is not allowed.")
         }
+        return authorize(capability, canonical: canonical)
+    }
+
+    /// Whether `capability` is allowed on `canonical`, a path ``CanonicalPath`` has already resolved: for a caller that resolves many
+    /// paths sharing their folders once each, as the `@` picker's listing does.
+    public func authorize(_ capability: SandboxCapability, canonical: String) -> SandboxDecision {
         switch capability {
             case .read:
                 if let refused = Self.refusal(.read, by: denyRead, for: canonical, verb: "read") { return refused }

@@ -120,12 +120,11 @@ public enum ProjectLister {
     {
         var listing = ProjectListing()
         var seen = Set<String>()
+        var folders = FolderCache(directory: directory)
         for path in candidates.sorted() where seen.insert(path).inserted {
-            var isDirectory: ObjCBool = false
-            guard FileManager.default.fileExists(atPath: directory + "/" + path, isDirectory: &isDirectory),
-                !isDirectory.boolValue
-            else { continue }
-            guard policy.isUnrestricted || policy.authorize(.read, path: path, relativeTo: directory).isAllowed else {
+            guard let canonical = folders.canonicalFile(path) else { continue }
+            let decision = canonical.map { policy.authorize(.read, canonical: $0) } ?? .denied(.read, path)
+            guard policy.isUnrestricted || decision.isAllowed else {
                 listing.hidden += 1
                 continue
             }
