@@ -55,8 +55,9 @@ struct MarkdownRowCharacterisationTests {
         return hash
     }
 
-    // Moved on purpose (note n11): a single `/word` outside the root's folders is no longer linked as a path.
+    // Moved on purpose (note n11): a single `/word` outside the root's folders is no longer linked as a path. Moved again (t119):
+    // `.pathWords` keeps `*`, `_` and `~` in a word starting with `/` or `~/`; all 45 of the 535 messages whose parse changed hold one.
     @Test func `the rows of random Markdown keep their digest`() {
-        #expect(Self.digest() == 15_554_548_159_868_817_949)
+        #expect(Self.digest() == 6_174_518_416_629_167_907)
     }
 }

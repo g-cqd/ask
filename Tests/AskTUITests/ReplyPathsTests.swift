@@ -34,6 +34,24 @@ struct ReplyPathsTests {
         #expect(row(rig, containing: "See my_dir/a_b.swift here.") != nil)
     }
 
+    /// t119: CommonMark made `_l/…/tmpx_` emphasis, so the path lost its underscores and its link named no file.
+    @Test func `a path whose underscores would be emphasis keeps them, and its link names the file`() throws {
+        let path = "/var/folders/_l/mtv6_00gn/T/tmpx_/notes.txt"
+        let rig = rig([.assistantText("Wrote \(path) now.")], short: false)
+        let shown = try #require(row(rig, containing: "Wrote \(path) now."), "\((0 ..< 12).map { rig.text(row: $0) })")
+        let links = try #require(
+            rig.controller.frame.links.indices.contains(shown) ? rig.controller.frame.links[shown] : nil
+        )
+        #expect(links.contains { $0.uri == "file://" + path }, "\(links)")
+        let prose = screenText([.assistantText("This is _emphasis_ in prose.")])
+        #expect(prose.contains("This is emphasis in prose."), "emphasis outside a path still reads: \(prose)")
+    }
+
+    private func screenText(_ updates: [ConversationUpdate]) -> String {
+        let made = rig(updates, short: false)
+        return (0 ..< 12).map { made.text(row: $0) }.joined(separator: "\n")
+    }
+
     @Test func `the person's own message keeps the path as written`() {
         let rig = rig([.userPrompt("look at \(Self.full)")])
         #expect(row(rig, containing: "look at \(Self.full)") != nil)
