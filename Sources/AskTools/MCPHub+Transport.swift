@@ -1,5 +1,5 @@
 internal import AskAI
-internal import AskAgentCore
+public import AskAgentCore
 internal import AskMCP
 internal import Foundation
 
@@ -11,22 +11,19 @@ extension MCPHub {
     /// - Parameters:
     ///   - inheriting: the environment a child's minimal one is taken from (ADR-0096): ask's own.
     ///   - jobs: whose watchdog stops each server's process group if ask is killed in a way it cannot see (ADR-0102), or nil for none.
+    ///   - sandbox: the run's sandbox, which a server that ``MCPServerSetting/isSandboxed`` runs inside with the network open.
     /// - Returns: the factory a hub is made with.
-    public static func standardTransport(inheriting: [String: String], jobs: JobTable? = nil)
-        -> MCPHost.TransportFactory
-    {
+    public static func standardTransport(
+        inheriting: [String: String],
+        jobs: JobTable? = nil,
+        sandbox: SandboxPolicy = .unrestricted
+    ) -> MCPHost.TransportFactory {
         let observer = jobs.map { WatchdogObserver(watchdog: $0.watchdog) }
         let credentials = CredentialFile.standard(environment: inheriting)
         return { server, environment, headers in
             if let command = server.command {
                 return StdioTransport(
-                    StdioLaunch(
-                        executable: command,
-                        arguments: server.args,
-                        environment: environment,
-                        workingDirectory: server.cwd,
-                        inheriting: inheriting
-                    ),
+                    launch(command, server, environment: environment, inheriting: inheriting, sandbox: sandbox),
                     observer: observer
                 )
             }
@@ -47,5 +44,27 @@ extension MCPHub {
                 authorization: signIn
             )
         }
+    }
+
+    /// How `server` is started: `command` itself, or, when it is sandboxed and the run has a sandbox, `command` inside
+    /// `sandbox-exec` under the run's policy with the network open (security audit 2026-11-22, MED-10): a server talks to its own
+    /// services, but reads and writes only what the model's commands may. `sandbox-exec` looks a bare name up on the server's `PATH`.
+    static func launch(
+        _ command: String,
+        _ server: MCPServerSetting,
+        environment: [String: String],
+        inheriting: [String: String],
+        sandbox: SandboxPolicy
+    ) -> StdioLaunch {
+        var policy = sandbox
+        policy.network = .any
+        let sandboxed = server.isSandboxed && !policy.isUnrestricted
+        return StdioLaunch(
+            executable: sandboxed ? "/usr/bin/sandbox-exec" : command,
+            arguments: sandboxed ? SeatbeltProfile(policy).arguments + [command] + server.args : server.args,
+            environment: environment,
+            workingDirectory: server.cwd,
+            inheriting: inheriting
+        )
     }
 }

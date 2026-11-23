@@ -94,6 +94,10 @@ public struct ConfigurationFile: Sendable, Equatable {
         try validateOpeners(file.openers, path: path, isProject: isProject)
         file.mcp = try MCPPresets.adding(file.presets, to: file.mcp, path: path)
         try validateMCP(file.mcp, path: path, isProject: isProject)
+        if isProject, var section = file.mcp {
+            for index in section.servers.indices { section.servers[index].definedByProject = true }
+            file.mcp = section
+        }
         try validateEnvironment(file.environment, path: path, isProject: isProject)
         if isProject, file.approvals != nil {
             throw .outOfRange(

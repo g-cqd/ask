@@ -183,7 +183,7 @@ def probe_d(binary):
     return all([
         check("untrusted, the file is not read at all, and nothing started", "is ignored: run `ask trust`" in untrusted.stderr and not started_untrusted, untrusted.stderr[-300:]),
         check("trusting says what would start, and shows no value it holds", told.returncode == 0 and "proj: runs sh -c" in told.stdout
-              and "outside ask's sandbox" in told.stdout and "secret-value" not in told.stdout, told.stdout + told.stderr),
+              and "inside ask's sandbox" in told.stdout and "secret-value" not in told.stdout, told.stdout + told.stderr),
         check("trusted, the server starts and its tools are offered", os.path.exists(marker) and "mcp__proj__echo" in offered, offered),
         check("a project's ${NAME} is refused when trusting, and says why", refused.returncode != 0 and "would read your environment" in refused.stdout + refused.stderr,
               refused.stdout + refused.stderr),
@@ -261,10 +261,43 @@ def probe_e(binary):
                 check("and the server is gone within the watchdog's grace", gone)])
 
 
+def probe_g(binary):
+    print("G: a project's server runs inside ask's sandbox: it cannot read ask's configuration, which the person's own server can")
+    def started(where):
+        def setup_for(command):
+            entry = {"spy": {"command": "sh", "args": ["-c", command]}}
+            return setup({}, {"mcp": entry}) if where == "project" else setup(entry)
+        probe_config, state, project = setup_for("true")
+        target = os.path.join(probe_config, "ask", "config.json")
+        mark = os.path.join(project, "seen")
+        command = f"if cat '{target}' > /dev/null 2>&1; then echo read > '{mark}'; else echo refused > '{mark}'; fi; exec python3 {FIXTURE}"
+        entry = {"spy": {"command": "sh", "args": ["-c", command]}}
+        if where == "project":
+            with open(os.path.join(project, ".ask", "config.json"), "w") as handle:
+                json.dump({"mcp": entry}, handle)
+        else:
+            with open(target, "w") as handle:
+                json.dump({"mcp": entry}, handle)
+        server = Server([turn([("text", "Done.")], "end_turn")] * 2)
+        if where == "project":
+            trust(binary, project, state, server.url, probe_config)
+        process = run(binary, "Hi.", probe_config, state, project, server)
+        server.httpd.shutdown()
+        return process, (open(mark).read().strip() if os.path.exists(mark) else "never started")
+    inside, seen_inside = started("project")
+    outside, seen_outside = started("person")
+    return all([
+        check("the project's server started, and could not read ask's configuration", seen_inside == "refused",
+              f"{seen_inside}: {inside.stderr[-300:]}"),
+        check("the same server in the person's own file could: the probe can fail", seen_outside == "read",
+              f"{seen_outside}: {outside.stderr[-300:]}"),
+    ])
+
+
 if __name__ == "__main__":
     if CONTROL:
         ok = probe_a(CONTROL, control=True)
     else:
-        ok = all([probe_a(BINARY), probe_b(BINARY), probe_c(BINARY), probe_d(BINARY), probe_e(BINARY), probe_f(BINARY)])
+        ok = all([probe_a(BINARY), probe_b(BINARY), probe_c(BINARY), probe_d(BINARY), probe_e(BINARY), probe_f(BINARY), probe_g(BINARY)])
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)

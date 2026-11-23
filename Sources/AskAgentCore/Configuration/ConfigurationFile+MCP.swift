@@ -63,6 +63,7 @@ extension ConfigurationFile {
                     case "mode": server.mode = try container.decode(MCPServerSetting.Mode.self, forKey: key)
                     case "maxDirectTools": server.maxDirectTools = try container.decode(Int.self, forKey: key)
                     case "oauth": server.oauthClientID = try container.decode(OAuthDecoded.self, forKey: key).clientID
+                    case "sandbox": server.sandbox = try decodeSwitch(container, key: key, name: "mcp.<server>.sandbox")
                     default: throw UnknownKey(key: "mcp.<server>." + key.stringValue)
                 }
             }
@@ -110,6 +111,15 @@ extension ConfigurationFile {
         for server in section.servers {
             try validate(server, path: path)
             guard isProject else { continue }
+            // A repository's server is code the repository chose: it may not take itself out of the sandbox.
+            if server.sandbox == false {
+                throw .outOfRange(
+                    path: path,
+                    key: "mcp.\(server.name).sandbox",
+                    reason:
+                        "a project's file cannot run its server outside the sandbox; name the server in your own config file for that"
+                )
+            }
             for (part, values) in [("env", server.env), ("headers", server.headers)]
             where values.values.contains(where: MCPServerSetting.referencesEnvironment) {
                 throw .outOfRange(

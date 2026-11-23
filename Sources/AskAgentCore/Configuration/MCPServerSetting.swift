@@ -3,7 +3,8 @@ public struct MCPServerSetting: Sendable, Equatable {
     /// The keys a server under `mcp` may set.
     // @dl:accept -- a key table, as every section has
     public static let keys = [
-        "command", "args", "env", "cwd", "url", "headers", "tools", "enabled", "mode", "maxDirectTools", "oauth"
+        "command", "args", "env", "cwd", "url", "headers", "tools", "enabled", "mode", "maxDirectTools", "oauth",
+        "sandbox"
     ]
 
     /// The name the configuration gave it. It is part of every tool's name (`mcp__<name>__<tool>`), so its letters are limited.
@@ -31,6 +32,15 @@ public struct MCPServerSetting: Sendable, Equatable {
     public var maxDirectTools: Int?
     /// Whether ask connects to it at all.
     public var enabled: Bool
+    /// Whether a server ask starts runs inside the run's sandbox, with the network open (security audit 2026-11-22, MED-10); nil
+    /// for the default, ``isSandboxed``.
+    public var sandbox: Bool?
+    /// Whether a project's own file defines it, which the loader marks: such a server is sandboxed unless said otherwise.
+    public var definedByProject = false
+
+    /// Whether it runs sandboxed: as `sandbox` says, else when a project's file defines it. The person's own servers and their
+    /// organisation's run as they did, so a server that writes a cache in the home keeps working until they say otherwise.
+    public var isSandboxed: Bool { sandbox ?? definedByProject }
     /// The client id to sign in to it with (`oauth.clientId`), for a server whose authorization server takes no registration; nil
     /// registers ask, or uses what an earlier sign-in registered (roadmap 0067).
     public var oauthClientID: String?

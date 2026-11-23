@@ -30,7 +30,8 @@ public struct MCPSection: Sendable, Equatable, CustomStringConvertible, LayeredS
         servers.isEmpty
             ? "none"
             : servers.map { server in
-                "\(server.name) (\(server.command == nil ? "url" : "command")\(server.enabled ? "" : ", off"))"
+                "\(server.name) (\(server.command == nil ? "url" : "command")\(server.enabled ? "" : ", off")"
+                    + "\(server.command != nil && server.isSandboxed ? ", sandboxed" : ""))"
             }
             .joined(separator: ", ")
     }
@@ -41,7 +42,9 @@ public struct MCPSection: Sendable, Equatable, CustomStringConvertible, LayeredS
         servers.map { server in
             let off = server.enabled ? "" : " (off)"
             if let command = server.command {
-                return "\(server.name): runs \(([command] + server.args).joined(separator: " "))\(off)"
+                let inside =
+                    server.isSandboxed ? ", inside ask's sandbox with the network open" : ", outside ask's sandbox"
+                return "\(server.name): runs \(([command] + server.args).joined(separator: " "))\(inside)\(off)"
             }
             let address = server.url.flatMap(Self.withoutQuery) ?? "an address that does not parse"
             return "\(server.name): connects to \(address)\(off)"

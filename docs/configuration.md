@@ -294,6 +294,7 @@ Each member names a server. Put servers in your own file; a project's file can n
 | `enabled` | `false` keeps the entry without connecting. |
 | `mode` | `"direct"` offers its tools directly, `"search"` through a search tool. By default, a server with more than 16 tools is searched. |
 | `maxDirectTools` | Changes that threshold of 16 for this server. |
+| `sandbox` | `true` runs a server ask starts inside ask's sandbox, with the network open: it reads what the model's commands may and writes only where they may. On by default for a server a project's file names, which that file cannot turn off; off by default for yours, since a server that keeps a cache in your home would stop working. |
 | `oauth` | `{"clientId": "…"}`: the client id to sign in with, for a server whose authorization server does not let ask register itself; register `http://127.0.0.1:33418/callback` as its redirect address there. |
 
 A server at an address that answers it needs a sign-in (OAuth, as the MCP specification says) is not counted as failed: when the turn
