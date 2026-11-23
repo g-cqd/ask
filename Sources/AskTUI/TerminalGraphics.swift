@@ -41,8 +41,10 @@ enum TerminalGraphics {
         return body.hasPrefix("OK") ? .supported : .unsupported
     }
 
-    /// Whether the terminal may draw them, from what it says it is: kitty (`TERM=xterm-kitty`) or Ghostty (`TERM=xterm-ghostty` or
-    /// `TERM_PROGRAM=ghostty`); not through tmux or over ssh, where graphics need passthrough.
+    /// Whether the terminal may draw them, from what it says it is: kitty (`TERM=xterm-kitty`), Ghostty (`TERM=xterm-ghostty` or
+    /// `TERM_PROGRAM=ghostty`), or Sunset from 0.1.0 (`TERM_PROGRAM=sunset`, `TERM_PROGRAM_VERSION`), the first that draws the
+    /// Unicode placeholders (its roadmap 0010 E; an older one sets no version); not through tmux or over ssh, where graphics need
+    /// passthrough.
     static func mayDraw(environment: [String: String]) -> Bool {
         if environment["TMUX"] != nil || environment["SSH_TTY"] != nil || environment["SSH_CONNECTION"] != nil {
             return false
@@ -52,5 +54,15 @@ enum TerminalGraphics {
         // Not WezTerm: it takes kitty graphics but not the Unicode placeholders ask draws with (seen 2026-11-06: the cells shown as
         // glyphs, the picture drawn at the cursor over the input).
         return term == "xterm-kitty" || term == "xterm-ghostty" || program == "ghostty"
+            || (program == "sunset" && isAtLeast(environment["TERM_PROGRAM_VERSION"], [0, 1, 0]))
+    }
+
+    /// Whether `version`, dotted numbers, is `least` or later; false for none, or one that does not read.
+    static func isAtLeast(_ version: String?, _ least: [Int]) -> Bool {
+        guard let version, !version.isEmpty else { return false }
+        let parts = version.split(separator: ".", omittingEmptySubsequences: false).map { Int($0) }
+        guard parts.allSatisfy({ $0 != nil }) else { return false }
+        let numbers = parts.compactMap(\.self) + Array(repeating: 0, count: max(0, least.count - parts.count))
+        return numbers.lexicographicallyPrecedes(least) == false
     }
 }
