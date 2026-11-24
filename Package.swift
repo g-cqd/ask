@@ -85,32 +85,32 @@ let package = Package(
     dependencies: [
         // The terminal stack. TerminalKit is the whole point of the extraction: `ask` links the same
         // terminal code Atelier's KittyCode does, rather than a third copy of it.
-        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "c6eb30847f79edf41ff5469a21dd29ab6816c4f7"),
+        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "6a41516725b8919af73b2d12fa36b9655036ce5a"),
         // JSON for every wire format: sessions now, provider streams and tool arguments next (ADR-0015).
         // Pinned by revision like every Aemi-family package; it shares TerminalKit's Aemi pin.
-        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "fb3d1649133eee852989bb7b2f40469b8a61c88d"),
+        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "968ecd17e9ba744655d5c3b60d3e759cf61dc211"),
         // Already resolved through AemiJSON; the linear-time engine also recognizes UI heredoc openers.
-        .package(url: "https://github.com/g-cqd/AemiRegex.git", revision: "7f6b1f8b86002f099cca32735ff90455b990c4e6"),
+        .package(url: "https://github.com/g-cqd/AemiRegex.git", revision: "3e317a77886f3525ccb7d5176a97bcdee92a90dd"),
         // The Markdown parser the transcript draws assistant messages with (roadmap 0065); the revision TerminalKitMarkdown pins.
         .package(
             url: "https://github.com/g-cqd/AemiMarkdown.git",
-            revision: "7b7fd228e13a7089e4c973c7d96faa2e6fd84c3d"
+            revision: "edb3104c10965912f271bd46029ec54ef3889a0b"
         ),
         // Mermaid diagrams in the transcript (roadmap 0198), pinned by revision like the rest of the family.
         .package(
             url: "https://github.com/g-cqd/AemiMermaid.git",
-            revision: "c29ed2ff011fb9e98f15917e48d5ff8538c1c6ce"
+            revision: "636c990fac6e7f6d76798c09952aac7c7d0601b8"
         ),
         // YAML and TOML, and the front matter of definition files (roadmap 0109; AemiHMMML's ADR-0009): the parsers ask's definition
         // reader had of its own moved there, strict by default and recovering when asked.
-        .package(url: "https://github.com/g-cqd/AemiHMMML.git", revision: "23d9a9d020cda1d215bd05fd9ace215c38198038"),
+        .package(url: "https://github.com/g-cqd/AemiHMMML.git", revision: "ff6f0d21a99fde3336c711a8d7f1200a7156ff50"),
         // AemiIO's durability profiles for session files (ADR-0017). The same revision TerminalKit and
         // AemiJSON pin, which SwiftPM requires: one revision per package in a graph.
         // Web pages as Markdown for `fetch` (roadmap 0237): its readable content, without the page's chrome. On the same aemi and
         // AemiMarkdown revisions.
-        .package(url: "https://github.com/g-cqd/AemiHTML.git", revision: "59bb11f48814a5bbf09ce4d430560f8da175f766"),
+        .package(url: "https://github.com/g-cqd/AemiHTML.git", revision: "e8ba412db553c409c9db3ab7c8bbe0fe3da4386a"),
         // Full-text search over sessions, tasks and notes (t209), on the same aemi revision.
-        .package(url: "https://github.com/g-cqd/AemiSearch.git", revision: "3a135633f2e1260ce133fd305fc68f03619b6345"),
+        .package(url: "https://github.com/g-cqd/AemiSearch.git", revision: "57c3f3ec5b6a3eaf634a203654de627db4b1dd8a"),
         .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "e34e3e517176a04f64e5d56e16f5019e55392a90"),
         // Child processes for the bash tool (ADR-0011): the official package, added with the first tool that
         // runs one.
