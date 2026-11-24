@@ -1,5 +1,5 @@
 {
-  "originHash" : "fb97ff7adc021b5d40b84961615bb212f37114fe911e9607ee24119a15b8afcf",
+  "originHash" : "3a7963d9440f8a79ad315a6eb38a00638ee67c1bd3675b9f5777d4bf1b6f87df",
   "pins" : [
     {
       "identity" : "aemi",
@@ -66,14 +66,6 @@
       }
     },
     {
-      "identity" : "aemitextui",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/g-cqd/AemiTextUI.git",
-      "state" : {
-        "revision" : "4b64bf4ea295d3ea68ceaa9ca2360beb7f5b0a3d"
-      }
-    },
-    {
       "identity" : "hdrhistogram-swift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/HdrHistogram/hdrhistogram-swift.git",
@@ -96,8 +88,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ordo-one/package-benchmark",
       "state" : {
-        "revision" : "ca4a9d300fc15d38132853c2e30462337b33c43f",
-        "version" : "1.38.1"
+        "revision" : "362fbd37dd13c4f1b1186c38302a72cd5648abdd",
+        "version" : "1.39.1"
       }
     },
     {
