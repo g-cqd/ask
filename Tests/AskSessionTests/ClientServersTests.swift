@@ -33,7 +33,8 @@ struct ClientServersTests {
         #expect(names.allSatisfy(MCPServerSetting.isValid(name:)))
     }
 
-    /// `ask serve` runs wherever the client started it, which is no session's folder.
+    /// `ask serve` runs wherever the client started it, which is no session's folder. Client-supplied servers are
+    /// treated as untrusted (sandboxed by default, N-A4).
     @Test func `a program runs in the session's folder unless it says where, and an address has no folder`() {
         let made = ClientServers.settings(
             [
@@ -45,5 +46,6 @@ struct ClientServersTests {
         )
         #expect(made.map(\.cwd) == ["/work", "/elsewhere", nil])
         #expect(made[0].args == ["x"] && made[0].env == ["K": "v"] && made[2].headers == ["H": "v"])
+        #expect(made.allSatisfy { $0.isSandboxed })
     }
 }

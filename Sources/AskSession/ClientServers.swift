@@ -12,6 +12,9 @@ enum ClientServers {
             server.name = unique(allowed(asked.name), among: taken)
             taken.insert(server.name)
             if server.command != nil, server.cwd == nil { server.cwd = workspace }
+            // Security review 2026-11-25 (N-A4): MCP servers passed by an ACP client are untrusted like project servers,
+            // so run them inside Seatbelt unless explicitly opted out in the server setting.
+            server.definedByProject = true
             return server
         }
     }

@@ -48,6 +48,6 @@ and `docs/sandbox.md`; aligned with OWASP Top 10 for LLM Applications 2025 and O
 | Risk | Owner | Mitigation today | Review / expiry date |
 |---|---|---|---|
 | `N-A2`: Media decoders run in main process | Maintainer | Private copy + size caps; Seatbelt helper scheduled for Sprint 2 | 2027-02-25 |
-| `MED-07`: Commands share macOS `TMPDIR` | Maintainer | Seatbelt blocks secret stores & workspace escapes; per-session `TMPDIR` queued | 2027-02-25 |
-| `N-A4`: `ask serve` trusts ACP client's `cwd` & MCP server list | Maintainer | Stdio-only (no listening socket), sandbox + approvals + org policy still apply | 2027-02-25 |
+| `MED-07`: Commands share macOS `TMPDIR` | Maintainer | Closed (`JobTable` creates private `0700` `TMPDIR` for sandboxed commands; macOS `/private/var/folders` remains writable in Seatbelt for Foundation tools) | 2027-02-25 |
+| `N-A4`: `ask serve` trusts ACP client's `cwd` & MCP server list | Maintainer | Stdio-only; ACP-supplied MCP servers are sandboxed by default (`definedByProject = true`) | 2027-02-25 |
 | `MED-10`: User-named MCP servers run outside Seatbelt by design | Maintainer | Explicit user configuration required; project-supplied servers stay sandboxed (ADR-0099) | 2027-02-25 |

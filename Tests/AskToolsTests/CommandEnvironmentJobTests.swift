@@ -59,6 +59,16 @@ struct CommandEnvironmentJobTests {
         #expect(output == "[][kept][key][p]\n[exit 0]")
     }
 
+    @Test func `a sandboxed command receives a private 0700 TMPDIR isolated from shared temp`() async throws {
+        let output = try await run(
+            #"echo \"${TMPDIR}\""#,
+            policy: .inherit,
+            sandbox: SandboxPolicy(network: .none)
+        )
+        let dir = output.split(separator: "\n").first.map(String.init) ?? ""
+        #expect(dir.contains("ask-tmp-"))
+    }
+
     @Test func `a name that is not a valid variable name is not given, and the rest are`() async throws {
         let table = Self.environment.merging(["BAD=NAME": "x", "": "y"]) { $1 }
         #expect(try await run(probe, policy: .inherit, table: table) == "[top-secret][kept][key][p]\n[exit 0]")
