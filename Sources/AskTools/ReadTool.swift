@@ -61,7 +61,13 @@ public struct ReadTool: ArgumentTool {
         SandboxRequest.property
     }
 
-    public init() {}
+    /// Executable path of `ask` for out-of-process Seatbelt media decoding (`ask decode-media`, N-A2).
+    /// Nil in unit tests (which run in-process without the `ask` CLI binary).
+    public let mediaDecoderExecutable: String?
+
+    public init(mediaDecoderExecutable: String? = nil) {
+        self.mediaDecoderExecutable = mediaDecoderExecutable
+    }
 
     public func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
         let url = try FileTools.authorized(arguments.path, for: [.read], in: context)
@@ -79,6 +85,30 @@ public struct ReadTool: ArgumentTool {
                 maximumImages: maximumImages
             )
             let allowance = ImageReader.Allowance(context.imageLimits)
+            if let executable = mediaDecoderExecutable, !context.sandbox.isUnrestricted {
+                return try await ScopedFile.withCopy(
+                    of: url,
+                    shownAs: arguments.path,
+                    limit: FileTools.maximumMediaBytes,
+                    in: context
+                ) { copy throws(ToolFailure) in
+                    try await MediaDecodeHost.runSandboxed(
+                        MediaDecodeHost.Request(
+                            kind: .video,
+                            filePath: copy.path,
+                            shownPath: arguments.path,
+                            maximumImages: maximumImages,
+                            at: request.at,
+                            count: request.count,
+                            every: request.every,
+                            start: request.start,
+                            end: request.end,
+                            imageLimits: context.imageLimits
+                        ),
+                        executable: executable
+                    )
+                }
+            }
             if context.sandbox.isUnrestricted {
                 return try await VideoReader.read(url, path: arguments.path, request, allowance: allowance)
             }
@@ -92,7 +122,30 @@ public struct ReadTool: ArgumentTool {
                 try await VideoReader.read(copy, path: arguments.path, request, allowance: allowance)
             }
         }
-        let isMedia = ImageReader.mediaType(of: header) != nil || PDFReader.isPDF(header)
+        let isPDF = PDFReader.isPDF(header)
+        let isImage = ImageReader.mediaType(of: header) != nil
+        if let executable = mediaDecoderExecutable, !context.sandbox.isUnrestricted, isPDF || isImage {
+            return try await ScopedFile.withCopy(
+                of: url,
+                shownAs: arguments.path,
+                limit: FileTools.maximumMediaBytes,
+                in: context
+            ) { copy throws(ToolFailure) in
+                try await MediaDecodeHost.runSandboxed(
+                    MediaDecodeHost.Request(
+                        kind: isPDF ? .pdf : .image,
+                        filePath: copy.path,
+                        shownPath: arguments.path,
+                        pages: arguments.pages,
+                        render: arguments.render ?? false,
+                        maximumImages: maximumImages,
+                        imageLimits: context.imageLimits
+                    ),
+                    executable: executable
+                )
+            }
+        }
+        let isMedia = isImage || isPDF
         let bytes = try FileTools.bytes(
             at: url,
             shownAs: arguments.path,
@@ -110,7 +163,11 @@ public struct ReadTool: ArgumentTool {
             )
         }
         if ImageReader.mediaType(of: bytes) != nil {
-            return try image(bytes, shownAs: arguments.path, allowance: ImageReader.Allowance(context.imageLimits))
+            return try MediaDecodeHost.decodeImage(
+                bytes,
+                shownAs: arguments.path,
+                allowance: ImageReader.Allowance(context.imageLimits)
+            )
         }
         let text = try FileTools.text(from: bytes, shownAs: arguments.path)
         guard arguments.offset != nil || arguments.limit != nil else { return ToolOutput(text) }
@@ -123,25 +180,5 @@ public struct ReadTool: ArgumentTool {
         return ToolOutput(
             lines[(first - 1) ..< last].joined(separator: "\n") + "\n[lines \(first)–\(last) of \(lines.count)]"
         )
-    }
-
-    /// An image file: a line saying what it is, and the image itself for a model that takes images (roadmap 0084).
-    private func image(_ bytes: [UInt8], shownAs path: String, allowance: ImageReader.Allowance) throws(ToolFailure)
-        -> ToolOutput
-    {
-        do {
-            let result = try ImageReader.read(bytes, allowance: allowance)
-            var output = ToolOutput("\(path): \(result.summary)")
-            output.images = [result.part]
-            return output
-        } catch .animated {
-            throw ToolFailure("\(path) is an animated PNG; it was not read.")
-        } catch .cannotFit {
-            throw ToolFailure(
-                "\(path) could not be made small enough to send (long side 2000 px, 4.5 MiB as base64, and what the model's provider accepts)."
-            )
-        } catch {
-            throw ToolFailure("\(path) looks like an image but could not be decoded.")
-        }
     }
 }

@@ -6,6 +6,12 @@ internal import Foundation
 public enum FileTools {
     public static let all: [any Tool] = [ReadTool(), WriteTool()]
 
+    /// File tools with `ReadTool` delegating untrusted media decoding to an isolated `executable decode-media` child
+    /// under Seatbelt (N-A2 / R-DES-2) when `executable` is available.
+    public static func all(mediaDecoderExecutable: String?) -> [any Tool] {
+        [ReadTool(mediaDecoderExecutable: mediaDecoderExecutable), WriteTool()]
+    }
+
     /// The largest file read or edited: far above source files, low enough to bound memory.
     static let maximumFileBytes = 16 << 20
     /// The largest image or PDF read: a 48-megapixel photograph is tens of megabytes, and it is decoded at reduced size.

@@ -161,7 +161,8 @@ let package = Package(
         .executableTarget(
             name: "ask",
             dependencies: [
-                "AskSession", "AskACP", "AskAI", "AskAgentCore", "AskApple", "AskCodemode", "AskCore", "AskTUI",
+                "AskSession", "AskACP", "AskAI", "AskAgentCore", "AskApple", "AskCodemode", "AskCore", "AskTools",
+                "AskTUI",
                 .product(name: "ArgumentParser", package: "swift-argument-parser")
             ],
             path: "Sources/ask",

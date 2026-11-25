@@ -137,7 +137,7 @@ func makeLoop(
             otherHarnesses: run.configuration.agents.value.readsOtherHarnesses
         )
     let offered: [any Tool] =
-        FileTools.all + [
+        FileTools.all(mediaDecoderExecutable: BinaryIdentity.running()?.path) + [
             BashTool(jobs: jobs, commandEnvironment: run.commandEnvironment), JobActionTool(jobs: jobs),
             TasksTool(board: lists.board, notes: lists.ideas), FetchTool()
         ] + (currentSession.map { [SessionSearchTool(currentSession: $0)] } ?? []) + (skillTool.map { [$0] } ?? [])

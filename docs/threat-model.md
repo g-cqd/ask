@@ -38,7 +38,7 @@ and `docs/sandbox.md`; aligned with OWASP Top 10 for LLM Applications 2025 and O
 | SSRF / DNS rebinding via `fetch` or MCP discovery | LLM06 | `ask` ↔ network | `FetchAddress` refuses loopback/private/link-local/metadata in every IPv4/IPv6 spelling and re-validates after DNS resolution | — |
 | Symlink / TOCTOU redirect out of workspace | ASI03 | `ask` ↔ disk | `ScopedFile` uses `O_NOFOLLOW`, `F_GETPATH` verification, `openat`/`mkdirat` (`0755`/`0644`), atomic `renameat` + fsync | — |
 | Malicious `.ask/` config, skill, agent, or MCP server | LLM03, ASI06 | Repo ↔ `ask` | `ProjectTrust` / `TrustedFile` binds project config, skills, and agents to explicit human approval by SHA-256 digest; project MCP servers run sandboxed | Extend `ProjectTrust` prompt to ACP-supplied MCP servers (`N-A4`) |
-| Hostile image, PDF, or video triggers decoder memory bug | LLM05 | `ReadTool` ↔ media frameworks | Size limits and private copy (`ScopedFile.withCopy`) | Move `ImageReader`/`PDFReader`/`VideoReader` into zero-network Seatbelt helper (`N-A2`, Sprint 2) |
+| Hostile image, PDF, or video triggers decoder memory bug | LLM05 | `ReadTool` ↔ media frameworks | Size limits, verified private copy (`ScopedFile.withCopy`), and isolated zero-network/zero-env `sandbox-exec` child (`ask decode-media`, `MediaDecodeHost`, N-A2) | — |
 | Terminal escape injection (OSC 52 clipboard, title spoofing) | LLM05 | Model/tool ↔ TTY | `TerminalTextFilter` / `OutputEscapes` strips CSI/OSC/DCS before rendering | — |
 | Unbounded spend / runaway loops / memory OOM | LLM10, ASI08 | Model ↔ runtime | Turn limits, byte caps, budget tests, organisation policy caps (ADR-0168) | Bounded default `ui.historyLimit` / `jobs.keepFinished` (`N-A7`, Sprint 2) |
 | Release supply-chain tampering | LLM03 | CI ↔ users | Revision-pinned SwiftPM + `Package.resolved`, SHA-pinned Actions (`zizmor` 0 findings), Developer ID + notarisation + CycloneDX SBOM + SLSA provenance via `swift-ci` | Configure protected `release` Environment secrets on `g-cqd/ask` (`N-A6`) |
@@ -47,7 +47,7 @@ and `docs/sandbox.md`; aligned with OWASP Top 10 for LLM Applications 2025 and O
 
 | Risk | Owner | Mitigation today | Review / expiry date |
 |---|---|---|---|
-| `N-A2`: Media decoders run in main process | Maintainer | Private copy + size caps; Seatbelt helper scheduled for Sprint 2 | 2027-02-25 |
+| `N-A2`: Media decoders run in main process | Maintainer | Closed (`ReadTool` delegates image/PDF/video decoding to zero-network, zero-env `sandbox-exec` child `ask decode-media`) | 2027-02-25 |
 | `MED-07`: Commands share macOS `TMPDIR` | Maintainer | Closed (`JobTable` creates private `0700` `TMPDIR` for sandboxed commands; macOS `/private/var/folders` remains writable in Seatbelt for Foundation tools) | 2027-02-25 |
 | `N-A4`: `ask serve` trusts ACP client's `cwd` & MCP server list | Maintainer | Stdio-only; ACP-supplied MCP servers are sandboxed by default (`definedByProject = true`) | 2027-02-25 |
 | `MED-10`: User-named MCP servers run outside Seatbelt by design | Maintainer | Explicit user configuration required; project-supplied servers stay sandboxed (ADR-0099) | 2027-02-25 |
