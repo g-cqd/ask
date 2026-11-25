@@ -165,7 +165,7 @@ enum ScopedFile {
         defer { close(directory) }
         for component in missing {
             try verify(directory, for: .write, appending: component, shownAs: path, in: context)
-            if mkdirat(directory, component, 0o777) != 0, errno != EEXIST {
+            if mkdirat(directory, component, 0o755) != 0, errno != EEXIST {
                 throw ToolFailure("Cannot write \(path): \(String(cString: strerror(errno))).")
             }
             // A link put there since is not followed: it fails, and nothing is written.
@@ -187,7 +187,7 @@ enum ScopedFile {
         flush: (Int32) -> Int32
     ) throws(ToolFailure) {
         let temporary = ".ask-write-\(UUID().uuidString)"
-        let file = openat(directory, temporary, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o666)
+        let file = openat(directory, temporary, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o644)
         guard file >= 0 else { throw ToolFailure("Cannot write \(path): \(String(cString: strerror(errno))).") }
         defer { close(file) }
         var written = 0

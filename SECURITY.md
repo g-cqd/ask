@@ -1,15 +1,35 @@
 # Security policy
 
-ask runs a language model's tool calls inside a macOS Seatbelt sandbox by
-default and keeps credentials (API keys, OAuth tokens from `ask login`) in
-`~/.config/ask`. If you found a way for a model, an extension or a crafted
-input to escape the sandbox, reach a secret store, or read another project's
-files, please report it privately: use GitHub's *Report a vulnerability*
-button on the Security tab of this repository, or open a security advisory.
-Do not open a public issue for it.
+`ask` runs a language model's tool calls inside a macOS Seatbelt sandbox by default and keeps provider credentials
+(API keys, OAuth tokens from `ask login`) in `~/.config/ask` (mode `0700`/`0600`, or encrypted in the session vault).
 
-Include the ask version (`ask --version`), the sandbox configuration if any
-(`--no-sandbox`, a `sandbox` section in `config.json`), and a minimal
-reproduction. Reports that reach a secret store (`~/.aws`, `~/.gnupg`,
-Keychains, `~/.netrc`, ssh private keys, `~/.config/ask` itself) are treated
-as high severity.
+## Reporting a vulnerability
+
+Report vulnerabilities privately through GitHub's **Report a vulnerability** button on the Security tab — never in
+public issues or pull requests. Include:
+
+- The `ask` version (`ask --version`).
+- The sandbox & approval configuration (`--no-sandbox`, `config.json`, organisation policy if any).
+- A minimal reproduction (command line, prompt/tool input, MCP server payload, or crafted media file).
+
+Reports that reach a secret store (`~/.aws`, `~/.gnupg`, Keychains, `~/.netrc`, SSH private keys, `~/.config/ask`, or
+sibling browser/app stores) or bypass session approval grants are treated as high severity.
+
+## Response targets (SLAs)
+
+| Milestone | Target |
+|---|---|
+| Private acknowledgement | Within **3 working days** |
+| Initial triage & severity confirmation | Within **7 calendar days** |
+| Fix & advisory — **Critical** | Within **7 calendar days** |
+| Fix & advisory — **High** | Within **30 calendar days** |
+| Fix — **Medium / Low** | Next scheduled release |
+
+Security fixes in released versions are published with a GitHub Security Advisory (and CVE identifier where applicable)
+and named in the release notes.
+
+## Release verification
+
+Every official `ask` tag release is built in CI, Developer ID signed, hardened-runtime protected, Apple-notarised, and
+accompanied by SHA-256 checksums, a CycloneDX 1.5 SBOM (`ask-<version>.sbom.cdx.json`), and GitHub SLSA Build
+Provenance attestations (`gh attestation verify <asset> --owner g-cqd`).
