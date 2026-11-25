@@ -2,26 +2,15 @@ import AskCore
 import Foundation
 import Testing
 
-@Suite("The white paper stays a core document")
+@Suite("Agent guidelines stay concise")
 struct WhitePaperTests {
-    @Test func `the white paper stays within its budget`() throws {
-        // A principles document that grows with every experiment stops being one. The probe history
-        // belongs in the diary, which is where it now lives.
+    @Test func `AGENTS.md exists and stays within its line budget`() throws {
         let lines = try DocumentationLayout.whitePaperLineCount()
-        #expect(
-            lines <= DocumentationLayout.maximumWhitePaperLines,
-            """
-            development/WHITE-PAPER.md is \(lines) lines, over the \
-            \(DocumentationLayout.maximumWhitePaperLines)-line budget for a principles document.
-            Probe history belongs in the diary, not here.
-            """
-        )
+        #expect(lines > 0 && lines <= DocumentationLayout.maximumWhitePaperLines)
     }
 
-    @Test func `the white paper does not carry a probe ledger`() throws {
-        // The failure mode this guards against is specific: a table of probes appended to a
-        // principles document, which then changes on every iteration and is never read whole.
+    @Test func `AGENTS.md does not carry a probe ledger`() throws {
         let text = try String(contentsOf: DocumentationLayout.whitePaperURL(), encoding: .utf8)
-        #expect(!text.contains("## Probe ledger"), "the probe history belongs in the diary")
+        #expect(!text.contains("## Probe ledger"))
     }
 }

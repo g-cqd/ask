@@ -24,6 +24,5 @@ ask                # in your project
 ## Learn more
 
 - [User guide](docs/README.md): keys, sessions, configuration, providers, sandbox.
-- [Development](development/WHITE-PAPER.md): how ask is built, and [how to contribute](CONTRIBUTING.md).
 
 [MIT](LICENSE)

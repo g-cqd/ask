@@ -1,233 +1,24 @@
 # Working in `ask`
 
-`ask` is a Swift terminal coding agent built for latency. Cold start, idle memory, input delay and
-action-to-action delay are budgets with numbers, not adjectives.
+Terminal coding agent for macOS written in Swift 6 (`g-cqd/ask`).
 
-**Read [`development/WHITE-PAPER.md`](development/WHITE-PAPER.md) first.** It carries the principles and leads with
-the evidence rule. This file does not repeat them — it records what an agent cannot derive by reading
-the source: the commands, the gates, the traps, and the decisions that are not yet settled.
+## Engineering principles
 
-## The one rule that outranks the rest
-
-Every claim is named, given a probe that could fail, run, and recorded in the diary — before it is
-acted on. This repository is full of confidently wrong beliefs that a probe overturned: DECSTR
-resets private modes (it does not), `@testable` conflicts with the strict flags (it does not), Aemi's
-zero tags block consumers (they do not).
-
-Three consequences worth internalising:
-
-- **A probe that cannot fail is not a probe.** Check the probe can fail before trusting a green result.
-- **A test that has never failed proves nothing.** New gates are broken on purpose once, to prove they fire.
-- **Unprobed claims are written as open questions, never as facts.**
-
-## Reliability
-
-Damage costs only what is actually damaged. Everything intact loads, every repair is reported, and reading
-never writes; `SessionLog.recover` is the worked example (ADR-0013). Refusing input needs a written safety
-reason. Convenience is a requirement, not a nice-to-have.
-
-Code and tests state their own reasons. When studying another agent, run its code against edge cases
-rather than trusting its source, and keep the notes in `development/research/`, not in the codebase.
+- **Verify claims with executable checks.** Every behaviour change and bug fix requires a test; performance claims require measured before/after data.
+- **Strictness.** Swift 6 language mode, strict memory safety, warnings as errors. Keep core modules decoupled from terminal/UI details.
+- **Security & confinement.** Respect Seatbelt sandboxing, command policy gates, Keychain credential storage, and secret-free logs/sessions. Never bypass confirmation or sandbox boundaries.
+- **User documentation tracks code.** Every configuration key in `ConfigurationFile` must be documented in `docs/configuration.md` (enforced by `UserDocumentationTests`). Keep `README.md`, `docs/`, and `Package.swift` factual and free of roadmaps or diaries.
 
 ## Commands
 
 ```sh
-Scripts/quality.sh              # format, lint, build and test
-Scripts/quality.sh --check      # verify only; what CI runs
-.ci/swift-ci run quality        # CI's quality check: format, lint, the analyzers, the audit and guards; what a push runs
-Scripts/mutate-changed.sh       # mutation testing with litmus: CI runs it, and it refuses to run anywhere else (see Gates)
-Scripts/dependency-audit.sh     # each target declares what it imports and imports what it declares; a stage of quality.sh
-python3 Scripts/check-layers.py # ADR-0009's target layering over the manifest; a stage of quality.sh
-Scripts/roadmap.sh open         # the open roadmap entries, read from their front matter
-ask --provider NAME --model ID  # a provider from ~/.config/ask/providers.json (ADR-0027)
-swift test -c release --enable-testable-imports   # tests, without re-linting
-python3 Scripts/measure-budgets.py .build/release/ask 12   # the five budgets
-Scripts/install.sh              # build, measure the budgets, install in ~/.local/bin only when they hold
-python3 Scripts/measure-action.py .build/release/ask 10 500  # the action, in detail, after 500 turns
-python3 Scripts/probe-codemode.py .build/release/ask         # a codemode script through the real binary: limits, sandbox, approval
-python3 Scripts/probe-codemode-at-once.py .build/release/ask # the calls a script makes at once: edits, writes, jobs, MCP, tasks
-Scripts/fuzz.sh 60 sse          # libFuzzer on the byte parsers (Fuzz/); weekly in CI; a finding becomes a red test, then a seed
+swift test
+swift build -c release --product ask
+swift format lint --strict --recursive Sources Tests Package.swift
 ```
 
-Build and test in **release, always**. A debug build measures a program nobody ships.
+## Architecture & Formal Models
 
-While iterating, run the tests from the existing build rather than rebuilding per edit. Build once
-per completed step.
-
-## Gates
-
-`Scripts/quality.sh` is the only entry point, so a check cannot be forgotten because someone
-remembered a different command. It runs swift-format, SwiftLint (`only_rules`), and the optimized
-tests. Style is Aemi's canonical configuration, synced rather than reinvented — never re-derive
-`.swift-format` or `.swiftlint.yml`.
-
-A pre-commit hook runs lint. A green test run is not a green commit.
-
-**Structure is gated too (ADR-0021).** `SourceStructureTests` and `ProviderNeutralityTests` run inside
-`swift test`, so the pre-push hook, `quality.sh` and CI enforce them: one top-level type per file, named for it;
-no file over 250 lines, tests included; provider names only in `AskAI/Anthropic`, `AskAI/Claude` and
-`Sources/AskSession` (with `Sources/ask`). Read the `ask-structure` skill before adding or moving code. `SourceStructure.knownViolations`
-is a ratchet baseline: it shrinks and never takes a new entry.
-
-**Static analysis is gated too (ADR-0022).** deadwood, dolly and arcleak run under `--strict`, pinned by version
-and SHA-256 in the family's lock, `Scripts/analyzers.lock` in Aemi-Studio/aemi at the commit `Scripts/analyzers.sh` names. A finding is fixed, or accepted where it is with a reason
-(`// @dl:accept -- why`, `@dw:`, `@al:`, on the line above the anchor); there are no baselines.
-
-**A dropped write error is gated too (roadmap 0230).** `DroppedWriteErrorsTests`: a `try?` before a call that keeps the person's data
-(a session record, a saved credential, a copied list, a file written) either becomes a failure said to the person, or carries
-`// try?: why` on its line or the one above.
-
-**A test's temporary folder is gated too (t126).** `TestTemporaryFoldersTests`: a test file that makes an `ask-` folder in the
-temporary directory and writes into it removes it (`removeItem`, or AemiTestKit's `cleanup()`). Its `leaking` list is a ratchet.
-
-**Mutation testing, on changed files (roadmap 0166).** `Scripts/mutate-changed.sh [BASE]` runs litmus, the family's own
-(`g-cqd/litmus`, pinned by version and SHA-256 in the script), on the `Sources` files changed against `BASE`, and fails on a surviving
-or unreached mutant not in `development/mutation-baseline.json`: kill it with a test. **CI only** (the owner, 2026-11-10 and
-2026-11-16): a run takes a runner for hours and rewrites the checkout it runs in, so the script refuses to run anywhere else.
-Run ordinary release tests and the non-mutation quality gate locally; report mutation verification separately from CI.
-CI runs it once a day on the files changed that day, and on Mondays on every file, uploading a fresh baseline to commit by hand.
-A run stops at its budget and says what it did not run. litmus rewrites sources in place for a run, so a test that reads `Sources`
-leaves out a file holding `SourceStandards.mutationMarker`.
-
-**When a refactor or factorisation is on the table, ask what Swift already offers first** (white paper §8):
-result builders, scoped closures, protocol extensions with defaults, typed throws, `callAsFunction`, key paths,
-macros. Compile candidates, pin behaviour with a characterisation test, benchmark on a request path.
-
-The pre-push hook runs `.project-hooks.yml`'s release task, not a plain `swift test`. If a hook looks wrong,
-`project-hooks repair --dry-run` says whether it is the generator's current script.
-
-## Documentation law
-
-Four directories, and the shape is enforced by tests rather than by good intentions:
-
-| Path | Rule |
-|---|---|
-| `development/WHITE-PAPER.md` | Principles, never a log. Capped at 200 lines. Probe history belongs in the diary. |
-| `development/adr/NNNN-title.md` | One decision per file. A decision changed by evidence becomes a **new ADR that supersedes** the old one — records are not edited into an unrecognisable shape. |
-| `development/roadmap/NNNN-title.md` | One entry per file, declaring `status:`. An entry is a claimable, completable unit of work. |
-| `development/diary/YYYY-MM-DD-NN.md` | The working log and **where probe history lives**. Capped at 256 lines; roll over at the ceiling. |
-
-`docs/` is not a record: it is the user guide, written for people using ask (ADR-0128). A change a user would notice updates it in the
-same commit. `UserDocumentationTests` fails when a configuration key is undocumented, a link is broken, or a page other than its index
-points into `development/`.
-
-When a decision changes, supersede it. `status: superseded` with a `superseded-by:` link, never a
-silent rewrite.
-
-## Budgets
-
-Four numbers, defined once in `AskCore.Budget` and printed by `ask --budgets`, so the measurement
-script reads them from the binary rather than keeping a copy that can drift.
-
-Report **median and spread, never the best run**. Percentiles, not averages. Interleave before-and-after
-runs so background load cancels out of the ratio.
-
-**Never trade correctness for speed.** `-Ounchecked` is banned: it strips the bounds and overflow checks
-`StrictMemorySafety` depends on. Speed comes from doing less work.
-
-The action-to-action budget is a tool call to its result on screen, for an in-process tool (ADR-0053):
-`Scripts/measure-action.py` measures it, with the next request and a sandboxed `bash` command beside it.
-
-## Package strictness
-
-Swift 6 language mode plus `StrictMemorySafety`, `ExistentialAny`, `InferIsolatedConformances`,
-`InternalImportsByDefault`, `MemberImportVisibility`, and warnings as errors.
-
-Do not add a flag that is not already here, and do not remove one without a probe showing the package
-is better without it. `RegionBasedIsolation`, `DisableOutwardActorInference`, `InferSendableFromCaptures`
-and `DeprecateApplicationMain` are deliberately absent — the compiler rejects naming them as redundant,
-and `.v6` is what guarantees they stay on.
-
-## Dependencies
-
-Terminal stack from **TerminalKit**, kernel tier and test kit from **Aemi** at a pinned revision.
-Two focused dependencies, each with one job (ADR-0005).
-
-`Package.swift` pins TerminalKit by full revision; `Package.resolved` must agree with that revision.
-After a verified upstream change, update the explicit pin and resolve it. Do not silently follow main.
-
-Each concern has one owner, and `SourceStandards` enforces the first two:
-
-- **JSON: AemiJSON** (ADR-0015), named qualified as `AemiJSON.JSONEncoder` and `AemiJSON.JSONDecoder`.
-- **Command line: swift-argument-parser**, in the `ask` executable only.
-- **Child processes: swiftlang/swift-subprocess** (ADR-0011), behind an injected interface.
-Introduce it with the first tool; avoid an unused dependency or a second POSIX/Foundation launcher.
-Read its lifetime/output-limit contracts before implementing cancellation or output truncation.
-
-Adding a dependency is an architectural decision. Generic tools do not live in `ask`: they are promoted
-to Aemi. The test is whether a second consumer is plausible, not whether one exists today.
-
-## Traps
-
-- **A green old dependency is not upstream verification.** Check the explicit manifest revision and
-  resolved revision together before attributing a fix to an updated package.
-- **`public` signatures need `public import Foundation`** under `InternalImportsByDefault` (SE-0409).
-  A plain import grants *internal* visibility, which makes `URL` internal and every public signature illegal.
-- **Release tests need `--enable-testable-imports`** (ADR-0006). `swift build --build-tests -c release`
-  is not equivalent and fails to resolve `@testable`. Benchmarks and shipping binaries are built
-  separately, without testability.
-- **Terminal behaviour needs three kinds of evidence**: byte-exact tests, an independent oracle model,
-  and a real emulator. Byte tests prove the encoder emitted what was intended; they do not prove any
-  terminal obeys it. Do not infer universal terminal behaviour from one emulator or from a model.
-
-- **Another writer may share the working tree.** Check `git status` for staged changes you did not make. Do
-  not `git add -A` or reformat the tree with `quality.sh` under them; work in a clone and deliver a branch.
-- **Splitting a file is not mechanical.** An unused `public import` is a compile error here, and `fileprivate`
-  members that cross the new boundary must widen. Recipe: `.agents/skills/ask-structure/references/`.
-- **A clone's `.build` cannot be reused.** Delete it; the paths are absolute.
-- **SwiftPM 6.4 writes no index store** by default, so Periphery needs `--build-system native`.
-
-## Working beside other agents
-
-Several agents work in this repository at once. To keep `main` the meeting point:
-
-- **One worktree per task**: `git worktree add ../ask-<task> -b <task> main`. Never edit the main checkout another
-  agent may be using, and never `git add -A` there.
-- **Merge each finished unit as soon as it is green**, not at the end: check `main`, rebase onto it, resolve
-  conflicts in the worktree, run `Scripts/quality.sh --check`, then `git merge --ff-only` from the main checkout.
-  A rebase that conflicts is resolved by reading both sides; the other agent's change is not discarded.
-- **Leave nothing dangling**: after the merge, `git worktree remove` and `git branch -d`. Before ending a session,
-  check `git branch -a` and `git worktree list`; a branch fully merged into `main` with no live worktree is deleted,
-  locally and on `origin`. A branch checked out in another agent's worktree is theirs.
-- **Take the next free number** for an ADR, roadmap entry or diary at the moment of writing, not at the start; it
-  may have been taken meanwhile.
-
-## Commit discipline
-
-Before creating an ADR, diary or roadmap entry, reserve its number with `Scripts/next-number.sh adr|diary|roadmap --claim`.
-Diary claims are per day (`--date YYYY-MM-DD` when needed). Claims cover this clone's branches and worktrees, not separate clones.
-From a clean task worktree, `Scripts/land.sh` integrates, runs the full gate, fast-forwards local main and removes that task's worktree/branch; `--keep` retains it.
-It never pushes. A failed gate/conflict keeps the task intact. Inspect the owner before removing a stale `.git/ask-land.lock`.
-
-**Reinstall at the end of every session (the owner, 2026-11-11).** Before ending a working session, run `Scripts/install.sh` from
-the landed main: it builds the release binary, measures the five budgets under load and replaces `~/.local/bin/ask` only when all
-hold (staged beside the target, run once, moved over it), so neither a failed build nor one over budget replaces a working binary.
-A refusal is reported, not retried until it passes: that would be the best run. Say in the final report which commit it was built
-from, or why it was not installed.
-
-Atomic and buildable. The message states **why** — the diff already says what. Never mix a refactor
-and a behaviour change. Slice by behaviour, not by file type.
-
-A pre-existing issue found mid-task is reported as a follow-up, not silently repaired: a change that
-fixes something the task did not name is harder to review, because the reviewer cannot tell the
-requested change from the extra one.
-
-## Current state
-
-Targets: `AskCore` (budgets, documentation layout, source standards), `AskAI` (`Model` and `Transport` are provider-neutral;
-providers are Claude (a subscription or a key), Codex (the ChatGPT subscription, over the Responses protocol), Antigravity
-(Cloud Code) and any OpenAI-compatible or Responses server by configuration or preset), `AskAgentCore` (the loop, tools contract,
-sessions, encryption, tasks and notes, compaction, hooks), `AskTools` (`read`, `write`, `edit`, `bash`, `tasks`, `notes`, `question`, `skill`, `server_resource`, jobs, sandbox narrowing), `AskMCP` (an MCP client for stdio and streamable HTTP, tools, resources, templates, and subscriptions),
-`AskTUI` (the interactive screen), `AskACP` (`ask serve`: the Agent Client Protocol on a connection, over AemiJSONRPC; ADR-0153), `AskCodemode` (what a `codemode` script runs in: the JavaScriptCore VM hosted by the hidden `ask codemode`, and the Python prelude; ADR-0156), `AskSession` (the conversation, its commands, sessions, threads, goals and loops, sign-in, model discovery and
-the composition of a run, with `package` access: ADR-0149) and the `ask` binary, which is the options and subcommands over `AskSession`. The whole
-is also covered by PTY and end-to-end probes (`Scripts/probe-*.py`).
-The PTY probes read the screen with pyte, pinned in `Scripts/probe-requirements.txt`: `Scripts/probe-deps.sh` installs it once into
-a cache that outlives `/tmp` (`ASK_PYTE` names another place), and a probe without it says to run that.
-Skills (0061) are built; MCP (0067) and hooks (0192) are in progress. Codemode (0012) is built, for JavaScript and Python. Not built: the extension host (0033), subagents (0063), a
-version and a release (0070). CI runs on every push (`gh run list -R g-cqd/ask`).
-
-`development/roadmap/` says what is owed and in what order. What is *not known* is registered, with what would settle it, in
-`development/research/` (`antigravity-2026-10.md`; the project-wide snapshot is `reassessment-2026-10-25.md`): read them before probing
-something that is already written down as a question.
-
-Read an entry's `status:` and `blocked-by:` before starting it.
+- Architecture decision records: `docs/adr/`
+- Formal TLA+ and Lean models: `docs/formal/`
+- Protocol extensions: `docs/protocol/`

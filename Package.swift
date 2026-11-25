@@ -1,51 +1,6 @@
 // swift-tools-version: 6.4
 import PackageDescription
 
-// ask — a Swift coding agent.
-//
-// ONE package, MANY small targets, so a given binary links only what it uses. The kernel tier
-// (byte/number/Unicode/text/IO/concurrency) and the deterministic test kit come from Aemi; the
-// terminal stack comes from the shared TerminalKit package. `ask` layers the agent on top.
-//
-// The target graph is ADR-0009's; targets land when they have content, never as empty shells.
-//   AskCore        — budgets, documentation layout, source standards.               deps: none
-//   AskAI          — providers, streaming, protocol adapters, auth.                 deps: none
-//   AskAgentCore   — the loop, the session tree, context, sandbox, approvals.       deps: AskAI
-//   AskMCP         — the MCP client: transports and the protocol.                   deps: AskAI
-//   AskApple       — Apple's on-device model.                                       deps: AskAI, AskAgentCore
-//   AskTools       — read, write, edit, bash, jobs, MCP tools (ADR-0011).           deps: AskAgentCore, AskAI, AskMCP
-//   AskTUI         — screen model, widgets, input routing, over TerminalKit only.   deps: none of ask's
-//   AskCodeMode    — the codemode host, when it has content.                        (roadmap 0012)
-//   ask            — composition root, the only target that sees everything.
-//
-// AemiRuntime (kernel pools/seams) and any app-level concurrency provider are deliberately never
-// co-exported from a single umbrella target, matching the Aemi rule.
-
-// The strictest settings a Swift package can carry, applied to every target here.
-//
-//   `.v6`                     — complete strict-concurrency checking; every sendable crossing is checked.
-//   `StrictMemorySafety`      — SE-0458. The terminal stack moves bytes through raw pointers and
-//                               POSIX descriptors, which is exactly where an unchecked access is
-//                               a silent memory-corruption bug. The check is the point.
-//   `ExistentialAny`          — every existential spells out `any`, so a protocol's intent is legible.
-//   `InternalImportsByDefault`— a module sees only what it declares.
-//   `MemberImportVisibility`  — a member is only visible when its module is imported.
-//   `InferIsolatedConformances` — no unannotated conformance silently guesses its isolation.
-//   `treatAllWarnings(as: .error)` — a warning is a defect with a louder voice.
-//
-// Already implied by `.swiftLanguageMode(.v6)`, and therefore deliberately NOT listed here, because
-// the compiler rejects a redundant flag: `RegionBasedIsolation`, `DisableOutwardActorInference`,
-// `InferSendableFromCaptures`, `DeprecateApplicationMain`. Naming them would be noise; `.v6` is
-// what actually turns them on, and it is the only way to guarantee they stay on.
-//
-// The expression type-check threshold below diagnoses slow compilation, not runtime latency.
-// It does not prevent @testable imports when testability is explicitly enabled (ADR-0006).
-// Runtime performance claims still require measurement of the separate shipping release build.
-//
-// SAFETY: `-Ounchecked` is deliberately NOT used. It would strip the bounds and overflow checks
-// that `StrictMemorySafety` relies on, trading correctness for a benchmark number. Performance in
-// `ask` comes from doing less work (diff rendering, pooled buffers), not from removing the checks
-// that catch the bugs.
 let strictSettings: [SwiftSetting] = [
     .swiftLanguageMode(.v6),
     .enableUpcomingFeature("StrictMemorySafety"),
@@ -57,16 +12,9 @@ let strictSettings: [SwiftSetting] = [
     .unsafeFlags(["-Xfrontend", "-warn-long-expression-type-checking=500"])
 ]
 
-// Fuzzing (roadmap 0232): `ASK_FUZZ=1` instruments ask's own modules for libFuzzer's coverage and opens their internals to the fuzz
-// package (`Fuzz/`, built by `Scripts/fuzz.sh`). Only that package is built this way: the executable and the tests would not link.
-// Instrumenting the whole graph (`swift build --sanitize fuzzer`) was tried first: the macro host's swift-syntax alone took over
-// half an hour.
 let fuzzSettings: [SwiftSetting] =
     Context.environment["ASK_FUZZ"] == nil ? [] : [.unsafeFlags(["-sanitize=fuzzer", "-enable-testing"])]
 
-/// Settings for every target in this package. `swift build` and `swift test` always run release
-/// configuration: the package ships a terminal agent whose entire reason to exist is latency, and a
-/// debug build measures a program nobody runs.
 let packageSettings: [SwiftSetting] = strictSettings + fuzzSettings
 
 let package = Package(
@@ -74,8 +22,6 @@ let package = Package(
     platforms: [.macOS(.v26)],
     products: [
         .executable(name: "ask", targets: ["ask"]),
-        // A library product exists because something outside the package consumes it (roadmap 0016): these five, the Benchmarks
-        // package (ADR-0016). AskCore and AskApple are targets only.
         .library(name: "AskAgentCore", targets: ["AskAgentCore"]),
         .library(name: "AskAI", targets: ["AskAI"]),
         .library(name: "AskMCP", targets: ["AskMCP"]),
@@ -83,40 +29,22 @@ let package = Package(
         .library(name: "AskTUI", targets: ["AskTUI"])
     ],
     dependencies: [
-        // The terminal stack. TerminalKit is the whole point of the extraction: `ask` links the same
-        // terminal code Atelier's KittyCode does, rather than a third copy of it.
         .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "6bd1a1c42db0fa36f40cc8a96f4a433aa6253b50"),
-        // JSON for every wire format: sessions now, provider streams and tool arguments next (ADR-0015).
-        // Pinned by revision like every Aemi-family package; it shares TerminalKit's Aemi pin.
         .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "989dff98ef8c2bd0964d291d69436b37e6b92ca3"),
-        // Already resolved through AemiJSON; the linear-time engine also recognizes UI heredoc openers.
         .package(url: "https://github.com/g-cqd/AemiRegex.git", revision: "360e011dc553735240f45c2085124dce20865e08"),
-        // The Markdown parser the transcript draws assistant messages with (roadmap 0065); the revision TerminalKitMarkdown pins.
         .package(
             url: "https://github.com/g-cqd/AemiMarkdown.git",
             revision: "3b9f6f782d20f4b821d2b6bb3479b6d57b8ac590"
         ),
-        // Mermaid diagrams in the transcript (roadmap 0198), pinned by revision like the rest of the family.
         .package(
             url: "https://github.com/g-cqd/AemiMermaid.git",
             revision: "4291610c870c7bf1357e7e3b748b23393b643ac7"
         ),
-        // YAML and TOML, and the front matter of definition files (roadmap 0109; AemiHMMML's ADR-0009): the parsers ask's definition
-        // reader had of its own moved there, strict by default and recovering when asked.
         .package(url: "https://github.com/g-cqd/AemiHMMML.git", revision: "8141f26d94495d6914717eda97409c48a7465bca"),
-        // AemiIO's durability profiles for session files (ADR-0017). The same revision TerminalKit and
-        // AemiJSON pin, which SwiftPM requires: one revision per package in a graph.
-        // Web pages as Markdown for `fetch` (roadmap 0237): its readable content, without the page's chrome. On the same aemi and
-        // AemiMarkdown revisions.
         .package(url: "https://github.com/g-cqd/AemiHTML.git", revision: "4d52f6faf1459ec022cfbf198b26fa065312e6e5"),
-        // Full-text search over sessions, tasks and notes (t209), on the same aemi revision.
         .package(url: "https://github.com/g-cqd/AemiSearch.git", revision: "c5cbf54f5a65a1d9ab04f298c61b723a51645305"),
         .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "cbaeb200acaf7da2f74168b7b16dc6a4b0a02e6c"),
-        // Child processes for the bash tool (ADR-0011): the official package, added with the first tool that
-        // runs one.
         .package(url: "https://github.com/swiftlang/swift-subprocess.git", .upToNextMinor(from: "1.0.2")),
-        // Command-line parsing for the `ask` executable only (ADR-0015). Its link cost against the
-        // cold-start budget was measured before adoption.
         .package(url: "https://github.com/apple/swift-argument-parser.git", .upToNextMinor(from: "1.8.2"))
     ],
     targets: [
@@ -130,13 +58,10 @@ let package = Package(
             name: "AskAgentCore",
             dependencies: [
                 "AskAI", .product(name: "AemiJSON", package: "AemiJSON"), .product(name: "AemiIO", package: "aemi"),
-                // The settings' value types, declared once (ADR-0166).
                 "AskCore",
-                // Openers' patterns (roadmap 0216).
                 .product(name: "AemiRegex", package: "aemiregex"),
                 .product(name: "AemiText", package: "aemi"), .product(name: "AemiDiff", package: "aemi"),
                 .product(name: "AemiArgon2", package: "aemi"),
-                // Session search (t209).
                 .product(name: "AemiSearch", package: "AemiSearch"),
                 .product(name: "AemiFrontMatter", package: "AemiHMMML"),
                 .product(name: "AemiHMMMLCore", package: "AemiHMMML"),
@@ -154,15 +79,12 @@ let package = Package(
             path: "Sources/AskAI",
             swiftSettings: packageSettings
         ),
-        // Apple's on-device model, linked in-process through FoundationModels (ADR-0116). Its own target, so nothing but the
-        // executable links the framework and a library's tests do not load it.
         .target(
             name: "AskApple",
             dependencies: ["AskAI", "AskAgentCore", .product(name: "AemiJSON", package: "AemiJSON")],
             path: "Sources/AskApple",
             swiftSettings: packageSettings
         ),
-        // The Model Context Protocol client: JSON-RPC over a transport, no policy (ADR-0096). A leaf, like pi's `pi-mcp`.
         .target(
             name: "AskMCP",
             dependencies: [
@@ -177,10 +99,8 @@ let package = Package(
             dependencies: [
                 "AskAgentCore", "AskAI", "AskCodemode", "AskMCP", .product(name: "AemiKernel", package: "aemi"),
                 .product(name: "AemiJSON", package: "AemiJSON"),
-                // The connection a codemode script's process is spoken to on (ADR-0156).
                 .product(name: "AemiJSONRPC", package: "AemiJSON"), .product(name: "AemiSearch", package: "AemiSearch"),
                 .product(name: "AemiHTML", package: "AemiHTML"),
-                // File watching (aemi ADR 0016): the new build beside the running one, the configuration files.
                 .product(name: "AemiIO", package: "aemi"), .product(name: "Subprocess", package: "swift-subprocess")
             ],
             path: "Sources/AskTools",
@@ -189,7 +109,6 @@ let package = Package(
         .target(
             name: "AskTUI",
             dependencies: [
-                // The settings' value types, declared once (ADR-0166): AskCore is the one target of ask's it may import.
                 "AskCore",
                 .product(name: "TerminalKitCodecs", package: "TerminalKit"),
                 .product(name: "TerminalKitIO", package: "TerminalKit"),
@@ -204,17 +123,12 @@ let package = Package(
                 .product(name: "AemiMermaidLayout", package: "AemiMermaid"),
                 .product(name: "AemiMermaidText", package: "AemiMermaid"),
                 .product(name: "AemiRegex", package: "aemiregex"),
-                // Output recognised as JSON is checked by parsing it (roadmap 0152, phase 5).
                 .product(name: "AemiJSON", package: "AemiJSON"),
-                // Fenced code's colours (roadmap 0152): aemi's lexers, standard library only.
                 .product(name: "AemiLexers", package: "aemi")
             ],
             path: "Sources/AskTUI",
             swiftSettings: packageSettings
         ),
-        // The conversation and what it owns (roadmap 0229, ADR-0149): commands, sessions, threads, goals, loops, sign-in, model
-        // discovery and the composition of a run, out of the executable so they are tested and mutation-checked. `package` access
-        // is its surface: only this package's executable and tests use it.
         .target(
             name: "AskSession",
             dependencies: [
@@ -225,25 +139,19 @@ let package = Package(
             ],
             swiftSettings: packageSettings
         ),
-        // Codemode's VM (ADR-0156): JavaScriptCore hosting one script whose only way out is the tools it is handed. It knows
-        // none of ask's libraries; the hidden `ask codemode` runs it in a process of its own.
         .target(
             name: "AskCodemode",
             dependencies: [
                 .product(name: "AemiJSON", package: "AemiJSON"), .product(name: "AemiJSONRPC", package: "AemiJSON"),
-                // The thread standard input is read on (AemiJSONRPC's descriptor reader runs on its pool).
                 .product(name: "AemiRuntime", package: "aemi")
             ],
             swiftSettings: packageSettings
         ),
-        // `ask serve`: the Agent Client Protocol on a connection (ADR-0153), over AemiJSONRPC. The one place that knows the protocol.
         .target(
             name: "AskACP",
             dependencies: [
-                // The screen's `Conversation` is the seam the agent is driven through: this is its second driver (ADR-0154).
                 "AskTUI",
                 .product(name: "AemiJSON", package: "AemiJSON"), .product(name: "AemiJSONRPC", package: "AemiJSON"),
-                // The thread standard input is read on (AemiJSONRPC's descriptor reader runs on its pool).
                 .product(name: "AemiRuntime", package: "aemi")
             ],
             swiftSettings: packageSettings
@@ -256,8 +164,6 @@ let package = Package(
             ],
             path: "Sources/ask",
             swiftSettings: packageSettings,
-            // The functions run from launch to the idle prompt first in the binary, so starting touches fewer pages of code and fewer
-            // stay resident (roadmap 0088: idle 15.6 -> 14.1 MiB). Scripts/generate-order-file.py writes the list; a stale name is skipped.
             linkerSettings: [
                 .unsafeFlags(
                     ["-Xlinker", "-order_file", "-Xlinker", Context.packageDirectory + "/Scripts/ask-startup.order"],
@@ -355,7 +261,6 @@ let package = Package(
                 .product(name: "TerminalKitStyle", package: "TerminalKit"),
                 .product(name: "TerminalKitText", package: "TerminalKit"),
                 .product(name: "TerminalKitMarkdown", package: "TerminalKit"),
-                // The render benchmark times the parse step on its own.
                 .product(name: "AemiMarkdown", package: "AemiMarkdown")
             ],
             path: "Tests/AskTUITests",
