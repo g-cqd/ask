@@ -23,7 +23,7 @@ concurrency:
 jobs:
   ci:
     name: Checks
-    uses: g-cqd/swift-ci/.github/workflows/swift-ci.yml@dfdec5d8248f70dfa6441225a751b30bf82059d8 # swift-ci dfdec5d
+    uses: g-cqd/swift-ci/.github/workflows/swift-ci.yml@2f915b39ab7ff1438e2cd6f998e517eabc875053 # swift-ci 2f915b3
     permissions:
       contents: write # publishes signed tag archives, CycloneDX SBOM, and release notes
       id-token: write # SLSA build provenance attestation
@@ -54,7 +54,7 @@ jobs:
       # "Version 6.4 is not available". v3 installs through swiftly, which resolves any published
       # toolchain, and 6.4 is published.
       - name: Setup · Install Swift
-        uses: swift-actions/setup-swift@364295d9c23900ce04d4e5cc708387921b4e50f9 # v3.0.0-beta.1
+        uses: g-cqd/swift-ci/setup-swift@2f915b39ab7ff1438e2cd6f998e517eabc875053 # swift-ci 2f915b3
         with:
           swift-version: ${{ env.SWIFT_VERSION }}
       - name: Cache · Restore SwiftPM
