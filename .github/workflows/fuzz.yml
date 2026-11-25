@@ -33,7 +33,7 @@ jobs:
       - name: Setup · Read .swift-version
         run: echo "SWIFT_VERSION=$(cat .swift-version)" >> "$GITHUB_ENV"
       - name: Setup · Install Swift
-        uses: g-cqd/swift-ci/setup-swift@2f915b39ab7ff1438e2cd6f998e517eabc875053 # swift-ci 2f915b3
+        uses: g-cqd/swift-ci/setup-swift@077676883cebb19f6febec70d980be464a3c9d18 # swift-ci 0776768
         with:
           swift-version: ${{ env.SWIFT_VERSION }}
       - name: Cache · Restore Corpus
