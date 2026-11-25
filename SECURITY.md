@@ -15,19 +15,21 @@ public issues or pull requests. Include:
 Reports that reach a secret store (`~/.aws`, `~/.gnupg`, Keychains, `~/.netrc`, SSH private keys, `~/.config/ask`, or
 sibling browser/app stores) or bypass session approval grants are treated as high severity.
 
-## Response targets (SLAs)
+## Response targets (best-effort, solo maintainer)
 
-| Milestone | Target |
-|---|---|
-| Private acknowledgement | Within **3 working days** |
-| Initial triage & severity confirmation | Within **7 calendar days** |
-| Fix & advisory — **Critical** | Within **7 calendar days** |
-| Fix & advisory — **High** | Within **30 calendar days** |
-| Fix — **Medium / Low** | Next scheduled release |
+This project is maintained by a single developer on a best-effort basis; the targets below are realistic guidelines
+rather than contractual SLAs:
+
+| Milestone | Best-effort target |
+| --- | --- |
+| Private acknowledgement | Within **7–14 days** |
+| Initial triage & severity confirmation | Within **30 days** |
+| Fix & advisory — **Critical** | Within **30 days** (sooner when actively exploited) |
+| Fix & advisory — **High** | Within **60–90 days** |
+| Fix — **Medium / Low** | Next scheduled release, as time permits |
 
 Security fixes in released versions are published with a GitHub Security Advisory (and CVE identifier where applicable)
 and named in the release notes.
-
 ## Release verification
 
 Every official `ask` tag release is built in CI, Developer ID signed, hardened-runtime protected, Apple-notarised, and
