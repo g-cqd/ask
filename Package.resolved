@@ -1,5 +1,5 @@
 {
-  "originHash" : "8591900cb344007838bd8108e5e49ff691e55d6b367f760c4afd85d72423fa48",
+  "originHash" : "2781033994176108a930dc2ffb78e31bb992de6ace072d1f1ca396244113c938",
   "pins" : [
     {
       "identity" : "aemi",
@@ -63,6 +63,14 @@
       "location" : "https://github.com/g-cqd/AemiSearch.git",
       "state" : {
         "revision" : "cba5a09c80117aaa6924f2f82ebbf803ba223db8"
+      }
+    },
+    {
+      "identity" : "aemitextui",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/g-cqd/AemiTextUI.git",
+      "state" : {
+        "revision" : "aebc2c6341367ee06f6fdc4a91fe81d41a12deee"
       }
     },
     {
