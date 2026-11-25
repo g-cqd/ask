@@ -29,19 +29,19 @@ let package = Package(
         .library(name: "AskTUI", targets: ["AskTUI"])
     ],
     dependencies: [
-        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "f877981b59e200d0fb31ddd1a7d291c9ac6c96d9"),
+        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "4b047b937f55e53f31b42b62d6f8a56de29869d3"),
         .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "53e572d875cc42ade99083641efdfac7ab865f31"),
         .package(url: "https://github.com/g-cqd/AemiRegex.git", revision: "1e5aba1925a5aef6663de171cc7dab9a335eb09c"),
         .package(
             url: "https://github.com/g-cqd/AemiMarkdown.git",
-            revision: "7e222678876503101697c30dbbcfa8569c4117d7"
+            revision: "269d403d416e3fb5aff9bab9087907d8eb322866"
         ),
         .package(
             url: "https://github.com/g-cqd/AemiMermaid.git",
             revision: "54cd91810a25651ec005643b994cd1ec766f5fdf"
         ),
         .package(url: "https://github.com/g-cqd/AemiHMMML.git", revision: "91e960f896248dad29405b1dfd2ec53d67896a0c"),
-        .package(url: "https://github.com/g-cqd/AemiHTML.git", revision: "633b499b1f7abcfa429832e2207f82b5d9d58d33"),
+        .package(url: "https://github.com/g-cqd/AemiHTML.git", revision: "5a82116c8927372ef77b033379708ebbcc12e21a"),
         .package(url: "https://github.com/g-cqd/AemiSearch.git", revision: "adee41e9144e7f73526c321b025be8de19386c82"),
         .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "340c49040faa49313d5632003d8224d9d0084fb0"),
         .package(url: "https://github.com/swiftlang/swift-subprocess.git", .upToNextMinor(from: "1.0.2")),
