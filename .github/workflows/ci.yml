@@ -26,7 +26,12 @@ jobs:
     uses: g-cqd/swift-ci/.github/workflows/swift-ci.yml@0858386225359c6db52d3e54a1ce8121847d249b # swift-ci 0858386
     permissions:
       contents: write # publishes signed tag archives and release notes
-    secrets: inherit
+    secrets:
+      DEVELOPER_ID_P12: ${{ secrets.DEVELOPER_ID_P12 }}
+      DEVELOPER_ID_P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
+      NOTARY_KEY: ${{ secrets.NOTARY_KEY }}
+      NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+      NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
 
   budgets:
     # After the checks: a tree that fails format, metrics, analyzers or tests is not worth a PTY measurement.

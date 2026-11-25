@@ -43,8 +43,8 @@ public struct CommandEnvironment: Sendable, Equatable {
         let prefixes = configured.withhold.filter { $0.hasSuffix("*") }.map { String($0.dropLast()) }
         let taken = { (name: String) in exact.contains(name) || prefixes.contains { name.hasPrefix($0) } }
         self.init(
-            withheld: credentials.union(Self.wellKnownCredentials).union(exact),
-            withheldPrefixes: credentialPrefixes + prefixes,
+            withheld: credentials.union(Self.wellKnownCredentials).union(Self.executionHijackVariables).union(exact),
+            withheldPrefixes: credentialPrefixes + Self.executionHijackPrefixes + prefixes,
             passed: Set(configured.pass.filter { !taken($0) }),
             shell: configured.shell
         )

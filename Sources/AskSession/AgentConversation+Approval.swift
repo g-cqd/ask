@@ -73,13 +73,18 @@ extension AgentConversation {
     }
 
     /// What the loop for `settings` consults before a call that changes things (roadmap 0134).
+    /// When the sandbox is off (`--no-sandbox`), session grants never auto-approve commands or calls (R-DES-4, N-A1).
     func callGate(for settings: RunSettings) -> ToolCallGate {
-        ToolCallGate(policy: settings.approvalPolicy) { [weak self] in await self?.approveCall($0) ?? false }
+        let sandboxed = !settings.sandbox.isUnrestricted
+        return ToolCallGate(policy: settings.approvalPolicy) { [weak self] in
+            await self?.approveCall($0, allowSessionGrants: sandboxed) ?? false
+        }
     }
 
     /// Asks the person about a call that changes things (roadmap 0134), unless a grant for the session covers it.
-    func approveCall(_ approval: ToolCallApproval) async -> Bool {
-        if approvals.withLock({ $0.calls.covers(approval.scope) }) { return true }
+    /// Session grants are disabled when `allowSessionGrants` is false (e.g. `--no-sandbox`, N-A1 / R-DES-4).
+    func approveCall(_ approval: ToolCallApproval, allowSessionGrants: Bool = true) async -> Bool {
+        if allowSessionGrants, approvals.withLock({ $0.calls.covers(approval.scope) }) { return true }
         // A command, and a codemode script (ADR-0156), are shown whole under the question; a file or a job is named in it.
         let isCommand: Bool = if case .command = approval.scope { true } else { false }
         let isScript = approval.scope == .tool("codemode")
@@ -91,16 +96,16 @@ extension AgentConversation {
                 : "\(approval.tool) \(ToolSummary.line(for: approval.input)). Allow it?"
         let kind: ApprovalKind =
             switch approval.scope {
-                case .command(let words) where words.coverable:
+                case .command(let words) where allowSessionGrants && words.coverable:
                     .command(phrases: words.phrases, programs: words.programs)
                 case .command: .command(phrases: [], programs: [])
-                case .file, .tool, .host: .grant
+                case .file, .tool, .host: allowSessionGrants ? .grant : .confirm
             }
         return await ask(
             question,
             remembering: (nil, nil),
             kind: kind,
-            scope: approval.scope,
+            scope: allowSessionGrants ? approval.scope : nil,
             detail: isCommand || isScript ? ToolSummary.fullInput(for: approval.input) : nil
         )
     }

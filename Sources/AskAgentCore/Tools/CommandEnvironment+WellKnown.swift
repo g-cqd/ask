@@ -18,4 +18,18 @@ extension CommandEnvironment {
         // Services.
         "SLACK_TOKEN", "SLACK_BOT_TOKEN", "STRIPE_SECRET_KEY", "SENTRY_AUTH_TOKEN"
     ]
+
+    /// Shell and tool execution-hijack variables withheld from commands by default (security review 2026-11-25, N-A1):
+    /// variables that cause shells, git, pagers, or dynamic linkers to execute arbitrary code when inherited.
+    public static let executionHijackVariables: Set<String> = Set(
+        "BASH_ENV ENV CDPATH GLOBIGNORE PROMPT_COMMAND PS4 GIT_SSH GIT_SSH_COMMAND GIT_PAGER GIT_EDITOR GIT_SEQUENCE_EDITOR GIT_EXTERNAL_DIFF GIT_ASKPASS GIT_CONFIG_PARAMETERS GIT_CONFIG_COUNT GIT_EXEC_PATH LESSOPEN LESSCLOSE"
+            .split(separator: " ")
+            .map(String.init)
+    )
+
+    /// Execution-hijack variable prefixes withheld by default (N-A1): git `GIT_CONFIG_KEY_*`/`GIT_CONFIG_VALUE_*`
+    /// environment injection and dynamic loader `DYLD_*` overrides.
+    public static let executionHijackPrefixes: [String] = [
+        "GIT_CONFIG_", "DYLD_"
+    ]
 }
