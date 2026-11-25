@@ -17,7 +17,11 @@ extension ScreenComposer {
         inset: Int,
         style: Style
     ) -> [Line] {
-        let flat = text.replacing("\n", with: " ")
+        var flat = text
+        if flat.utf8.contains(where: { $0 == 0x0A || $0 == 0x0D || $0 == 0x09 }) {
+            flat = flat.replacing("\r\n", with: " ").replacing("\r", with: " ").replacing("\n", with: " ")
+                .replacing("\t", with: "    ")
+        }
         let status = ColumnSlicer.split(metadata, columns: 0 ..< width).selected
         let statusCells = UnicodeWidth.displayWidth(of: status)
         let available = Swift.max(0, width - statusCells - (status.isEmpty ? 0 : headerGap))
@@ -204,17 +208,14 @@ extension ScreenComposer {
             inset: inset,
             style: toolStatusStyle(status)
         )
-        guard !shownOutput.isEmpty else { return lines }
-        return lines + [Line(text: "", style: .default)]
-            + body(
-                of: shownOutput,
+        return lines
+            + outputSection(
+                shownOutput,
                 block: block,
                 width: width,
                 inset: inset,
-                style: Style(dim: true),
                 firstLine: TranscriptContent.hardLineCount(of: header),
-                code: output.code,
-                diff: output.diff
+                look: output
             )
     }
 

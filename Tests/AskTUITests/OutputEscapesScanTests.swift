@@ -6,10 +6,10 @@ import Testing
 /// `String.UTF8View` one byte at a time, a sixth of a long session's resume.
 @Suite("An output is read for escapes exactly when it holds one or a control")
 struct OutputEscapesScanTests {
-    /// What the decision was before: an escape, a C1 lead byte, or a control but tab, line feed and carriage return.
+    /// What the decision was before: an escape, a C1 lead byte, a carriage return, or any other control but tab and line feed.
     private static func reference(_ raw: String) -> Bool {
         raw.utf8.contains { $0 == 0x1B || $0 == 0xC2 }
-            || raw.utf8.contains { ($0 < 0x20 && $0 != 0x09 && $0 != 0x0A && $0 != 0x0D) || $0 == 0x7F }
+            || raw.utf8.contains { ($0 < 0x20 && $0 != 0x09 && $0 != 0x0A) || $0 == 0x7F }
     }
 
     @Test func `every byte alone, and inside plain text, decides as before`() {
@@ -23,9 +23,11 @@ struct OutputEscapesScanTests {
         }
     }
 
-    @Test func `plain text, with tabs and both line ends, needs no reading`() {
+    @Test func `plain text, with tabs and line feeds, needs no reading; carriage returns do`() {
         #expect(!OutputEscapes.needsReading(""))
-        #expect(!OutputEscapes.needsReading(String(repeating: "a line\twith tabs été 🙂\r\n", count: 1_000)))
+        #expect(!OutputEscapes.needsReading(String(repeating: "a line\twith tabs été 🙂\n", count: 1_000)))
+        #expect(OutputEscapes.needsReading("a line\r\nnext"))
+        #expect(OutputEscapes.needsReading("In Progress...\rCurrent status:"))
         #expect(OutputEscapes.needsReading(String(repeating: "x", count: 10_000) + "\u{1B}[31m"))
     }
 

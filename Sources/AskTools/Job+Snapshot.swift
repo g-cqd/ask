@@ -1,3 +1,4 @@
+internal import AskAgentCore
 internal import Synchronization
 
 extension Job {
@@ -6,7 +7,10 @@ extension Job {
 
     func snapshot(output: String?) -> JobSnapshot {
         state.withLock { state in
-            let tail = String(decoding: state.recent, as: UTF8.self)
+            let slice =
+                state.totalBytes > state.recent.count
+                ? UTF8Cut.droppingPartialStart(state.recent[...]) : state.recent[...]
+            let tail = String(decoding: slice, as: UTF8.self)
             let note = state.totalBytes > state.recent.count ? "… earlier output not shown\n" : ""
             let lines = state.totalLines + (state.recent.last.map { $0 == 0x0A ? 0 : 1 } ?? 0)
             return JobSnapshot(

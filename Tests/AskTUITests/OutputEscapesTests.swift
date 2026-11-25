@@ -9,10 +9,43 @@ import Testing
 struct OutputEscapesTests {
     private static let esc = "\u{1B}"
 
-    @Test func `output with no escape is kept as it is, with no spans`() {
-        let parsed = OutputEscapes("plain\n\tline\r\n")
-        #expect(parsed.text == "plain\n\tline\r\n")
+    @Test func `output with no escape or carriage return is kept as it is, with no spans`() {
+        let parsed = OutputEscapes("plain\n\tline\n")
+        #expect(parsed.text == "plain\n\tline\n")
         #expect(parsed.lines.isEmpty)
+    }
+
+    @Test func `carriage returns and CRLF become line feeds so progress lines never render as U+FFFD`() {
+        let notary =
+            "Current status: In Progress...\rCurrent status: In Progress....\rCurrent status: Accepted..........Processing complete\n"
+        let parsed = OutputEscapes(notary)
+        #expect(
+            parsed.text
+                == "Current status: In Progress...\nCurrent status: In Progress....\nCurrent status: Accepted..........Processing complete\n"
+        )
+        #expect(!parsed.text.contains("\r"))
+        #expect(parsed.lines.allSatisfy { $0.isEmpty })
+
+        #expect(OutputEscapes("one\r\ntwo\r\nthree").text == "one\ntwo\nthree")
+        #expect(OutputEscapes("a\r\r\nb\n\rc").text == "a\n\nb\n\nc")
+    }
+
+    @Test func `styles carry across CRLF and bare CR line breaks`() {
+        let parsed = OutputEscapes("\(Self.esc)[32mone\r\ntwo\rthree\(Self.esc)[39m")
+        #expect(parsed.text == "one\ntwo\nthree")
+        let green = Style(fg: .indexed(2))
+        #expect(
+            parsed.lines == [
+                [.init(bytes: 0 ..< 3, style: green)],
+                [.init(bytes: 0 ..< 3, style: green)],
+                [.init(bytes: 0 ..< 5, style: green)]
+            ]
+        )
+    }
+
+    @Test func `an unterminated sequence gives up at a carriage return too`() {
+        #expect(OutputEscapes("a\(Self.esc)]0;never ends\rnext").text == "a\nnext")
+        #expect(OutputEscapes("a\(Self.esc)]0;never ends\r\nnext").text == "a\nnext")
     }
 
     @Test func `a colour and bold become a span over the plain text`() {

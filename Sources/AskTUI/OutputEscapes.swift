@@ -2,10 +2,11 @@ internal import TerminalKitStyle
 
 /// A tool's output with its terminal escapes read (note n30). SGR's colours and text attributes, and OSC 8 links ask accepts, become
 /// spans over the plain text. Everything else a program writes is removed whole: cursor moves, clears, titles, the clipboard's OSC 52,
-/// DCS, SOS, PM and APC strings, two-byte escapes, their 8-bit forms, and every control but tab, line feed and carriage return. Nothing
-/// of it reaches the terminal raw, and the text copied or folded is the plain one.
+/// DCS, SOS, PM and APC strings, two-byte escapes, their 8-bit forms, and every control but tab and line feed. Carriage returns
+/// (`\r\n` and bare `\r`, as progress lines write) become line feeds so neither reaches `ScreenBuffer` as a control drawn as U+FFFD
+/// (note n6). Nothing of it reaches the terminal raw, and the text copied or folded is the plain one.
 ///
-/// Bounded like ``TerminalTextFilter``: a line feed, or a sequence longer than any real one, ends a sequence, so one that never ends
+/// Bounded like ``TerminalTextFilter``: a line break, or a sequence longer than any real one, ends a sequence, so one that never ends
 /// cannot hide the rest of the output. A background colour is not kept, so the block's own shows.
 struct OutputEscapes: Sendable, Equatable {
     /// A run of one line's bytes, in the plain text, drawn in a style of its own; its `link` is an OSC 8 target ask accepts.
@@ -14,7 +15,7 @@ struct OutputEscapes: Sendable, Equatable {
         var style: Style
     }
 
-    /// The output without any escape or control but tab, line feed and carriage return.
+    /// The output without any escape or control but tab and line feed, with `\r\n` and bare `\r` turned into `\n`.
     var text: String
     /// Each hard line's spans, by line; empty when the output had no escape at all.
     var lines: [[Span]]
@@ -23,7 +24,7 @@ struct OutputEscapes: Sendable, Equatable {
     static let longest = 4_096
 
     init(_ raw: String) {
-        // Most output has no escape: it is kept as it is, unread.
+        // Most output has no escape or carriage return: it is kept as it is, unread.
         guard Self.needsReading(raw) else {
             text = raw
             lines = []
@@ -36,18 +37,28 @@ struct OutputEscapes: Sendable, Equatable {
         lines = reader.lines
     }
 
-    /// Whether `raw` holds an escape, a C1 lead byte, or a control but tab, line feed and carriage return. One pass over the bytes
-    /// in place: two through `String.UTF8View`, a byte at a time, were a sixth of a long session's resume (t233).
+    /// Whether `raw` holds an escape, a C1 lead byte, a carriage return, or any other control but tab and line feed. One pass over
+    /// the bytes in place: two through `String.UTF8View`, a byte at a time, were a sixth of a long session's resume (t233).
     static func needsReading(_ raw: String) -> Bool {
         var raw = raw
         return raw.withUTF8 { bytes in
             bytes.contains { byte in
                 byte == 0x1B || byte == 0xC2 || byte == 0x7F
-                    || (byte < 0x20 && byte != 0x09 && byte != 0x0A && byte != 0x0D)
+                    || (byte < 0x20 && byte != 0x09 && byte != 0x0A)
             }
         }
     }
 
+    /// `uri` if ask opens links like it, by its own rule (``LinkOpener``): http, https, file or mailto, and safe to write; nil otherwise.
+    static func acceptedLink(_ uri: String) -> String? {
+        guard uri.utf8.count <= 2_048, Style.isSafeLink(uri) else { return nil }
+        let lower = uri.lowercased()
+        let schemes = ["http://", "https://", "file://", "mailto:"]
+        return schemes.contains { lower.hasPrefix($0) } ? uri : nil
+    }
+}
+
+extension OutputEscapes {
     private struct Reader {
         enum State {
             case text, escape, control, string, stringEscape, osc, oscEscape
@@ -64,6 +75,8 @@ struct OutputEscapes: Sendable, Equatable {
         private var runStart = 0
         private var style = Style()
         private var sequence: [UInt8] = []
+        /// Whether the previous byte in `.text` was CR, so an immediately following LF collapses `\r\n` into one `\n`.
+        private var afterCR = false
 
         mutating func step(_ byte: UInt8) {
             if state != .text, state != .lead, givesUp(byte) { return }
@@ -83,15 +96,15 @@ struct OutputEscapes: Sendable, Equatable {
             }
         }
 
-        /// Inside a sequence: a line feed, or one byte past the longest, gives it up and the text goes on; any other byte is kept in it.
+        /// Inside a sequence: a line break, or one byte past the longest, gives it up and the text goes on; any other byte is kept in it.
         private mutating func givesUp(_ byte: UInt8) -> Bool {
-            guard byte == 0x0A || sequence.count > OutputEscapes.longest else {
+            guard byte == 0x0A || byte == 0x0D || sequence.count > OutputEscapes.longest else {
                 sequence.append(byte)
                 return false
             }
             state = .text
             sequence.removeAll(keepingCapacity: true)
-            if byte == 0x0A { text(byte) }
+            if byte == 0x0A || byte == 0x0D { text(byte) }
             return true
         }
 
@@ -131,13 +144,18 @@ struct OutputEscapes: Sendable, Equatable {
         private var endsWithST: Bool { sequence.count >= 2 && sequence.suffix(2).elementsEqual([0xC2, 0x9C]) }
 
         private mutating func text(_ byte: UInt8) {
+            if afterCR {
+                afterCR = false
+                if byte == 0x0A { return }
+            }
             switch byte {
-                case 0x0A:
+                case 0x0A, 0x0D:
                     endLine()
-                    kept.append(byte)
+                    kept.append(0x0A)
                     lineStart = kept.count
                     runStart = kept.count
-                case 0x09, 0x0D: kept.append(byte)
+                    afterCR = byte == 0x0D
+                case 0x09: kept.append(byte)
                 case 0x1B: begin(.escape)
                 case 0xC2: state = .lead
                 case 0x00 ..< 0x20, 0x7F: break
@@ -195,13 +213,5 @@ struct OutputEscapes: Sendable, Equatable {
             next.link = OutputEscapes.acceptedLink(String(decoding: rest[(separator + 1)...], as: UTF8.self))
             change(to: next)
         }
-    }
-
-    /// `uri` if ask opens links like it, by its own rule (``LinkOpener``): http, https, file or mailto, and safe to write; nil otherwise.
-    static func acceptedLink(_ uri: String) -> String? {
-        guard uri.utf8.count <= 2_048, Style.isSafeLink(uri) else { return nil }
-        let lower = uri.lowercased()
-        let schemes = ["http://", "https://", "file://", "mailto:"]
-        return schemes.contains { lower.hasPrefix($0) } ? uri : nil
     }
 }

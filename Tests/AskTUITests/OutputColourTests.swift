@@ -1,5 +1,6 @@
 internal import TerminalKitCodecs
 internal import TerminalKitInput
+internal import TerminalKitRender
 internal import TerminalKitStyle
 internal import Testing
 
@@ -105,5 +106,44 @@ struct OutputColourTests {
 
     @Test func `output with no escape draws as before`() {
         #expect(rows("plain output").allSatisfy { $0.accents.allSatisfy { $0.style.fg != .indexed(1) } })
+    }
+
+    @Test func `bare CR and CRLF tool outputs and tabbed folded headers render with no U+FFFD`() {
+        var state = ScreenState(label: "test")
+        state.transcript.setToolsFoldedByDefault(false)
+        state.transcript.startTool(
+            name: "shell",
+            summary: "",
+            id: "c1",
+            fullInput: "xcrun notarytool submit",
+            command: ToolCommand()
+        )
+        state.transcript.finishTool(
+            .succeeded,
+            output: "Current status: In Progress...\rCurrent status: In Progress....\r\nAccepted\r\n",
+            id: "c1"
+        )
+        state.transcript.startTool(
+            name: "shell",
+            summary: "",
+            id: "c2",
+            fullInput: "printf\t'ok'\r\nsecond",
+            command: ToolCommand()
+        )
+        state.transcript.finishTool(.succeeded, output: "ok", id: "c2")
+        state.transcript.toggleFold(1)
+
+        var composer = ScreenComposer()
+        var buffer = ScreenBuffer(columns: 72, rows: 16)
+        _ = composer.compose(state, into: &buffer)
+        let screen = (0 ..< buffer.rows)
+            .map { row in
+                String((0 ..< buffer.columns).map { buffer[row, $0].character })
+            }
+            .joined(separator: "\n")
+        #expect(!screen.contains("\u{FFFD}"), "screen must not draw replacement characters: \(screen)")
+        #expect(screen.contains("Current status: In Progress..."))
+        #expect(screen.contains("Current status: In Progress...."))
+        #expect(screen.contains("Accepted"))
     }
 }

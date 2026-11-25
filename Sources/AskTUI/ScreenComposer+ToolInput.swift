@@ -51,18 +51,36 @@ extension ScreenComposer {
                 code: context.code?.part == .input ? context.code : nil,
                 diff: name == "edit" ? DiffLook(theme: style.theme) : nil
             )
-            + (shownOutput.isEmpty
-                ? []
-                : [Line(text: "", style: .default)]
-                    + body(
-                        of: shownOutput,
-                        block: block,
-                        width: width,
-                        inset: inset,
-                        style: Style(dim: true),
-                        firstLine: 1 + TranscriptContent.hardLineCount(of: input),
-                        code: outputLook(context.code, style: style).code,
-                        diff: outputLook(context.code, style: style).diff
-                    ))
+            + outputSection(
+                shownOutput,
+                block: block,
+                width: width,
+                inset: inset,
+                firstLine: 1 + TranscriptContent.hardLineCount(of: input),
+                look: outputLook(context.code, style: style)
+            )
+    }
+
+    /// A tool block's dimmed output section: a blank row and the body lines, or empty when there is no output.
+    static func outputSection(
+        _ text: String,
+        block: Int,
+        width: Int,
+        inset: Int,
+        firstLine: Int,
+        look: (code: FileCode?, diff: DiffLook?)
+    ) -> [Line] {
+        guard !text.isEmpty else { return [] }
+        return [Line(text: "", style: .default)]
+            + body(
+                of: text,
+                block: block,
+                width: width,
+                inset: inset,
+                style: Style(dim: true),
+                firstLine: firstLine,
+                code: look.code,
+                diff: look.diff
+            )
     }
 }

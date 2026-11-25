@@ -43,6 +43,16 @@ struct JobOutputTailTests {
         await table.stopAll()
     }
 
+    @Test func `a long single-line UTF-8 output cut mid-scalar produces no U+FFFD`() async throws {
+        let (table, root) = try await run("printf '%s' 'ééééééééééééééééééééEND'; read hold", printed: "END")
+        defer { try? FileManager.default.removeItem(at: root) }
+        // 10 bytes from the end lands in the middle of a 2-byte 'é' (3 bytes for END + 7 bytes = 3.5 'é's).
+        let tail = try #require(table.outputTail(of: "job-1", maximumBytes: 10))
+        #expect(tail.hasPrefix("… earlier output not shown\n"))
+        #expect(tail.hasSuffix("éééEND") && !tail.contains("\u{FFFD}"))
+        await table.stopAll()
+    }
+
     @Test func `an unknown job, or one with no output file, has no tail`() async throws {
         let table = JobTable()
         #expect(table.outputTail(of: "job-9", maximumBytes: 100) == nil)

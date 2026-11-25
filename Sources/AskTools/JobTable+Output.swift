@@ -1,3 +1,4 @@
+internal import AskAgentCore
 internal import Foundation
 
 extension JobTable {
@@ -12,9 +13,11 @@ extension JobTable {
         guard let size = try? handle.seekToEnd() else { return nil }
         let start = size > UInt64(maximumBytes) ? size - UInt64(maximumBytes) : 0
         guard (try? handle.seek(toOffset: start)) != nil, let data = try? handle.readToEnd() else { return nil }
-        let text = String(decoding: data, as: UTF8.self)
-        guard start > 0 else { return text }
-        let whole = text.firstIndex(of: "\n").map { String(text[text.index(after: $0)...]) } ?? text
-        return "… earlier output not shown\n" + whole
+        guard start > 0 else { return String(decoding: data, as: UTF8.self) }
+        let bytes = Array(data)
+        let slice =
+            bytes.firstIndex(of: 0x0A).map { bytes[bytes.index(after: $0)...] }
+            ?? UTF8Cut.droppingPartialStart(bytes[...])
+        return "… earlier output not shown\n" + String(decoding: slice, as: UTF8.self)
     }
 }
