@@ -23,17 +23,25 @@ concurrency:
 jobs:
   ci:
     name: Checks
-    uses: g-cqd/swift-ci/.github/workflows/swift-ci.yml@47a42af8d79c2e5f8a50f9c4a13b0d3b46f2d009 # swift-ci 47a42af
+    uses: g-cqd/swift-ci/.github/workflows/swift-ci.yml@056b8867a3714f40478f36909e110374adffb148 # swift-ci 056b886
     permissions:
       contents: write # publishes signed tag archives, CycloneDX SBOM, and release notes
-      id-token: write # SLSA build provenance attestation
-      attestations: write # SLSA build provenance attestation
     secrets:
       DEVELOPER_ID_P12: ${{ secrets.DEVELOPER_ID_P12 }}
       DEVELOPER_ID_P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
       NOTARY_KEY: ${{ secrets.NOTARY_KEY }}
       NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
       NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
+
+  attest:
+    name: Attest · Build Provenance
+    needs: ci
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+    uses: g-cqd/swift-ci/.github/workflows/attest-release.yml@056b8867a3714f40478f36909e110374adffb148 # swift-ci 056b886
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
 
   budgets:
     # After the checks: a tree that fails format, metrics, analyzers or tests is not worth a PTY measurement.
@@ -54,7 +62,7 @@ jobs:
       # "Version 6.4 is not available". v3 installs through swiftly, which resolves any published
       # toolchain, and 6.4 is published.
       - name: Setup · Install Swift
-        uses: g-cqd/swift-ci/setup-swift@47a42af8d79c2e5f8a50f9c4a13b0d3b46f2d009 # swift-ci 47a42af
+        uses: g-cqd/swift-ci/setup-swift@056b8867a3714f40478f36909e110374adffb148 # swift-ci 056b886
         with:
           swift-version: ${{ env.SWIFT_VERSION }}
       - name: Cache · Restore SwiftPM
