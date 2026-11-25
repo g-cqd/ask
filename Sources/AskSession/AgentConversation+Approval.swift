@@ -155,15 +155,32 @@ extension AgentConversation {
         if let opener = approvals.withLock({ $0.openers.removeValue(forKey: id) }) {
             return opener.resume(returning: choice)
         }
-        approvals.withLock { state in
+        let summary: (kind: String, scope: String) = approvals.withLock { state in
             let scope = state.callScopes.removeValue(forKey: id)
+            let request = state.waiting[id]?.request
+            let destructiveKey = state.waiting[id]?.destructiveKey
             if choice == .session {
-                if let request = state.waiting[id]?.request { state.grants.append(request) }
-                if let key = state.waiting[id]?.destructiveKey { state.destructiveGrants.insert(key) }
+                if let request { state.grants.append(request) }
+                if let destructiveKey { state.destructiveGrants.insert(destructiveKey) }
                 if let scope { state.calls.grant(scope) }
             }
             if choice == .program, case .command(let words)? = scope { state.calls.grantPrograms(words) }
+            if request != nil { return ("sandbox.approval", "widen") }
+            if let destructiveKey { return ("mcp.destructive_approval", destructiveKey) }
+            if case .command(let words)? = scope {
+                return ("tool.command_approval", words.programs.joined(separator: ","))
+            }
+            if case .tool(let name)? = scope { return ("tool.approval", name) }
+            if case .file? = scope { return ("tool.file_approval", "file") }
+            if case .host(let host)? = scope { return ("tool.host_approval", host) }
+            return ("approval.answer", "confirm")
         }
+        SecurityAuditLog.defaultLog()
+            .record(
+                kind: summary.kind,
+                outcome: choice == .deny ? "denied" : (choice == .once ? "allowed_once" : "granted_session"),
+                attributes: ["scope": summary.scope]
+            )
         resolve(id, allowed: choice != .deny)
     }
 
