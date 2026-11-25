@@ -1,3 +1,4 @@
+import AskCore
 import Foundation
 import Testing
 
@@ -91,7 +92,7 @@ struct AgyVersionsTests {
         _ = try await AgyCloudClient(transport: transport, versions: versions).account(accessToken: "t")
         let sent = transport.requests.first { $0.url.path.hasSuffix("loadCodeAssist") }
         let agent = sent?.headers.first { $0.name == "user-agent" }?.value
-        #expect(agent == "antigravity/cli/1.9.2 ask/0 (Antigravity subscription connector)")
+        #expect(agent == "antigravity/cli/1.9.2 ask/\(AskVersion.current) (Antigravity subscription connector)")
     }
 
     @Test func `a request names the version in the header and the envelope`() async throws {
@@ -109,6 +110,8 @@ struct AgyVersionsTests {
         do { for try await _ in stream {} } catch {}
         let sent = try #require(transport.requests.first)
         #expect(sent.headers.first { $0.name == "user-agent" }?.value.hasPrefix("antigravity/cli/1.9.2 ") == true)
-        #expect(String(decoding: sent.body, as: UTF8.self).contains("antigravity/cli/1.9.2 ask/0"))
+        #expect(
+            String(decoding: sent.body, as: UTF8.self).contains("antigravity/cli/1.9.2 ask/\(AskVersion.current)")
+        )
     }
 }

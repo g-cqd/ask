@@ -1,11 +1,12 @@
 internal import AskAI
 public import AskAgentCore
+internal import AskCore
 internal import AskMCP
 internal import Foundation
 
 extension MCPHub {
     /// What ask names itself to a server. Some servers' front doors refuse a client that names nothing.
-    public static let userAgent = "ask/0 (MCP client)"
+    public static let userAgent = "ask/\(AskVersion.current) (MCP client)"
 
     /// The real transports: a child process for a server with a `command`, and an HTTPS connection for one with a `url`.
     /// - Parameters:

@@ -1,6 +1,7 @@
 internal import ArgumentParser
 internal import AskACP
 internal import AskAgentCore
+internal import AskCore
 internal import AskSession
 
 /// `ask serve`: ask as an agent an editor drives, speaking the Agent Client Protocol on standard input and output (ADR-0153).
@@ -14,9 +15,8 @@ struct ServeCommand: AsyncParsableCommand {
 
     func run() async {
         let sessions = ServedSessions()
-        // ask has no version yet (roadmap 0070): "0", as its other identities say.
         await ACPServer.serveStandardStreams(
-            agent: ACPImplementation(name: "ask", title: "ask", version: "0"),
+            agent: ACPImplementation(name: "ask", title: "ask", version: AskVersion.current),
             sessions: { asked in
                 let made = try await sessions.make(
                     in: asked.cwd,

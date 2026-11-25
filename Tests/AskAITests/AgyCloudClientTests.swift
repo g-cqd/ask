@@ -1,4 +1,5 @@
 internal import AemiJSON
+internal import AskCore
 internal import Foundation
 internal import Testing
 
@@ -47,7 +48,10 @@ struct AgyCloudClientTests {
         #expect(request.url.absoluteString == "https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist")
         func header(_ name: String) -> String? { request.headers.first { $0.name == name }?.value }
         #expect(header("authorization") == "Bearer access-test")
-        #expect(header("user-agent") == "antigravity/cli/1.5.6 ask/0 (Antigravity subscription connector)")
+        #expect(
+            header("user-agent")
+                == "antigravity/cli/1.5.6 ask/\(AskVersion.current) (Antigravity subscription connector)"
+        )
         let body = try AemiJSON.parse(request.body).root
         #expect(body["mode"].string == "FULL_ELIGIBILITY_CHECK")
         #expect(body["metadata"]["ideName"].string == "ask")

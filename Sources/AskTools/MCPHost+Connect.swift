@@ -1,5 +1,6 @@
 internal import AskAI
 internal import AskAgentCore
+internal import AskCore
 internal import AskMCP
 internal import Foundation
 internal import Synchronization
@@ -19,7 +20,7 @@ extension MCPHost {
         } catch {
             return fail(server, MCPFailure.describe(error, server: server.name))
         }
-        let connection = MCPConnection(transport: transport, clientName: "ask", clientVersion: "0")
+        let connection = MCPConnection(transport: transport, clientName: "ask", clientVersion: AskVersion.current)
         // Known before it starts, so that stopping the host reaches a server that is still starting.
         let registered = state.withLock { state -> Bool in
             guard !state.stopping else { return false }

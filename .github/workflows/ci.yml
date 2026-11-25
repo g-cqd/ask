@@ -5,6 +5,7 @@ name: CI
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
   merge_group:
   schedule:
@@ -17,14 +18,15 @@ permissions:
 # The budget job's runs: a newer push cancels the previous one's (swift-ci's own jobs have their own group).
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name != 'schedule' && github.ref != 'refs/heads/main' }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') && github.event_name != 'schedule' && github.ref != 'refs/heads/main' }}
 
 jobs:
   ci:
     name: Checks
-    uses: g-cqd/swift-ci/.github/workflows/swift-ci.yml@f5edf0095e3033975b61e5c328cb7464ce1bb7e3 # swift-ci f5edf00
+    uses: g-cqd/swift-ci/.github/workflows/swift-ci.yml@0858386225359c6db52d3e54a1ce8121847d249b # swift-ci 0858386
     permissions:
-      contents: write # reusable publish permission; this package publishes no archives
+      contents: write # publishes signed tag archives and release notes
+    secrets: inherit
 
   budgets:
     # After the checks: a tree that fails format, metrics, analyzers or tests is not worth a PTY measurement.

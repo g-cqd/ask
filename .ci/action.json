@@ -26,6 +26,20 @@
     ],
     "discipline": {}
   },
+  "release": {
+    "executables": [
+      "ask"
+    ],
+    "notes": "docs/releases/{tag}.md",
+    "noteStyle": "freeform",
+    "appleSigning": {
+      "sign": true,
+      "identifier": "ask",
+      "hardenedRuntime": true,
+      "notarize": true,
+      "requireOnTag": true
+    }
+  },
   "commands": [
     {
       "id": "dependency-audit",

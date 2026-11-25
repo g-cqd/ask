@@ -15,6 +15,7 @@ struct Ask: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "ask",
         abstract: "A terminal coding agent: reliable, fast, light.",
+        version: AskVersion.current,
         subcommands: [
             Login.self, Logout.self, ModelsCommand.self, ConnectionsCommand.self, Sessions.self, ConfigCommand.self,
             TrustCommand.self, SkillsCommand.self, KeysCommand.self,
