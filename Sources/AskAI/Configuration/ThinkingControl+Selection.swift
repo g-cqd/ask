@@ -17,7 +17,14 @@ extension ThinkingControl {
         // The provider's default sends nothing, except on a Claude model that always thinks: there it is sent as that adaptive thinking,
         // so its summary can be asked for (roadmap 0167).
         if level == .providerDefault {
-            return model.provider == .anthropic ? providerDefault(descriptor: matching) : nil
+            switch model.provider {
+                case .anthropic: return providerDefault(descriptor: matching)
+                // An Antigravity family has no default of its own on the wire: its default effort names the variant sent.
+                case .agy:
+                    return matching?.defaultReasoningLevel.flatMap(ThinkingLevel.init(rawValue:))
+                        .map(ThinkingControl.effort)
+                default: return nil
+            }
         }
         switch model.provider {
             case .anthropic:
@@ -40,7 +47,13 @@ extension ThinkingControl {
                     return try select(level, model: routed, descriptor: matching, maximumTokens: maximumTokens)
                 }
                 throw .unsupportedProtocol("OpenAI chat completions")
-            case .agy: throw .unsupportedProtocol("Antigravity")
+            // Antigravity has no effort field: a family's efforts are its variants, one id each, which the encoder names.
+            case .agy:
+                guard let matching, !matching.reasoningLevels.isEmpty else { throw .unsupportedProtocol("Antigravity") }
+                guard matching.reasoningLevels.contains(level.rawValue) else {
+                    throw .unavailable(model: model.model, level: level, available: matching.reasoningLevels)
+                }
+                return .effort(level)
             case .apple: throw .unsupportedProtocol("the on-device model")
         }
     }

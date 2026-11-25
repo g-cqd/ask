@@ -44,14 +44,31 @@ struct AgyRequestEncoderTests {
         #expect(root["request"]["generationConfig"]["thinkingConfig"]["includeThoughts"].bool == true)
     }
 
-    @Test func `an explicit thinking control is refused, not silently dropped`() {
-        for control in [ThinkingControl.disabled, .betweenTools, .effort(.high)] {
+    @Test func `a thinking control other than an effort is refused, not silently dropped`() {
+        for control in [ThinkingControl.disabled, .betweenTools, .adaptive, .budget(tokens: 2_048, effort: nil)] {
             #expect(throws: ThinkingError.unsupportedProtocol("Antigravity")) {
                 try AgyEncoderFixtures.encode(
                     AgyEncoderFixtures.request([AgyEncoderFixtures.user("hi")], thinking: control)
                 )
             }
         }
+    }
+
+    /// Antigravity lists each model's efforts as models of their own (`claude-opus-5-5-high`) and has no effort field: an effort names
+    /// the variant, and no control sends the model as it was asked for.
+    @Test func `an effort names the model's variant at that effort, and no control leaves the model as it is`() throws {
+        let effort = try AgyEncoderFixtures.encode(
+            AgyEncoderFixtures.request(
+                [AgyEncoderFixtures.user("hi")],
+                model: "claude-opus-5-5",
+                thinking: .effort(.high)
+            )
+        )
+        #expect(effort["model"].string == "claude-opus-5-5-high")
+        let plain = try AgyEncoderFixtures.encode(
+            AgyEncoderFixtures.request([AgyEncoderFixtures.user("hi")], model: "gemini-4-neon-low")
+        )
+        #expect(plain["model"].string == "gemini-4-neon-low")
     }
 
     @Test func `instructions travel as one system instruction, or not at all`() throws {

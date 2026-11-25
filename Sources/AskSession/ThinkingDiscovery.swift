@@ -4,8 +4,8 @@ internal import Foundation
 
 /// Resolve capabilities only when an explicit nondefault policy needs them. Provider control selection is in AskAI;
 /// this adapter supplies the selected connection's metadata and says what is known, not what inference will accept.
-/// Loading never uses the network: a native Claude model with no cached descriptor is looked up just before its first
-/// request (``lookup(_:model:environment:maximumTokens:)``), because a startup round trip would delay the first frame.
+/// Loading never uses the network: a native Claude model or an Antigravity model with no cached descriptor is looked up just before
+/// its first request (``lookup(_:model:environment:maximumTokens:)``), because a startup round trip would delay the first frame.
 enum ThinkingDiscovery {
     struct Result {
         var model: ResolvedModel
@@ -21,6 +21,7 @@ enum ThinkingDiscovery {
             // A Claude model that always thinks is sent its default as adaptive thinking, so its summary can be asked for. Startup reads
             // the cache only; when it cannot be used (absent, a day old, or written under a subscription token since refreshed), the
             // model is looked up before the first request, as for a chosen level, or its thinking would stream empty (roadmap 0167).
+            if model.provider == .agy { return try agyDefault(model, environment: environment) }
             guard model.provider == .anthropic else {
                 return Result(model: model, control: nil, status: "provider defaults; no control sent", notices: [])
             }
@@ -43,7 +44,7 @@ enum ThinkingDiscovery {
             )
         }
         let (descriptor, notices) = cachedMetadata(model, environment: environment)
-        if model.provider == .anthropic, descriptor == nil {
+        if model.provider == .anthropic || model.provider == .agy, descriptor == nil {
             return Result(
                 model: model,
                 control: nil,
@@ -67,6 +68,32 @@ enum ThinkingDiscovery {
         return Result(model: chosen, control: control, status: status, notices: notices)
     }
 
+    /// An Antigravity family with no level chosen is sent as its default variant, from the cached list; without one it is looked up
+    /// before the first request, since its own name is no id the server takes.
+    private static func agyDefault(_ model: ResolvedModel, environment: [String: String]) throws -> Result {
+        guard let descriptor = cachedMetadata(model, environment: environment).0 else {
+            return Result(
+                model: model,
+                control: nil,
+                status: "provider default; looked up before the first request",
+                notices: [],
+                pending: true
+            )
+        }
+        let control = try ThinkingControl.select(
+            .providerDefault,
+            model: model,
+            descriptor: descriptor,
+            maximumTokens: 0
+        )
+        return Result(
+            model: model,
+            control: control,
+            status: control.map { "provider default: \($0)" } ?? "provider defaults; no control sent",
+            notices: []
+        )
+    }
+
     /// The control for a native model with no cached descriptor: asks Anthropic for the list, which also fills the cache.
     /// - Parameters:
     ///   - level: the user's requested level.
@@ -81,6 +108,22 @@ enum ThinkingDiscovery {
         environment: [String: String],
         maximumTokens: Int
     ) async throws -> ThinkingControl? {
+        // An Antigravity family: the account's list, downloaded now and cached for the next run, names its variants; a list that cannot
+        // be had sends the family's own name, whose refusal then says so.
+        if model.provider == .agy {
+            let listing = try? await ModelDiscovery.agy(environment: environment)
+                .refreshed(now: Date().timeIntervalSince1970)
+            let descriptor = listing?.snapshot.models.first { $0.id == model.model }
+            guard level != .providerDefault else {
+                return try? ThinkingControl.select(
+                    level,
+                    model: model,
+                    descriptor: descriptor,
+                    maximumTokens: maximumTokens
+                )
+            }
+            return try ThinkingControl.select(level, model: model, descriptor: descriptor, maximumTokens: maximumTokens)
+        }
         let catalog = AnthropicModelDiscovery.catalog(environment: environment, connection: model.connection)
         // The provider's default asked for nothing: a list that cannot be had leaves it as it was, rather than failing the request.
         guard level != .providerDefault else {
@@ -116,7 +159,10 @@ enum ThinkingDiscovery {
             case .copilot:
                 snapshot = (try? await ModelDiscovery.copilot(environment: environment).models(now: now))
                     .map { CatalogSnapshot(models: $0) }
-            case .openAICompatible, .agy, .apple: snapshot = nil
+            case .agy:
+                snapshot = try? await ModelDiscovery.agy(environment: environment).refreshed(now: now).snapshot
+            case .openAICompatible, .apple:
+                snapshot = nil
         }
         return snapshot?.models.first { $0.id == model.model }
     }
@@ -146,7 +192,9 @@ enum ThinkingDiscovery {
                         try ModelDiscovery.copilot(environment: environment).cached(now: now)?
                             .first { $0.id == model.model }, []
                     )
-                case .openAICompatible, .agy, .apple: return (nil, [])
+                case .agy:
+                    return (try ModelDiscovery.agy(environment: environment).cachedModel(model.model, now: now), [])
+                case .openAICompatible, .apple: return (nil, [])
             }
         } catch { return (nil, ["Thinking catalog not used: \(error)"]) }
     }

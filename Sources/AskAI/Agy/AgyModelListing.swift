@@ -50,8 +50,16 @@ enum AgyModelListing {
         let kept = all.filter { $0.unsuitable == nil }
         guard !kept.isEmpty else { throw ModelCatalogError.noModels }
         let standard = root["defaultAgentModelId"].string
+        // Each family offered at several efforts comes first, before its variants: the name a person picks, and the one sessions and
+        // configurations named before the server listed efforts apart.
+        let families = Self.families(
+            root,
+            variants: Dictionary(kept.map { ($0.id, $0) }) { first, _ in first },
+            order: all.map(\.id),
+            standard: standard
+        )
         return AgyModelList(
-            models: all,
+            models: families + all,
             defaultModelID: standard.flatMap { id in kept.contains { $0.id == id } ? id : nil }
         )
     }

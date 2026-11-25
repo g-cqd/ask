@@ -128,10 +128,11 @@ struct AgyClientTests {
         Issue.record("a cut stream was not an error")
     }
 
-    @Test func `an explicit thinking control fails before anything is sent`() async throws {
+    /// An effort names the model's variant (``AgyRequestEncoder``); any other control has no way onto the wire.
+    @Test func `a thinking control other than an effort fails before anything is sent`() async throws {
         let transport = SequencedTransport([.json(200, try Self.fixture("stream-claude-call"))])
         var asked = Self.request
-        asked.thinking = .effort(.high)
+        asked.thinking = .disabled
         await #expect(throws: ThinkingError.unsupportedProtocol("Antigravity")) {
             _ = try await Self.events(transport, asked)
         }

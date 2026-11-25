@@ -80,3 +80,7 @@ Claude's thinking is shown: ask asks for its summary (`display: "summarized"`), 
 thinking empty. On a model that always thinks (Opus 5.5, Sonnet 5.5), `default` is sent as the adaptive thinking it is, at the model's
 own effort, so that the summary can be asked for too. On a model where thinking is optional, `default` sends nothing; choose an effort
 to see its thinking.
+
+Antigravity offers each model at several efforts, each its own model (`claude-opus-5-5-low`, `claude-opus-5-5-high`). Name the model
+without the effort (`claude-opus-5-5`) and ask sends the effort you chose, or the server's usual one with `default`; `ask models agy`
+shows the efforts each offers. A name with the effort in it is sent as it is.

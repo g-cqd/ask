@@ -16,8 +16,9 @@ public enum AgyRequestEncoder {
     ///   - promptID: an id for the prompt it belongs to.
     ///   - version: the `agy` version the identity names (``AgyVersions``).
     /// - Returns: the JSON body.
-    /// - Throws: ``ThinkingError/unsupportedProtocol(_:)`` when the request asks for an explicit thinking control, which this protocol
-    ///   has no tested way to carry.
+    /// - Throws: ``ThinkingError/unsupportedProtocol(_:)`` when the request asks for a thinking control other than an effort, which this
+    ///   protocol has no way to carry. An effort names the model's variant at that effort, `<model>-<effort>`, the only way the server
+    ///   takes one (``AgyModelListing/families(_:variants:order:standard:)``).
     public static func encode(
         _ request: ModelRequest,
         project: String,
@@ -25,13 +26,21 @@ public enum AgyRequestEncoder {
         promptID: String,
         version: String = AgyVersions.known
     ) throws(ThinkingError) -> [UInt8] {
-        if request.thinking != nil { throw .unsupportedProtocol("Antigravity") }
+        let model: String
+        switch request.thinking {
+            case nil:
+                model = request.model
+            case .effort(let level):
+                model = "\(request.model)-\(level.rawValue)"
+            case .disabled, .betweenTools, .budget, .adaptive:
+                throw .unsupportedProtocol("Antigravity")
+        }
         let contents = Content.all(in: request)
         var writer = JSONStreamWriter(capacity: 4_096)
         writer.object { writer in
             writer.field("project", project)
             writer.field("requestId", requestID)
-            writer.field("model", request.model)
+            writer.field("model", model)
             writer.field("userAgent", AgyCloud.userAgent(version: version))
             writer.field("requestType", "agent")
             writer.field("userPromptId", promptID)

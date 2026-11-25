@@ -21,7 +21,16 @@ public enum ThinkingOptions {
                 if descriptor?.api == "/v1/messages" { return choices(for: .anthropic, descriptor: descriptor) }
                 if descriptor?.api == "/responses" { return choices(for: .codex, descriptor: descriptor) }
                 return nil
-            case .openAICompatible, .agy, .apple: return nil
+            case .openAICompatible, .apple:
+                return nil
+            // An Antigravity family offers the efforts it has variants for; any other model is one effort, fixed by its id.
+            case .agy:
+                guard let descriptor, !descriptor.reasoningLevels.isEmpty else { return nil }
+                return Choices(
+                    levels: descriptor.reasoningLevels.compactMap(ThinkingLevel.init(rawValue:)),
+                    verified: true,
+                    serverDefault: descriptor.defaultReasoningLevel.flatMap(ThinkingLevel.init(rawValue:))
+                )
             case .anthropic:
                 guard let descriptor, descriptor.supportsThinking != false else {
                     return descriptor == nil ? Choices(levels: Self.every, verified: false, serverDefault: nil) : nil
