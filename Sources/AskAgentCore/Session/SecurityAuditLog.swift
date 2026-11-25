@@ -1,3 +1,4 @@
+internal import AemiJSON
 public import Foundation
 internal import Synchronization
 
@@ -56,10 +57,9 @@ public final class SecurityAuditLog: Sendable {
             outcome: Self.sanitize(outcome),
             attributes: bounded
         )
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
-        guard var line = try? encoder.encode(event) else { return }
-        line.append(0x0A)
+        guard var bytes = try? AemiJSON.JSONEncoder().encodeToBytes(event) else { return }
+        bytes.append(0x0A)
+        let line = Data(bytes)
         lock.withLock { _ in
             Self.append(line, to: fileURL)
         }
@@ -69,10 +69,10 @@ public final class SecurityAuditLog: Sendable {
     public func readEvents() -> [Event] {
         lock.withLock { _ in
             guard let data = try? Data(contentsOf: fileURL) else { return [] }
-            let decoder = JSONDecoder()
+            let decoder = AemiJSON.JSONDecoder()
             return data.split(separator: 0x0A)
                 .compactMap { slice in
-                    try? decoder.decode(Event.self, from: Data(slice))
+                    try? decoder.decode(Event.self, from: Array(slice))
                 }
         }
     }
@@ -94,6 +94,7 @@ public final class SecurityAuditLog: Sendable {
         {
             let rotated = url.deletingPathExtension().appendingPathExtension("1.jsonl")
             try? fm.removeItem(at: rotated)
+            // try?: best-effort rotation of the security audit log; logging must never crash or block user approvals
             try? fm.moveItem(at: url, to: rotated)
         }
         if !fm.fileExists(atPath: url.path) {

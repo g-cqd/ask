@@ -18,7 +18,9 @@ struct SubprocessInventoryTests {
         "Reexec.swift": "/reload replaces ask with its new build: execve, not a child",
         "OpenerLaunch.swift": "the person's own opener command, started on their click (ADR-0148)",
         "CommandCheck.swift":
-            "a command is parsed by the shell that will run it, and read by shellcheck, before it runs (ADR-0139)"
+            "a command is parsed by the shell that will run it, and read by shellcheck, before it runs (ADR-0139)",
+        "MediaDecodeHost.swift":
+            "untrusted image, PDF, and video decoding runs in a zero-network Seatbelt child under sandbox-exec (N-A2 / R-DES-2)"
     ]
 
     private static let launches = [

@@ -75,82 +75,31 @@ public struct ReadTool: ArgumentTool {
         let asked = arguments.maxImages ?? arguments.count
         let maximumImages = min(Self.largestImages, max(1, asked ?? Self.defaultImages))
         if VideoReader.looksLikeVideo(header) {
-            let request = VideoReader.Request(
-                at: arguments.at,
-                // One number says how many pictures (ADR-0164): a video's frames are that many, and 4 when the call does not say.
-                count: asked.map { _ in maximumImages },
-                every: arguments.every,
-                start: arguments.start,
-                end: arguments.end,
-                maximumImages: maximumImages
-            )
-            let allowance = ImageReader.Allowance(context.imageLimits)
-            if let executable = mediaDecoderExecutable, !context.sandbox.isUnrestricted {
-                return try await ScopedFile.withCopy(
-                    of: url,
-                    shownAs: arguments.path,
-                    limit: FileTools.maximumMediaBytes,
-                    in: context
-                ) { copy throws(ToolFailure) in
-                    try await MediaDecodeHost.runSandboxed(
-                        MediaDecodeHost.Request(
-                            kind: .video,
-                            filePath: copy.path,
-                            shownPath: arguments.path,
-                            maximumImages: maximumImages,
-                            at: request.at,
-                            count: request.count,
-                            every: request.every,
-                            start: request.start,
-                            end: request.end,
-                            imageLimits: context.imageLimits
-                        ),
-                        executable: executable
-                    )
-                }
-            }
-            if context.sandbox.isUnrestricted {
-                return try await VideoReader.read(url, path: arguments.path, request, allowance: allowance)
-            }
-            // AVFoundation opens a path, and a path can be swapped after the check: it reads a verified copy instead.
-            return try await ScopedFile.withCopy(
-                of: url,
-                shownAs: arguments.path,
-                limit: FileTools.maximumMediaBytes,
+            return try await readVideo(
+                at: url,
+                arguments: arguments,
+                asked: asked,
+                maximumImages: maximumImages,
                 in: context
-            ) { copy throws(ToolFailure) in
-                try await VideoReader.read(copy, path: arguments.path, request, allowance: allowance)
-            }
+            )
         }
         let isPDF = PDFReader.isPDF(header)
         let isImage = ImageReader.mediaType(of: header) != nil
         if let executable = mediaDecoderExecutable, !context.sandbox.isUnrestricted, isPDF || isImage {
-            return try await ScopedFile.withCopy(
-                of: url,
-                shownAs: arguments.path,
-                limit: FileTools.maximumMediaBytes,
+            return try await readMediaSandboxed(
+                at: url,
+                kind: isPDF ? .pdf : .image,
+                arguments: arguments,
+                maximumImages: maximumImages,
+                executable: executable,
                 in: context
-            ) { copy throws(ToolFailure) in
-                try await MediaDecodeHost.runSandboxed(
-                    MediaDecodeHost.Request(
-                        kind: isPDF ? .pdf : .image,
-                        filePath: copy.path,
-                        shownPath: arguments.path,
-                        pages: arguments.pages,
-                        render: arguments.render ?? false,
-                        maximumImages: maximumImages,
-                        imageLimits: context.imageLimits
-                    ),
-                    executable: executable
-                )
-            }
+            )
         }
-        let isMedia = isImage || isPDF
         let bytes = try FileTools.bytes(
             at: url,
             shownAs: arguments.path,
             in: context,
-            limit: isMedia ? FileTools.maximumMediaBytes : FileTools.maximumFileBytes
+            limit: (isImage || isPDF) ? FileTools.maximumMediaBytes : FileTools.maximumFileBytes
         )
         if PDFReader.isPDF(bytes) {
             return try PDFReader.read(
@@ -180,5 +129,77 @@ public struct ReadTool: ArgumentTool {
         return ToolOutput(
             lines[(first - 1) ..< last].joined(separator: "\n") + "\n[lines \(first)–\(last) of \(lines.count)]"
         )
+    }
+
+    private func readVideo(
+        at url: URL,
+        arguments: Arguments,
+        asked: Int?,
+        maximumImages: Int,
+        in context: ToolContext
+    ) async throws(ToolFailure) -> ToolOutput {
+        let request = VideoReader.Request(
+            at: arguments.at,
+            // One number says how many pictures (ADR-0164): a video's frames are that many, and 4 when the call does not say.
+            count: asked.map { _ in maximumImages },
+            every: arguments.every,
+            start: arguments.start,
+            end: arguments.end,
+            maximumImages: maximumImages
+        )
+        let allowance = ImageReader.Allowance(context.imageLimits)
+        if let executable = mediaDecoderExecutable, !context.sandbox.isUnrestricted {
+            return try await ScopedFile.withCopy(
+                of: url,
+                shownAs: arguments.path,
+                limit: FileTools.maximumMediaBytes,
+                in: context
+            ) { copy throws(ToolFailure) in
+                var media = MediaDecodeHost.Request(kind: .video, filePath: copy.path, shownPath: arguments.path)
+                media.maximumImages = maximumImages
+                media.at = request.at
+                media.count = request.count
+                media.every = request.every
+                media.start = request.start
+                media.end = request.end
+                media.imageLimits = context.imageLimits
+                return try await MediaDecodeHost.runSandboxed(media, executable: executable)
+            }
+        }
+        if context.sandbox.isUnrestricted {
+            return try await VideoReader.read(url, path: arguments.path, request, allowance: allowance)
+        }
+        // AVFoundation opens a path, and a path can be swapped after the check: it reads a verified copy instead.
+        return try await ScopedFile.withCopy(
+            of: url,
+            shownAs: arguments.path,
+            limit: FileTools.maximumMediaBytes,
+            in: context
+        ) { copy throws(ToolFailure) in
+            try await VideoReader.read(copy, path: arguments.path, request, allowance: allowance)
+        }
+    }
+
+    private func readMediaSandboxed(
+        at url: URL,
+        kind: MediaDecodeHost.Request.Kind,
+        arguments: Arguments,
+        maximumImages: Int,
+        executable: String,
+        in context: ToolContext
+    ) async throws(ToolFailure) -> ToolOutput {
+        try await ScopedFile.withCopy(
+            of: url,
+            shownAs: arguments.path,
+            limit: FileTools.maximumMediaBytes,
+            in: context
+        ) { copy throws(ToolFailure) in
+            var media = MediaDecodeHost.Request(kind: kind, filePath: copy.path, shownPath: arguments.path)
+            media.pages = arguments.pages
+            media.render = arguments.render ?? false
+            media.maximumImages = maximumImages
+            media.imageLimits = context.imageLimits
+            return try await MediaDecodeHost.runSandboxed(media, executable: executable)
+        }
     }
 }

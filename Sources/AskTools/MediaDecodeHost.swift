@@ -1,3 +1,4 @@
+internal import AemiJSON
 public import AskAI
 public import AskAgentCore
 internal import Foundation
@@ -20,8 +21,8 @@ public enum MediaDecodeHost {
         public var filePath: String
         public var shownPath: String
         public var pages: String?
-        public var render: Bool
-        public var maximumImages: Int
+        public var render = false
+        public var maximumImages = 8
         public var at: [Double]?
         public var count: Int?
         public var every: Double?
@@ -29,32 +30,10 @@ public enum MediaDecodeHost {
         public var end: Double?
         public var imageLimits: ImageLimits?
 
-        public init(
-            kind: Kind,
-            filePath: String,
-            shownPath: String,
-            pages: String? = nil,
-            render: Bool = false,
-            maximumImages: Int = 8,
-            at: [Double]? = nil,
-            count: Int? = nil,
-            every: Double? = nil,
-            start: Double? = nil,
-            end: Double? = nil,
-            imageLimits: ImageLimits? = nil
-        ) {
+        public init(kind: Kind, filePath: String, shownPath: String) {
             self.kind = kind
             self.filePath = filePath
             self.shownPath = shownPath
-            self.pages = pages
-            self.render = render
-            self.maximumImages = maximumImages
-            self.at = at
-            self.count = count
-            self.every = every
-            self.start = start
-            self.end = end
-            self.imageLimits = imageLimits
         }
     }
 
@@ -94,13 +73,13 @@ public enum MediaDecodeHost {
         let inputData = FileHandle.standardInput.readDataToEndOfFile()
         let response: Response
         do {
-            let request = try JSONDecoder().decode(Request.self, from: inputData)
+            let request = try AemiJSON.JSONDecoder().decode(Request.self, from: Array(inputData))
             response = await decodeLocally(request)
         } catch {
             response = Response(content: "Media decoder received malformed request.", isError: true, images: [])
         }
-        if let encoded = try? JSONEncoder().encode(response) {
-            FileHandle.standardOutput.write(encoded)
+        if let encoded = try? AemiJSON.JSONEncoder().encodeToBytes(response) {
+            FileHandle.standardOutput.write(Data(encoded))
         }
     }
 
@@ -156,7 +135,7 @@ public enum MediaDecodeHost {
     /// network, zero inherited credentials, and read-only access solely to `request.filePath`'s private directory.
     static func runSandboxed(_ request: Request, executable: String) async throws(ToolFailure) -> ToolOutput {
         let payload: Data
-        do { payload = try JSONEncoder().encode(request) } catch {
+        do { payload = Data(try AemiJSON.JSONEncoder().encodeToBytes(request)) } catch {
             throw ToolFailure("\(request.shownPath) could not be prepared for decoding.")
         }
         let policy = sandboxPolicy(for: request.filePath, executable: executable)
@@ -179,7 +158,7 @@ public enum MediaDecodeHost {
             throw ToolFailure("\(request.shownPath): sandboxed media decoder failed to run.")
         }
         guard status.isSuccess, !stdout.isEmpty,
-            let decoded = try? JSONDecoder().decode(Response.self, from: stdout)
+            let decoded = try? AemiJSON.JSONDecoder().decode(Response.self, from: Array(stdout))
         else {
             throw ToolFailure("\(request.shownPath) could not be decoded in the media sandbox.")
         }

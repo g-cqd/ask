@@ -155,7 +155,18 @@ extension AgentConversation {
         if let opener = approvals.withLock({ $0.openers.removeValue(forKey: id) }) {
             return opener.resume(returning: choice)
         }
-        let summary: (kind: String, scope: String) = approvals.withLock { state in
+        let summary = recordApprovalDecision(id: id, choice: choice)
+        SecurityAuditLog.defaultLog()
+            .record(
+                kind: summary.kind,
+                outcome: choice == .deny ? "denied" : (choice == .once ? "allowed_once" : "granted_session"),
+                attributes: ["scope": summary.scope]
+            )
+        resolve(id, allowed: choice != .deny)
+    }
+
+    private func recordApprovalDecision(id: Int, choice: ApprovalChoice) -> (kind: String, scope: String) {
+        approvals.withLock { state in
             let scope = state.callScopes.removeValue(forKey: id)
             let request = state.waiting[id]?.request
             let destructiveKey = state.waiting[id]?.destructiveKey
@@ -165,23 +176,24 @@ extension AgentConversation {
                 if let scope { state.calls.grant(scope) }
             }
             if choice == .program, case .command(let words)? = scope { state.calls.grantPrograms(words) }
-            if request != nil { return ("sandbox.approval", "widen") }
-            if let destructiveKey { return ("mcp.destructive_approval", destructiveKey) }
-            if case .command(let words)? = scope {
-                return ("tool.command_approval", words.programs.joined(separator: ","))
-            }
-            if case .tool(let name)? = scope { return ("tool.approval", name) }
-            if case .file? = scope { return ("tool.file_approval", "file") }
-            if case .host(let host)? = scope { return ("tool.host_approval", host) }
-            return ("approval.answer", "confirm")
+            return Self.auditSummary(request: request, destructiveKey: destructiveKey, scope: scope)
         }
-        SecurityAuditLog.defaultLog()
-            .record(
-                kind: summary.kind,
-                outcome: choice == .deny ? "denied" : (choice == .once ? "allowed_once" : "granted_session"),
-                attributes: ["scope": summary.scope]
-            )
-        resolve(id, allowed: choice != .deny)
+    }
+
+    private static func auditSummary(
+        request: SandboxRequest?,
+        destructiveKey: String?,
+        scope: CallScope?
+    ) -> (kind: String, scope: String) {
+        if request != nil { return ("sandbox.approval", "widen") }
+        if let destructiveKey { return ("mcp.destructive_approval", destructiveKey) }
+        switch scope {
+            case .command(let words): return ("tool.command_approval", words.programs.joined(separator: ","))
+            case .tool(let name): return ("tool.approval", name)
+            case .file: return ("tool.file_approval", "file")
+            case .host(let host): return ("tool.host_approval", host)
+            case nil: return ("approval.answer", "confirm")
+        }
     }
 
     /// Answers question `id` once; a second answer, or one to a question already answered, does nothing.

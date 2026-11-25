@@ -26,11 +26,10 @@ public final class JobTable: Sendable {
     private let filePrefix: String
 
     /// The environment commands inherit, before a run's policy takes from it what it withholds (ADR-0106).
-    private let environment: [String: String]
+    let environment: [String: String]
 
-    /// Private `0700` per-table scratch directory handed to sandboxed commands via `TMPDIR` (MED-07): keeps temporary
-    /// files created by commands isolated from other processes' files under shared `/tmp` / `$TMPDIR`.
-    private let privateTempDirectory: String?
+    /// Private `0700` per-table scratch directory handed to sandboxed commands via `TMPDIR` (MED-07).
+    let privateTempDirectory: String?
 
     /// An empty table whose commands inherit ask's own environment, less what a run's policy withholds.
     public convenience init() { self.init(environment: ProcessInfo.processInfo.environment) }
@@ -39,17 +38,7 @@ public final class JobTable: Sendable {
     public init(environment: [String: String]) {
         self.environment = environment
         filePrefix = "\(Int(Date().timeIntervalSince1970))-\(getpid())"
-        let scratch = FileManager.default.temporaryDirectory
-            .appending(path: "ask-tmp-\(getpid())-\(UUID().uuidString)")
-        if (try? FileManager.default.createDirectory(
-            at: scratch,
-            withIntermediateDirectories: false,
-            attributes: [.posixPermissions: 0o700]
-        )) != nil {
-            privateTempDirectory = scratch.path
-        } else {
-            privateTempDirectory = nil
-        }
+        privateTempDirectory = Self.makePrivateTempDirectory()
     }
 
     deinit {
@@ -252,21 +241,5 @@ public final class JobTable: Sendable {
         let all = jobs.withLock { Array($0.values) }
         for job in all { job.signalGroup(SIGTERM) }
         for job in all { job.signalGroup(SIGKILL) }
-    }
-}
-
-extension JobTable {
-    /// What a command in `context` is given of ask's environment: the policy's filter, a private `0700` `TMPDIR`
-    /// when sandboxed (MED-07), and under the `provider` network level the proxy's address, so its traffic goes where
-    /// the sandbox lets it (roadmap 0021).
-    func commandEnvironment(for context: ToolContext) -> [String: String] {
-        var values = context.commandEnvironment.filtered(environment)
-        if !context.sandbox.isUnrestricted, let privateTempDirectory {
-            values["TMPDIR"] = privateTempDirectory
-        }
-        if context.sandbox.network == .provider {
-            values.merge(ProviderAccess.commandEnvironment()) { _, proxy in proxy }
-        }
-        return values
     }
 }
