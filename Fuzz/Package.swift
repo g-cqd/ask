@@ -10,9 +10,9 @@ let package = Package(
     dependencies: [
         .package(name: "ask", path: ".."),
         // The same revisions ask pins: one revision of a package in a graph.
-        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "53e572d875cc42ade99083641efdfac7ab865f31"),
-        .package(url: "https://github.com/g-cqd/AemiSearch.git", revision: "adee41e9144e7f73526c321b025be8de19386c82"),
-        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "f877981b59e200d0fb31ddd1a7d291c9ac6c96d9")
+        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "fdcf306b1ffbbd29161df787ae2ea97e56718d2c"),
+        .package(url: "https://github.com/g-cqd/AemiSearch.git", revision: "cba5a09c80117aaa6924f2f82ebbf803ba223db8"),
+        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "ac1e90640d8220374ed0590c4227e521c6421729")
     ],
     targets: [
         .executableTarget(
