@@ -15,11 +15,11 @@ struct NoiseVectorTests {
 
         let protocol_name: String  // swiftlint:disable:this identifier_name
         let init_prologue: String  // swiftlint:disable:this identifier_name
-        let init_static: String  // swiftlint:disable:this identifier_name
+        let init_static: String?  // swiftlint:disable:this identifier_name
         let init_ephemeral: String  // swiftlint:disable:this identifier_name
         let init_remote_static: String?  // swiftlint:disable:this identifier_name
         let resp_static: String  // swiftlint:disable:this identifier_name
-        let resp_ephemeral: String  // swiftlint:disable:this identifier_name
+        let resp_ephemeral: String?  // swiftlint:disable:this identifier_name
         let handshake_hash: String  // swiftlint:disable:this identifier_name
         let messages: [Message]
     }
@@ -27,7 +27,7 @@ struct NoiseVectorTests {
     private struct File: Decodable { let vectors: [Vector] }
 
     private static let fixture = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
-        .appending(path: "Fixtures/Noise/cacophony-xx-ik.json")
+        .appending(path: "Fixtures/Noise/cacophony.json")
 
     private static func vector(_ pattern: NoiseHandshake.Pattern) throws -> Vector {
         let file = try JSONDecoder().decode(File.self, from: Data(contentsOf: fixture))
@@ -58,8 +58,8 @@ struct NoiseVectorTests {
         var initiator = try NoiseHandshake(
             pattern: pattern,
             initiator: true,
-            localStatic: try Self.key(vector.init_static),
-            remoteStatic: pattern == .ik ? respondersStatic.publicKey : nil,
+            localStatic: try vector.init_static.map(Self.key),
+            remoteStatic: pattern.isOneWay || pattern == .ik ? respondersStatic.publicKey : nil,
             prologue: Self.bytes(vector.init_prologue),
             ephemeral: try Self.key(vector.init_ephemeral)
         )
@@ -68,7 +68,7 @@ struct NoiseVectorTests {
             initiator: false,
             localStatic: respondersStatic,
             prologue: Self.bytes(vector.init_prologue),
-            ephemeral: try Self.key(vector.resp_ephemeral)
+            ephemeral: try vector.resp_ephemeral.map(Self.key)
         )
         let handshakeLength = pattern.messages.count
         for (index, message) in vector.messages.prefix(handshakeLength).enumerated() {
@@ -84,16 +84,16 @@ struct NoiseVectorTests {
         #expect(initiator.isComplete && responder.isComplete)
         #expect(initiator.handshakeHash == Self.bytes(vector.handshake_hash))
         #expect(responder.handshakeHash == initiator.handshakeHash)
-        #expect(
-            responder.remoteStatic?.rawRepresentation == (try Self.key(vector.init_static)).publicKey.rawRepresentation
-        )
+        if let initStatic = vector.init_static {
+            #expect(responder.remoteStatic?.rawRepresentation == (try Self.key(initStatic)).publicKey.rawRepresentation)
+        }
 
         var initiatorChannel = try initiator.transport()
         var responderChannel = try responder.transport()
         for (offset, message) in vector.messages.dropFirst(handshakeLength).enumerated() {
             let index = handshakeLength + offset
             let payload = Self.bytes(message.payload)
-            let writerIsInitiator = index % 2 == 0
+            let writerIsInitiator = pattern.isOneWay || index % 2 == 0
             let sealed =
                 writerIsInitiator ? try initiatorChannel.seal(payload) : try responderChannel.seal(payload)
             #expect(sealed == Self.bytes(message.ciphertext), "transport message \(index)")

@@ -1,14 +1,15 @@
 package import CryptoKit
 
-/// A Noise handshake (revision 34, section 5.3) over `25519_ChaChaPoly_SHA256`, for the two patterns ADR-0170 uses: `XX` between a
-/// node and the gateway, each learning the other's static key in the handshake, and `IK` from a controller to a node whose static key
-/// it already holds. A handshake is written and read message by message; once its last message is through, ``transport`` gives the
+/// A Noise handshake (revision 34, section 5.3) over `25519_ChaChaPoly_SHA256`, for the patterns ADR-0170 uses: `XX` between a node
+/// and the gateway, each learning the other's static key in the handshake; `IK` from a controller to a node whose static key it
+/// already holds; and the one-way `N`, which seals a node's list to a controller's key. A handshake is written and read message by message; once its last message is through, ``transport`` gives the
 /// two cipher states of the channel.
 package struct NoiseHandshake: Sendable {
     /// The patterns ADR-0170 uses.
     package enum Pattern: String, Sendable, CaseIterable {
         case xx = "XX"
         case ik = "IK"
+        case n = "N"
 
         enum Token: Sendable { case e, s, ee, es, se, ss }
 
@@ -17,11 +18,15 @@ package struct NoiseHandshake: Sendable {
             switch self {
                 case .xx: [[.e], [.e, .ee, .s, .es], [.s, .se]]
                 case .ik: [[.e, .es, .s, .ss], [.e, .ee, .se]]
+                case .n: [[.e, .es]]
             }
         }
 
-        /// The keys known before the handshake, hashed in order: the responder's static key for `IK`.
-        var respondersStaticIsKnown: Bool { self == .ik }
+        /// The keys known before the handshake, hashed in order: the responder's static key for `IK` and `N`.
+        var respondersStaticIsKnown: Bool { self != .xx }
+
+        /// Whether only the initiator sends, once the handshake is through (section 7.4).
+        package var isOneWay: Bool { self == .n }
     }
 
     /// Why a handshake stopped.
@@ -36,7 +41,7 @@ package struct NoiseHandshake: Sendable {
     package let pattern: Pattern
     package let isInitiator: Bool
     private var symmetric: NoiseSymmetricState
-    private let localStatic: PrivateKey
+    private let localStatic: PrivateKey?
     private var localEphemeral: PrivateKey?
     /// The ephemeral a test fixes, used instead of a fresh one; never set outside tests.
     private let fixedEphemeral: PrivateKey?
@@ -48,7 +53,7 @@ package struct NoiseHandshake: Sendable {
     /// - Parameters:
     ///   - pattern: `XX` or `IK`.
     ///   - initiator: whether this side writes the first message.
-    ///   - localStatic: this side's static key.
+    ///   - localStatic: this side's static key; nil only for `N`'s initiator, which has none.
     ///   - remoteStatic: the responder's static key, which `IK`'s initiator must know; nil otherwise.
     ///   - prologue: data both sides must agree on, such as the protocol version and the channel's purpose.
     ///   - ephemeral: for test vectors only: the ephemeral key to use.
@@ -56,7 +61,7 @@ package struct NoiseHandshake: Sendable {
     package init(
         pattern: Pattern,
         initiator: Bool,
-        localStatic: PrivateKey,
+        localStatic: PrivateKey?,
         remoteStatic: PublicKey? = nil,
         prologue: [UInt8] = [],
         ephemeral: PrivateKey? = nil
@@ -69,7 +74,7 @@ package struct NoiseHandshake: Sendable {
         symmetric = NoiseSymmetricState(protocolName: "Noise_\(pattern.rawValue)_25519_ChaChaPoly_SHA256")
         symmetric.mixHash(prologue)
         if pattern.respondersStaticIsKnown {
-            let responder = initiator ? remoteStatic : localStatic.publicKey
+            let responder = initiator ? remoteStatic : localStatic?.publicKey
             guard let responder else { throw .missingKey }
             symmetric.mixHash(Array(responder.rawRepresentation))
         }
@@ -99,6 +104,7 @@ package struct NoiseHandshake: Sendable {
                         out += bytes
                         symmetric.mixHash(bytes)
                     case .s:
+                        guard let localStatic else { throw Failure.missingKey }
                         out += try symmetric.encryptAndHash(Array(localStatic.publicKey.rawRepresentation))
                     default: try mixDH(token)
                 }
@@ -154,6 +160,7 @@ package struct NoiseHandshake: Sendable {
     package func transport() throws(Failure) -> NoiseTransport {
         guard isComplete else { throw .wrongTurn }
         let (initiatorSends, responderSends) = symmetric.split()
+        // One-way: the responder only receives, and sends nothing (section 7.4).
         return isInitiator
             ? NoiseTransport(sending: initiatorSends, receiving: responderSends, handshakeHash: symmetric.hash)
             : NoiseTransport(sending: responderSends, receiving: initiatorSends, handshakeHash: symmetric.hash)

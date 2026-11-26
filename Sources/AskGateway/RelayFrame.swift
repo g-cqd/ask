@@ -50,7 +50,7 @@ package struct RelayFrame: Sendable, Equatable {
         let bytes = Array(bytes)
         guard bytes.count >= 5 else { throw .tooShort }
         guard let kind = Kind(rawValue: bytes[0]) else { throw .unknownKind(bytes[0]) }
-        let channel = bytes[1 ... 4].reduce(UInt32(0)) { $0 << 8 | UInt32($1) }
+        let channel = RelayBytes.readU32(bytes.dropFirst())
         try self.init(kind: kind, channel: channel, body: Array(bytes[5...]))
     }
 
@@ -87,7 +87,7 @@ package struct RelayFrame: Sendable, Equatable {
         var rest = body[...]
         while !rest.isEmpty {
             guard rest.count >= 36 else { return false }
-            let length = rest.dropFirst(32).prefix(4).reduce(0) { $0 << 8 | Int($1) }
+            let length = Int(RelayBytes.readU32(rest.dropFirst(32)))
             rest = rest.dropFirst(36)
             guard length > 0, rest.count >= length else { return false }
             rest = rest.dropFirst(length)

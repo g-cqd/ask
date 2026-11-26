@@ -46,9 +46,18 @@ with `close` reason `4`. Channel 0 carries only `hello`, `list`, `lists`, `ping`
 ## The sealed list
 
 What a node shares: its sessions' names, folders and states. Sealed to each trusted controller key, so the gateway forwards it
-unread: for each controller, the controller's key fingerprint (the first 8 bytes of SHA-256 of its public key), then an `N`-pattern
-Noise message (`N_25519_ChaChaPoly_SHA256`, the prologue `ask-gateway/1 list`) whose payload is the list as JSON. The format of the
-JSON is fixed with the node (t152).
+unread. For each controller, in turn:
+
+```
++--------------------+--------------+----------------------------------+
+| fingerprint (8 B)  | length (u32) | N message (length bytes, >= 48)  |
++--------------------+--------------+----------------------------------+
+```
+
+The fingerprint is the first 8 bytes of SHA-256 of the controller's public key; the message is a Noise `N_25519_ChaChaPoly_SHA256`
+message to that key, the prologue `ask-gateway/1 list`, a fresh ephemeral key for each, whose payload is the list as JSON (at most
+65,487 bytes). A controller opens the entry with its fingerprint and ignores the others. The format of the JSON is fixed with the
+node.
 
 ## Channel messages
 
