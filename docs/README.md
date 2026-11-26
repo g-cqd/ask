@@ -23,5 +23,6 @@ ask is a terminal coding agent for macOS. What it gives you:
 - [The sandbox](sandbox.md): what the model can reach, and how to change it.
 - [Skills and MCP servers](skills-and-mcp.md): giving the model instructions and more tools.
 - [ask in an editor](editors.md): `ask serve`, for an editor that speaks the Agent Client Protocol.
+- [The gateway](gateway.md): this computer's gateway key, and the browsers it trusts.
 
 none of it is needed to use ask.

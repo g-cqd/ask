@@ -166,8 +166,8 @@ let package = Package(
         .executableTarget(
             name: "ask",
             dependencies: [
-                "AskSession", "AskACP", "AskAI", "AskAgentCore", "AskApple", "AskCodemode", "AskCore", "AskTools",
-                "AskTUI",
+                "AskSession", "AskACP", "AskAI", "AskAgentCore", "AskApple", "AskCodemode", "AskCore", "AskGateway",
+                "AskTools", "AskTUI", .product(name: "AemiJSON", package: "AemiJSON"),
                 .product(name: "ArgumentParser", package: "swift-argument-parser")
             ],
             path: "Sources/ask",
