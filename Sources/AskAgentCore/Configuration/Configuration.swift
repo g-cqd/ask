@@ -74,6 +74,7 @@ public struct Configuration: Sendable, Equatable {
     public var openers = Setting(value: OpenersSection(), source: .defaults)  // what a clicked link opens with, 0216
     public var threads = Setting(value: ThreadsSection(), source: .defaults)  // how many threads, how deep, 0195
     public var jobs = Setting(value: JobsSection(), source: .defaults)  // how many finished jobs are kept, t232
+    public var gateway = Setting(value: GatewaySection(), source: .defaults)  // ADR-0170
     public var policy = Setting(value: PolicySection(), source: .defaults)  // an organisation's alone, ADR-0168
     /// Where each `ui` and `skills` key came from, by its dotted name; read through `source(ofKey:)`.
     var keySources: [String: Source] = [:]
@@ -126,6 +127,7 @@ public struct Configuration: Sendable, Equatable {
         next.agents = next.agents.layered(file.agents, from: source)
         next.openers = next.openers.layered(file.openers, from: source)
         next.jobs = next.jobs.layered(file.jobs, from: source)
+        next.gateway = next.gateway.layered(file.gateway, from: source)
         next.policy = next.policy.layered(file.policy, from: source)
         next.mcp = next.mcp.layered(file.mcp, from: source)
         next.environment = next.environment.layered(file.environment, from: source)

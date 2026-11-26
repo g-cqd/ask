@@ -290,6 +290,20 @@
     "keepFinished": 200
   },
 
+  "gateway": {
+    // Whether this computer offers its sessions to the gateway: every session, while on. Default: false. Your own file only.
+    "enabled": true,
+
+    // The gateway on the local network, as host:port. Default: none. Your own file only.
+    "address": "192.168.1.20:7443",
+
+    // The gateway's public key, base64; a gateway holding another key is refused. Default: none. Your own file only.
+    "key": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
+
+    // The folders a controller may start a session in, absolute or under ~/; none allows none. Default: none. Your own file only.
+    "folders": ["~/Developer"]
+  },
+
   "openers": {
     // The app a clicked file opens in. Default: the system's choice. Your own file only.
     "file": "Xcode",

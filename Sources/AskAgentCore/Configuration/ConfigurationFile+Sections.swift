@@ -33,7 +33,8 @@ extension ConfigurationFile {
         "sandbox": .declared(\.sandbox), "ui": .declared(\.ui), "skills": .declared(\.skills),
         "approvals": .declared(\.approvals),
         "hooks": .declared(\.hooks), "threads": .declared(\.threads), "agents": .declared(\.agents),
-        "openers": .declared(\.openers), "jobs": .declared(\.jobs), "policy": .declared(\.policy),
+        "openers": .declared(\.openers), "jobs": .declared(\.jobs), "gateway": .declared(\.gateway),
+        "policy": .declared(\.policy),
         "environment": .declared(\.environment),
         "mcp": SectionKey(
             read: { file, container, key in file.mcp = try container.decode(MCPDecoded.self, forKey: key).section },

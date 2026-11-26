@@ -17,6 +17,12 @@ public struct PolicySection: Sendable, Equatable, CustomStringConvertible, Layer
     /// `policy.managedSkillsOnly`: whether skills come only from the organisation's folder (`skills` beside its requirements),
     /// which must belong to root as its documents do.
     public var managedSkillsOnly: Bool?
+    /// `policy.gatewayAllowed`: whether this computer may share its sessions with a gateway (ADR-0170).
+    public var gatewayAllowed: Bool?
+    /// `policy.gatewayApprovals`: whether a controller through the gateway may answer approvals.
+    public var gatewayApprovals: Bool?
+    /// `policy.gatewayStart`: whether a controller through the gateway may start sessions.
+    public var gatewayStart: Bool?
 
     /// The keys, in the order they are shown, from their declarations (``PolicySection/settings``).
     public static let keys = settings.all.map(\.name)

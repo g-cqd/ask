@@ -28,6 +28,7 @@ extension Configuration {
         compare("threads", previous.threads, threads)
         compare("agents", previous.agents, agents)
         compare("jobs", previous.jobs, jobs)
+        compare("gateway", previous.gateway, gateway)
         compare("openers", previous.openers, openers)
         compare("policy", previous.policy, policy)
         compare("sandbox", previous.sandbox, sandbox)

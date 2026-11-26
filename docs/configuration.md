@@ -157,6 +157,9 @@ profile: it is refused, and belongs in `requirements.json` or `defaults.json`.
 | `mcpServers` | The MCP servers ask may use, by what they are rather than their name: a URL such as `"https://mcp.example.com/*"`, or a command and its arguments separated by blanks, such as `"npx -y @example/*"`. A server none matches is switched off, and ask says so when it starts. | any |
 | `managedHooksOnly` | `true` lets only the organisation's documents (`requirements.json`, `defaults.json`, their drop-ins and a profile) set a hook command: `hooks.check` set anywhere else is replaced by theirs, or off, and ask says so. | `false` |
 | `managedSkillsOnly` | `true` offers only the skills in the organisation's `skills` folder, beside `requirements.json`; the person's and the projects' are not. The folder must belong to root and be writable by nobody else, as the documents must; otherwise no skill is offered, and ask says why. | `false` |
+| `gatewayAllowed` | `false` keeps this computer from sharing its sessions with a [gateway](gateway.md), whatever `gateway.enabled` says. | `true` |
+| `gatewayApprovals` | `false` leaves approvals to the person at the computer: a controller through the gateway cannot answer them. | `true` |
+| `gatewayStart` | `false` keeps a controller through the gateway from starting sessions, even in `gateway.folders`. | `true` |
 
 A profile's `requirements` may hold it too. A run, or a `/model` choice, that the policy does not allow stops with a message naming it
 and the file. A later drop-in replaces a
@@ -389,6 +392,18 @@ model has not read yet, so it can still ask for it later.
 | Key | Default | What it does |
 |---|---|---|
 | `keepFinished` | `null` | The most finished jobs kept, the oldest let go first; `null` keeps them all, `0` none. A running job is never let go, and the job tools say when one asked for was. |
+
+### `gateway`
+
+Sharing this computer's sessions with a [gateway](gateway.md) (ADR-0170). Your own file only: a project's file that sets it is
+refused. The gateway is not available yet; these keys are read and checked, so a file written for it opens.
+
+| Key | Default | What it does |
+|---|---|---|
+| `enabled` | `false` | `true` offers every session of this computer to the gateway, as long as it is on. The organisation's `policy.gatewayAllowed` can keep it off. |
+| `address` | none | The gateway on your local network, as `host:port`, such as `"192.168.1.20:7443"`; an IPv6 address in brackets. |
+| `key` | none | The gateway's public key, 32 bytes in base64. A gateway holding another key is refused, so a machine pretending to be it learns nothing. |
+| `folders` | none | The folders a controller may start a new session in, absolute or under `~/`. None allows none. |
 
 ### `openers`
 

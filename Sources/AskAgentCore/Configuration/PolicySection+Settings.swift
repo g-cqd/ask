@@ -75,6 +75,36 @@ extension PolicySection: DeclaredSection {
                     "Whether skills come only from the organisation's skills folder, beside its requirements."
                 ),
                 \.managedSkillsOnly
+            ),
+            .bool(
+                SettingCatalog.row(
+                    "policy.gatewayAllowed",
+                    .boolean,
+                    "false",
+                    "true",
+                    "Whether this computer may share its sessions with a gateway; false keeps gateway.enabled off."
+                ),
+                \.gatewayAllowed
+            ),
+            .bool(
+                SettingCatalog.row(
+                    "policy.gatewayApprovals",
+                    .boolean,
+                    "false",
+                    "true",
+                    "Whether a controller through the gateway may answer approvals; false leaves them to the computer."
+                ),
+                \.gatewayApprovals
+            ),
+            .bool(
+                SettingCatalog.row(
+                    "policy.gatewayStart",
+                    .boolean,
+                    "false",
+                    "true",
+                    "Whether a controller through the gateway may start sessions in gateway.folders."
+                ),
+                \.gatewayStart
             )
         ]
     )

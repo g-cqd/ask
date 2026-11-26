@@ -36,6 +36,7 @@ public struct ConfigurationFile: Sendable, Equatable {
     public var presets: [String]?  // roadmap 0190: sets of MCP servers ask knows, added to `mcp`
     public var openers: OpenersSection?  // roadmap 0216, ADR-0148; the person's own file only
     public var jobs: JobsSection?  // t232: how many finished jobs are kept
+    public var gateway: GatewaySection?  // ADR-0170: sharing this computer's sessions with a gateway
     public var policy: PolicySection?  // ADR-0168: an organisation's requirements only
 
     /// The keys ask knows, in the order `ask config` shows them.
@@ -45,7 +46,7 @@ public struct ConfigurationFile: Sendable, Equatable {
         "model", "provider", "thinking", "maxTurns", "compactAt", "keepAwake", "keepDisplayAwake", "credentials",
         "approvals", "modelScopes", "sessionEncryption", "sessionCompression", "sessionPassword", "taskScope",
         "codemode", "hooks", "threads", "agents", "sandbox", "ui", "skills", "presets", "mcp", "environment", "openers",
-        "jobs", "policy"
+        "jobs", "gateway", "policy"
     ]
 
     /// The file at `path`, or nil when there is none.
@@ -92,6 +93,7 @@ public struct ConfigurationFile: Sendable, Equatable {
         try validateThreads(file.threads, path: path)
         try validateAgents(file.agents, path: path, isProject: isProject)
         try validateOpeners(file.openers, path: path, isProject: isProject)
+        try validateGateway(file.gateway, path: path, isProject: isProject)
         file.mcp = try MCPPresets.adding(file.presets, to: file.mcp, path: path)
         try validateMCP(file.mcp, path: path, isProject: isProject)
         if isProject, var section = file.mcp {

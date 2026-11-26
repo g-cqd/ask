@@ -10,7 +10,7 @@ extension SettingCatalog {
     // @dl:accept -- every configuration section is decoded, layered and compared by the same idiom; the keys are the data
     static let sections: Set<String> = [
         "sandbox", "ui", "ui.fold", "skills", "approvals", "hooks", "threads", "agents", "environment", "mcp",
-        "openers", "jobs"
+        "openers", "jobs", "gateway"
     ]
 
     /// The structured settings' values, which their kind alone does not say.
@@ -30,7 +30,8 @@ extension SettingCatalog {
         "ui.pathAncestors": "a whole number of 0 or more, or null for no limit",
         "ui.historyLimit": "a whole number of 1 or more, or null for no limit",
         "jobs.keepFinished": "a whole number of 0 or more, or null for no limit",
-        "openers.rules": "a list of rules, each with a match and an app or a command"
+        "openers.rules": "a list of rules, each with a match and an app or a command",
+        "gateway.folders": "a list of paths, absolute or under ~/"
     ]
     // @dl:enable near-clone
 
