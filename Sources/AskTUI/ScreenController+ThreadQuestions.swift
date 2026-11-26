@@ -15,23 +15,42 @@ extension ScreenController {
                 case .focus: break
             }
             if let approval = view.approval {
-                state.pendingApproval = PendingApproval(
+                var shown = PendingApproval(
                     id: approval.id,
                     question: "\(runner.name): " + approval.question,
                     kind: approval.kind,
                     detail: approval.detail
                 )
+                shown.cursor = approval.cursor
+                shown.checked = approval.checked
+                shown.showsWholeDetail = approval.showsWholeDetail
+                state.pendingApproval = shown
             } else {
-                state.pendingQuestions = view.questions
+                // Named for its thread, which is not the conversation shown (owner, 2026-11-26).
+                var questions = view.questions
+                questions?.askedBy = runner.name
+                state.pendingQuestions = questions
             }
             state.popped = runner.id
             return
         }
     }
 
-    /// Takes a popped question back off what is shown; its thread still has it.
+    /// Takes a popped question back off what is shown; its thread still has it, with what the person did to it so far: the choices
+    /// checked, the note typed, the answer highlighted. Every update takes it off and puts it back, so a copy that forgot them lost
+    /// the person's typing at each update (owner, 2026-11-26).
     mutating func unpopThreadQuestion() {
-        guard state.popped != nil else { return }
+        guard let id = state.popped else { return }
+        if var questions = state.pendingQuestions, state.threads[id]?.questions?.id == questions.id {
+            questions.askedBy = nil
+            state.threads[id]?.questions = questions
+        }
+        if let shown = state.pendingApproval, var kept = state.threads[id]?.approval, kept.id == shown.id {
+            kept.cursor = shown.cursor
+            kept.checked = shown.checked
+            kept.showsWholeDetail = shown.showsWholeDetail
+            state.threads[id]?.approval = kept
+        }
         state.pendingApproval = nil
         state.pendingQuestions = nil
         state.popped = nil

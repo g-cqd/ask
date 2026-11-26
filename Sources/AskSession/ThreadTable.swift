@@ -25,6 +25,9 @@ final class ThreadTable: Sendable {
         var reports: [String] = []
         /// What it is called where it is shown: the on-device model's name or the person's; its id, `thread-N`, when none.
         var title: String?
+        /// The model it works with from its next run, as `/model` in its lane wrote it; nil for `threads.model`, else the
+        /// conversation's (owner, 2026-11-26).
+        var model: String?
     }
 
     struct State {
@@ -59,6 +62,9 @@ final class ThreadTable: Sendable {
     }
 
     func thread(_ name: String) -> Thread? { state.withLock { $0.threads[name] } }
+
+    /// Thread `name` works with `model` from its next run; nil goes back to `threads.model`, else the conversation's.
+    func setModel(_ name: String, to model: String?) { state.withLock { $0.threads[name]?.model = model } }
 
     /// The name the next thread is given, for the `thread.start` hook point.
     var nextName: String { state.withLock { "thread-\($0.next)" } }

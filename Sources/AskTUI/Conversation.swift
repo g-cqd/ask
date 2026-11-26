@@ -96,6 +96,9 @@ public protocol Conversation: Sendable {
     /// `/merge` in thread `id`'s lane: merge it now, with the unmerged threads under it (roadmap 0195).
     func mergeThread(_ id: String, update: @escaping @Sendable (ConversationUpdate) -> Void)
 
+    /// `/model` in thread `id`'s lane: the model it works with, shown or chosen for it alone (owner, 2026-11-26).
+    func threadModel(_ id: String, arguments: String, update: @escaping @Sendable (ConversationUpdate) -> Void)
+
     /// The screen now shows lane `id`, a runner's, or main when nil.
     func laneShown(_ id: String?)
 
@@ -111,6 +114,8 @@ public protocol Conversation: Sendable {
 
     /// Sends the command the current run waits on to the background (roadmap 0173); false when it waits on none.
     func sendCommandToBackground() -> Bool
+    /// The same for thread `id`'s run, or main's when nil (owner, 2026-11-26).
+    func sendCommandToBackground(inThread id: String?) -> Bool
     /// Starts anything that reports on its own while the screen is open, such as a new build appearing, until the
     /// returned task is cancelled. Nil when there is nothing to watch.
     func background(update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never>?

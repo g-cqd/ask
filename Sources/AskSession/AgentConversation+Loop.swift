@@ -22,7 +22,13 @@ extension AgentConversation {
     }
 
     /// The loop threads run on (roadmap 0195): main's, or one for `threads.model`, built once and dropped when the settings change.
-    func threadLoop() async throws -> AgentLoop {
+    /// `model`: a thread's own, from `/model` in its lane (owner, 2026-11-26): its loop is built for it, not kept.
+    func threadLoop(model: String? = nil) async throws -> AgentLoop {
+        if let model {
+            let settings = try await settings(forModel: model)
+            mcp.apply(settings.configuration.mcp.value.servers)
+            return try makeLoop(settings, loopHooks(settings))
+        }
         let (word, cached) = current.withLock { ($0.settings.configuration.threads.value.threadModel, $0.threadLoop) }
         guard let word else { return try agentLoop() }
         if let cached { return cached }
@@ -33,6 +39,15 @@ extension AgentConversation {
             if current.threadLoop == nil { current.threadLoop = created }
             return current.threadLoop ?? created
         }
+    }
+
+    /// The model a thread works with, as the status line names it in its lane: its own, `threads.model`, or the conversation's.
+    func threadModelLabel(_ own: String?) async -> String {
+        let word = own ?? current.withLock { $0.settings.configuration.threads.value.threadModel }
+        guard let word, let settings = try? await settings(forModel: word) else {
+            return current.withLock { $0.settings.model.label }
+        }
+        return settings.model.label
     }
 
     /// The settings in force with `word` as the model, read as `/model` reads its word; throws when it does not resolve.

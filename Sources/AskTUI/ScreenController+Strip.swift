@@ -88,18 +88,22 @@ extension ScreenController {
         return []
     }
 
-    /// Esc, once the selection and a picker have had it. One step back, never the draft or a turn: the strip's selection returns to the input, then a
-    /// lane returns to main, then an open strip closes.
+    /// Esc, once the selection and a picker have had it. One step back, never the draft: the strip's selection returns to the input, then a
+    /// lane returns to main, then an open strip closes, then what is shown working is interrupted. A thread's lane is a conversation as
+    /// main is (owner, 2026-11-26): while its thread works, Esc interrupts it as it would main's turn, unless main waits for an answer.
     mutating func escapePressed(at instant: ContinuousClock.Instant = .now) -> [Effect] {
         if state.stripSelection != nil {
             state.stripSelection = nil
-        } else if state.lane != nil {
+        } else if let lane = state.lane, !lane.isThread || !ScreenComposer.focusedWorks(state) || mainWaits(lane) {
             leaveLane()
-        } else if state.runnersOpen {
+        } else if state.lane == nil, state.runnersOpen {
             state.runnersOpen = false
-        } else if state.running, options.interruptKeys.allowsEscape {
+        } else if ScreenComposer.focusedWorks(state), options.interruptKeys.allowsEscape {
             return escapeInterrupts(at: instant)
         }
         return []
     }
+
+    /// Whether main waits for an answer while `lane` is shown: then Esc goes back to it.
+    private func mainWaits(_ lane: LaneView) -> Bool { lane.stashedApproval != nil || lane.stashedQuestions != nil }
 }

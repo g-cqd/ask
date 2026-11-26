@@ -19,6 +19,8 @@ public struct PendingQuestions: Sendable, Equatable {
     var notes: [PromptEditor]
     /// Why Enter did not go on, shown under the question until the next key.
     var problem: String?
+    /// The thread that asked, when its questions are shown outside its lane (`threads.questions`); nil for the conversation shown.
+    public internal(set) var askedBy: String?
 
     init(id: Int, questions: [ScreenQuestion]) {
         self.id = id

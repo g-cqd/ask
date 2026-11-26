@@ -90,6 +90,10 @@ extension Conversation {
     public func renameThread(_ id: String, to title: String, update: @escaping @Sendable (ConversationUpdate) -> Void) {
     }
 
+    /// No threads, so none to give a model.
+    public func threadModel(_ id: String, arguments: String, update: @escaping @Sendable (ConversationUpdate) -> Void) {
+    }
+
     /// No threads, so none to merge.
     public func mergeThread(_ id: String, update: @escaping @Sendable (ConversationUpdate) -> Void) {}
 
@@ -118,6 +122,9 @@ extension Conversation {
 
     /// No command to send.
     public func sendCommandToBackground() -> Bool { false }
+
+    /// Main's only, for a conversation without threads.
+    public func sendCommandToBackground(inThread id: String?) -> Bool { id == nil ? sendCommandToBackground() : false }
 
     /// Nothing to watch.
     public func background(update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never>? { nil }

@@ -82,20 +82,29 @@ struct SteeringTests {
                     input.append(QueuedPrompt(id: 2, text: "Now"))
                 }
             }
+        // At the end of the work both enter together, steering first: no model turn between them (owner, 2026-11-26).
         #expect(prompts(file) == ["Start", "Now", "Later"])
-        #expect(provider.requests.count == 5)
+        #expect(provider.requests.count == 4)
         #expect(input.remaining.isEmpty)
     }
 
-    @Test func `one steering message enters per turn in FIFO order`() async throws {
+    @Test func `queued steering messages enter together in FIFO order, with no model turn between them`() async throws {
         let file = try session()
         let provider = ScriptedProvider([.reply("a"), .reply("b"), .reply("c")])
         let input = PromptQueue()
         input.append(QueuedPrompt(id: 1, text: "One"))
         input.append(QueuedPrompt(id: 2, text: "Two"))
-        try await loop(provider).run("Start", in: file, input: input) { _ in }
+        var accepted: [Int] = []
+        try await loop(provider)
+            .run("Start", in: file, input: input) { event in
+                if case .promptAccepted(let prompt) = event { accepted.append(prompt.id) }
+            }
         #expect(prompts(file) == ["Start", "One", "Two"])
-        #expect(provider.requests.count == 3)
+        #expect(accepted == [1, 2])
+        #expect(provider.requests.count == 2)
+        #expect(
+            provider.requests.last?.messages.last == ModelMessage(role: .user, blocks: [.text("One"), .text("Two")])
+        )
     }
 
     @Test func `provider failure and the turn limit leave unsent messages queued`() async throws {

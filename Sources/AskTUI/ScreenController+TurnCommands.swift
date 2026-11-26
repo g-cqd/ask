@@ -73,12 +73,27 @@ extension ScreenController {
     }
 
     /// The transcript's waiting line at `index` shown as sent, as `text`; added anew when the line there is no longer the waiting one.
+    /// Shows message `text`, queued at `index`, where the model took it (owner, 2026-11-26): in place when nothing but other queued
+    /// messages came after it, else at the end, with a gray line left where it was queued.
     mutating func showSent(at index: Int, queued: String, as text: String) {
         // Still the queued line it was: the spinner moves the revision on every tick, so the item is checked, not the revision.
         guard state.transcript.items.indices.contains(index), state.transcript.items[index] == .queued(queued) else {
             state.transcript.addUser(text)
             return
         }
-        state.transcript.replace(at: index, with: .user(text))
+        let after = state.transcript.items[(index + 1)...]
+        if after.allSatisfy({ if case .queued = $0 { true } else { false } }) {
+            state.transcript.replace(at: index, with: .user(text))
+            return
+        }
+        state.transcript.replace(at: index, with: .notice(Self.queuedHere(queued), isError: false))
+        state.transcript.addUser(text)
+    }
+
+    /// The gray line left where a message was queued, once the model took it further down.
+    static func queuedHere(_ text: String) -> String {
+        let first = text.split(separator: "\n", omittingEmptySubsequences: true).first.map(String.init) ?? ""
+        let preview = first.count > 72 ? String(first.prefix(71)) + "…" : first
+        return "Queued here, sent below: " + preview
     }
 }

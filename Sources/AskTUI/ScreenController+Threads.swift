@@ -4,6 +4,11 @@ extension ScreenController {
     /// An update from thread `id`, drawn in its conversation. During ``onMain(_:)`` the lane's view waits in the lane, so a thread whose
     /// lane is shown is changed there. Only what a conversation shows applies: a thread's run, status or questions are not main's.
     mutating func applyThread(_ id: String, _ update: ConversationUpdate) -> [Effect] {
+        // A thread's model is its own, never main's label (owner, 2026-11-26).
+        if case .label(let text) = update {
+            state.threadLabels[id] = text
+            return []
+        }
         let inLane = state.lane?.isThread == true && state.lane?.id == id
         var thread: ThreadView
         if inLane, let lane = state.lane {

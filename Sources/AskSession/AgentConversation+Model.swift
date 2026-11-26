@@ -45,9 +45,8 @@ extension AgentConversation {
                 )
             case .reset: await select(nil, announcing: "From the configuration", update: update)
             case .choose(let provider, let model):
-                let configuration = current.withLock { $0.settings.configuration }
-                if let path = configuration.requirement(of: "model") ?? configuration.requirement(of: "provider") {
-                    update(.notice("Model not changed: your organisation requires it (\(path)).", isError: true))
+                if let refusal = modelRequired() {
+                    update(.notice(refusal, isError: true))
                     return
                 }
                 let (named, id) = provider.map { ($0, model) } ?? serving(model)
@@ -59,6 +58,15 @@ extension AgentConversation {
                 // An account named for a model is the one it is used with next time (roadmap 0092).
                 if chosen, provider != nil { ModelAccounts.remember(named, for: id) }
         }
+    }
+
+    /// Why the model cannot be changed, when the organisation requires one (managed `model` or `provider`); nil when it may.
+    func modelRequired() -> String? {
+        let configuration = current.withLock { $0.settings.configuration }
+        guard let path = configuration.requirement(of: "model") ?? configuration.requirement(of: "provider") else {
+            return nil
+        }
+        return "Model not changed: your organisation requires it (\(path))."
     }
 
     /// The provider and model for `/model WORD`: `provider/model` as written; else the provider whose list holds the model, for the effort in force

@@ -112,10 +112,18 @@ public struct Transcript: Sendable, Equatable {
     public mutating func addAssistantText(_ text: String) { stream(text, as: Item.assistant) }
 
     /// Continues the last item when it is of the kind `make` makes, or starts one.
+    /// Streams `text` into the block being written. Messages queued meanwhile wait below it and do not cut it in two (owner,
+    /// 2026-11-26): the reply goes on in its block, above them.
     private mutating func stream(_ text: String, as make: (String) -> Item) {
-        switch (items.last, make("")) {
+        let last = items.lastIndex { if case .queued = $0 { false } else { true } }
+        switch (last.map { items[$0] }, make("")) {
             case (.thinking(let existing)?, .thinking), (.assistant(let existing)?, .assistant):
-                replaceLast(make(existing + text))
+                guard let last else { return }
+                if last == items.count - 1 {
+                    replaceLast(make(existing + text))
+                } else {
+                    replace(at: last, with: make(existing + text))
+                }
             default: append(make(text))
         }
     }

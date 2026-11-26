@@ -17,7 +17,7 @@ extension ScreenController {
     mutating func questionKey(_ key: KeyEvent) -> [Effect]? {
         guard var pending = state.pendingQuestions else { return nil }
         if key.keyCode == 0x03 || (key.modifiers.contains(.ctrl) && (key.keyCode == 0x63 || key.keyCode == 0x43)) {
-            return finish(pending, with: nil) + abort()
+            return finish(pending, with: nil) + stopFocused()
         }
         // In a job's lane the section is not shown: Esc returns to it, and the lane keeps its other keys. A thread's lane shows the
         // thread's own questions, which take the keys there.

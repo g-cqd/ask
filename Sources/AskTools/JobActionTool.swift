@@ -82,12 +82,18 @@ public struct JobActionTool: ArgumentTool, JobTool {
             case .input, .wait:
                 if action == .input { try job.sendInput(arguments.text, closing: arguments.closeInput == true) }
                 let seconds = Swift.min(Swift.max(1, arguments.timeoutSeconds ?? (action == .wait ? 60 : 1)), 600)
-                // The end only (ADR-0159): a text, a port or a file is waited for where the command starts, by bash.
-                let outcome = await JobWaiting.wait(for: job, needle: nil, seconds: seconds, clock: access.clock)
+                // The end only (ADR-0159): a text, a port or a file is waited for where the command starts, by bash. The person may end
+                // the wait with Ctrl+B, as a command's (roadmap 0173, owner 2026-11-26), so a message can steer during a long one.
+                let clock = access.clock
+                let raced = try? await access.jobs.foreground.race {
+                    await JobWaiting.wait(for: job, needle: nil, seconds: seconds, clock: clock)
+                }
+                let outcome = raced ?? .backgrounded
                 if job.status != .running { return JobWaiting.ended(job, headline: "[\(job.id) ended]") }
                 let headline =
                     switch outcome {
                         case .cancelled: "[aborted; \(job.id) still running]"
+                        case .backgrounded: "[the person ended this wait; \(job.id) still running]"
                         case .timedOut where action == .wait:
                             "[nothing happened within \(seconds) s; \(job.id) still running]"
                         default: "[\(job.id) still running]"

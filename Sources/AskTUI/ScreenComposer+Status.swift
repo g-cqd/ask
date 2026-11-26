@@ -106,7 +106,12 @@ extension ScreenComposer {
         // The folder ask works in (notes n6 and n63): shortened, then dropped, before the context's use is.
         let path = state.statusPath.isEmpty ? nil : StatusSegment(state.statusPath, priority: 35)
         if let path, state.statusPathSide == .leading { pieces.append(path) }
-        var label = StatusSegment(state.labelVariants.isEmpty ? [state.label] : state.labelVariants, priority: 90)
+        // In a thread's lane, the model that answers there (owner, 2026-11-26).
+        let threadLabel = state.lane.flatMap { $0.isThread ? state.threadLabels[$0.id] : nil }
+        var label = StatusSegment(
+            threadLabel.map { [$0] } ?? (state.labelVariants.isEmpty ? [state.label] : state.labelVariants),
+            priority: 90
+        )
         label.carries = true
         pieces.append(label)
         if !state.context.isEmpty { pieces.append(StatusSegment(state.context, priority: 40)) }

@@ -28,7 +28,7 @@ extension ScreenController {
         -> [Effect]?
     {
         guard key.keyCode == Key.right.rawValue, key.modifiers.isEmpty, key.eventType == .press,
-            state.editor.text.isEmpty, !state.running
+            state.editor.text.isEmpty, !ScreenComposer.focusedWorks(state)
         else { return nil }
         if let previous, previous.duration(to: now) <= Self.continueTapWindow {
             return submit(Self.continueText, followUp: false)

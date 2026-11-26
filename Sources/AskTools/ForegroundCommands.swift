@@ -1,11 +1,12 @@
 internal import Synchronization
 
 /// The commands the model is waiting on right now (roadmap 0173), so the person can send them to the background: each wait races the
-/// person's request, and a request ends every wait there is, which then returns as a yield does.
+/// person's request, and a request ends every wait of the conversation it names (main, or a thread: ``JobOwner``), which then returns
+/// as a yield does.
 final class ForegroundCommands: Sendable {
     private struct State {
         var next = 0
-        var waits: [Int: CheckedContinuation<Bool, Never>] = [:]
+        var waits: [Int: (owner: String?, continuation: CheckedContinuation<Bool, Never>)] = [:]
         /// Who waits for a wait to begin (``waitUntilWaiting()``).
         var watchers: [CheckedContinuation<Void, Never>] = []
     }
@@ -15,9 +16,11 @@ final class ForegroundCommands: Sendable {
     /// Runs `body`, the wait for a command, unless the person sends the command to the background first: then nil. A request that ends
     /// because the wait is cancelled is no answer, so a cancelled wait still reports itself.
     func race<Value: Sendable>(_ body: @escaping @Sendable () async throws -> Value) async throws -> Value? {
-        try await withThrowingTaskGroup(of: Value??.self) { group in
+        // Whose wait it is: the run that waits, read here, before the child tasks.
+        let owner = JobOwner.current
+        return try await withThrowingTaskGroup(of: Value??.self) { group in
             group.addTask { .some(try await body()) }
-            group.addTask { await self.requested() ? .some(nil) : nil }
+            group.addTask { await self.requested(by: owner) ? .some(nil) : nil }
             while let next = try await group.next() {
                 guard let answer = next else { continue }
                 group.cancelAll()
@@ -27,11 +30,11 @@ final class ForegroundCommands: Sendable {
         }
     }
 
-    /// Ends every wait; false when none was waiting.
-    func sendToBackground() -> Bool {
+    /// Ends every wait of `owner`'s run: main's when nil, else the thread's; false when it waited on none.
+    func sendToBackground(owner: String? = nil) -> Bool {
         let resumed = state.withLock { state in
-            defer { state.waits.removeAll() }
-            return Array(state.waits.values)
+            let keys = state.waits.filter { $0.value.owner == owner }.map(\.key)
+            return keys.compactMap { state.waits.removeValue(forKey: $0)?.continuation }
         }
         for continuation in resumed { continuation.resume(returning: true) }
         return !resumed.isEmpty
@@ -50,7 +53,7 @@ final class ForegroundCommands: Sendable {
     }
 
     /// True once the person asks; false when the wait was cancelled, because the command ended first.
-    private func requested() async -> Bool {
+    private func requested(by owner: String?) async -> Bool {
         let key = state.withLock { state -> Int in
             defer { state.next += 1 }
             return state.next
@@ -59,7 +62,7 @@ final class ForegroundCommands: Sendable {
             await withCheckedContinuation { continuation in
                 let (cancelled, watchers) = state.withLock { state -> (Bool, [CheckedContinuation<Void, Never>]) in
                     if Task.isCancelled { return (true, []) }
-                    state.waits[key] = continuation
+                    state.waits[key] = (owner, continuation)
                     defer { state.watchers.removeAll() }
                     return (false, state.watchers)
                 }
@@ -67,7 +70,7 @@ final class ForegroundCommands: Sendable {
                 for watcher in watchers { watcher.resume() }
             }
         } onCancel: {
-            state.withLock { $0.waits.removeValue(forKey: key) }?.resume(returning: false)
+            state.withLock { $0.waits.removeValue(forKey: key) }?.continuation.resume(returning: false)
         }
     }
 }

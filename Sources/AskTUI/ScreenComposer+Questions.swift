@@ -20,7 +20,12 @@ extension ScreenComposer {
         let margin = "  "
         let width = Swift.max(1, columns - margin.count)
         let blank = Line(text: "", style: .default)
-        var top: [Line] = pending.isSeries ? [tabLine(pending, columns: columns), blank] : []
+        // Who asks, when it is a thread and not the conversation shown (owner, 2026-11-26).
+        let asker = pending.askedBy.map {
+            Line(text: clipped(margin + "\($0) asks", to: columns), style: Style(fg: .indexed(5), bold: true))
+        }
+        var top: [Line] =
+            (asker.map { [$0] } ?? []) + (pending.isSeries ? [tabLine(pending, columns: columns), blank] : [])
         var body: [Line]
         var choiceRows: [Int?]
         if pending.reviewing {
@@ -54,7 +59,7 @@ extension ScreenComposer {
             )
         }
         let kept = Array(top.suffix(rows - body.count))
-        let tabs = pending.isSeries && kept.count == top.count ? 0 : nil
+        let tabs = pending.isSeries && kept.count == top.count ? (asker == nil ? 0 : 1) : nil
         return QuestionLayout(
             lines: kept + body,
             choices: kept.count ..< kept.count + choiceCount,

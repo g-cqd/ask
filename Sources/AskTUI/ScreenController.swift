@@ -42,6 +42,8 @@ public struct ScreenController: Sendable {
         case stopThread(id: String)
         /// `/rename TITLE` in a thread's lane.
         case renameThread(id: String, title: String)
+        /// `/model` in a thread's lane: its own model (owner, 2026-11-26).
+        case threadModel(id: String, arguments: String)
         /// `/merge` (or `/close`) in a thread's lane: merge it now, with the threads under it.
         case mergeThread(id: String)
         /// `threads.questions` `after`: wake the screen when a thread's question has waited `after`.
@@ -64,6 +66,8 @@ public struct ScreenController: Sendable {
         case answerInput(id: Int, text: String?)
         /// Send the command the model waits on to the background (roadmap 0173).
         case sendCommandToBackground
+        /// The same, for what thread `id` waits on, from its lane (owner, 2026-11-26).
+        case sendThreadCommandToBackground(id: String)
         case quit
     }
 

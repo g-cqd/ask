@@ -67,6 +67,8 @@ public struct ScreenState: Sendable, Equatable {
     var laneSerial = 0
     /// Each thread's conversation (roadmap 0194), by its runner id, while its lane is not shown; the shown one is the lane's.
     var threads: [String: ThreadView] = [:]
+    /// The model each thread works with, as its lane's status line names it (owner, 2026-11-26); main's is ``label``.
+    var threadLabels: [String: String] = [:]
     /// When each thread was first seen merged, and those merged long enough to leave the sidebar (`threads.mergedShownFor`).
     /// The pointer's shape the screen wants (note n13): a hand over what a click acts on.
     var pointer = PointerShape.default

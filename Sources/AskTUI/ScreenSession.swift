@@ -177,7 +177,7 @@ final class ScreenSession {
             case .armThreadQuestionTimer, .armQuitTimer, .armSandboxNoteTimer: Self.armTimer(effect, sink)
             case .readRunnerOutput(let id):
                 runnerOutput.watch(id, in: conversation, sink: sink)
-            case .startThread, .stopThread, .renameThread, .mergeThread:
+            case .startThread, .stopThread, .renameThread, .threadModel, .mergeThread:
                 Self.performThread(effect, conversation, sink)
             case .watchJob(let id):
                 jobOutput[id]?.cancel()
@@ -192,7 +192,8 @@ final class ScreenSession {
                 await conversation.commitConfig(scope: scope, path: path, value: value) { sink.yield(.update($0)) }
             case .answerInput(let id, let text):
                 conversation.answer(input: id, with: text)
-            case .sendCommandToBackground: Self.sendCommandToBackground(conversation, sink)
+            case .sendCommandToBackground: Self.sendCommandToBackground(conversation, thread: nil, sink)
+            case .sendThreadCommandToBackground(let id): Self.sendCommandToBackground(conversation, thread: id, sink)
             case .cancelRun:
                 run?.cancel()
             case .pasteFromClipboard:

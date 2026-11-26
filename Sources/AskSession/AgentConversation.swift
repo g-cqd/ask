@@ -135,6 +135,8 @@ final class AgentConversation: Conversation {
 
     func sendCommandToBackground() -> Bool { jobs.sendForegroundToBackground() }
 
+    func sendCommandToBackground(inThread id: String?) -> Bool { jobs.sendForegroundToBackground(owner: id) }
+
     func withdraw(_ id: Int) -> Bool {
         promptInput.withLock { $0 }?.withdraw(id: id) ?? false
     }

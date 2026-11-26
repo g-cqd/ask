@@ -19,26 +19,21 @@ extension ScreenController {
             state.editor.clear()
             return []
         }
-        // In a thread's lane, Ctrl+C is the thread's: it stops while it works, and main's turn goes on (roadmap 0195).
-        if let lane = state.lane, lane.isThread,
-            state.runners.first(where: { $0.id == lane.id })?.state.isActive == true
-        {
-            state.transcript.addNotice("Stopping \(lane.name) and the threads under it…", isError: false)
-            return [.stopThread(id: lane.id)]
-        }
-        if state.running, options.interruptKeys.allowsControlC {
+        // What is shown working stops: main's turn, or in a thread's lane the thread, and main's turn goes on (roadmap 0195), with the
+        // same confirmation (owner, 2026-11-26).
+        if ScreenComposer.focusedWorks(state), options.interruptKeys.allowsControlC {
             if options.abortTurnRequiresConfirmation {
                 if let armed = state.abortArmedAt, press.at - armed <= Self.quitWindow {
                     state.abortArmedAt = nil
                     state.abortArmedAction = nil
-                    return abort()
+                    return stopFocused()
                 }
                 state.abortArmedAt = press.at
                 state.abortArmedAction = "Ctrl+C"
                 quitGeneration += 1
                 return [.armQuitTimer(generation: quitGeneration)]
             }
-            return abort()
+            return stopFocused()
         }
         if let armed = press.armedAt, press.at - armed <= Self.quitWindow { return [.quit] }
         state.quitArmedAt = press.at
@@ -53,14 +48,14 @@ extension ScreenController {
             if let armed = state.abortArmedAt, instant - armed <= Self.quitWindow {
                 state.abortArmedAt = nil
                 state.abortArmedAction = nil
-                return abort()
+                return stopFocused()
             }
             state.abortArmedAt = instant
             state.abortArmedAction = "Esc"
             quitGeneration += 1
             return [.armQuitTimer(generation: quitGeneration)]
         }
-        return abort()
+        return stopFocused()
     }
 
     /// Only consecutive interrupt presses can confirm aborting the current turn.
