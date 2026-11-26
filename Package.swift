@@ -149,6 +149,11 @@ let package = Package(
             ],
             swiftSettings: packageSettings
         ),
+        // ADR-0170: the gateway's channels and protocol, shared by ask's node side and the gateway; Apple's CryptoKit only.
+        .target(
+            name: "AskGateway",
+            swiftSettings: packageSettings
+        ),
         .target(
             name: "AskACP",
             dependencies: [
@@ -231,6 +236,12 @@ let package = Package(
                 .product(name: "AemiJSONRPC", package: "AemiJSON")
             ],
             path: "Tests/AskACPTests",
+            swiftSettings: packageSettings
+        ),
+        .testTarget(
+            name: "AskGatewayTests",
+            dependencies: ["AskGateway"],
+            path: "Tests/AskGatewayTests",
             swiftSettings: packageSettings
         ),
         .testTarget(
