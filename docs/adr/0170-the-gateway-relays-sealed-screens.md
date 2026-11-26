@@ -90,9 +90,19 @@ browser. Sunset may carry the shell built in, with no first visit at all.
 - Cloudflare terminates TLS and sees only sealed frames, since every frame inside is end to end.
 - The weak point is the browser: a controller key opened in a compromised browser reads what that browser reads. The passkey keeps
   the key bound to a device and a touch; the passphrase is the recovery, and should be long.
-- Rendering per viewer costs the node one composer per viewer, at the screen's own budgets; measured before a viewer limit is set.
-- New code: the node agent and protocol in ask (a module beside `AskACP`), the gateway (a separate executable product), the shell
-  (web, in its own repository), and a terminal emulator in the shell (xterm.js-class, to choose after a probe).
+- Rendering per viewer costs the node one screen per viewer. Measured in release on an M3 (`Benchmarks` `ViewerProbe`, 400 and
+  2,000 turns of a prompt, a Markdown reply and a 60-line command each): after the first screen, each more viewer adds 0.3 to
+  2.4 MiB resident, since the transcripts share the conversation's strings, and 0.13 to 0.16 ms of layout and diff per streamed
+  delta, about 750 bytes of terminal output per frame. Four viewers take 0.6 ms per delta, well inside a frame; no limit is needed
+  for the first version.
+- New code: the node agent and protocol in ask (a module beside `AskACP`), the gateway (a separate executable product), and the
+  shell (web, in its own repository).
+- The shell's terminal is **xterm.js with `@xterm/addon-unicode-graphemes`**. Fed the bytes ask wrote in a PTY (alternate screen,
+  SGR mouse, focus, bracketed paste, synchronized output, OSC 8 links), headless xterm.js 5 drew the same screen as the reference
+  emulator, cell for cell. Its default Unicode 6 widths do not match ask's (an emoji takes one cell, `⚠️` one, `👍🏽` two
+  clusters); with the graphemes addon (Unicode 15, grapheme clusters) every cell matched, emoji, CJK and combining marks included.
+- xterm.js draws no kitty graphics: until the shell does, the node tells the viewer's screen it draws no pictures, and pictures
+  stay links.
 - Sharing all sessions of a computer means a new session is offered the moment it starts; `gateway.enabled` off stops all at once.
 
 ## Open

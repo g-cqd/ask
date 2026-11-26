@@ -64,6 +64,15 @@ let package = Package(
             ],
             path: "Benchmarks/PipelineProbe"
         ),
+        // ADR-0170: what one more viewer of a live session costs the node (t150).
+        .executableTarget(
+            name: "ViewerProbe",
+            dependencies: [
+                .product(name: "AskTUI", package: "ask"),
+                .product(name: "TerminalKitRender", package: "TerminalKit")
+            ],
+            path: "Benchmarks/ViewerProbe"
+        ),
         // MCP calls under stress (roadmap 0114): a plain executable, because its stdio and HTTP cases run child processes and compare each
         // layer with the floor beneath it. Run: swift run -c release MCPStress [calls]
         .executableTarget(
