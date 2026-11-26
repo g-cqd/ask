@@ -28,7 +28,7 @@ jobs:
       - name: Setup · Read .swift-version
         run: echo "SWIFT_VERSION=$(cat .swift-version)" >> "$GITHUB_ENV"
       - name: Setup · Install Swift
-        uses: g-cqd/swift-ci/setup-swift@fda8ff085332c1883685384f975dff7227b1f7e5 # swift-ci fda8ff0
+        uses: g-cqd/swift-ci/setup-swift@07936b09eef98d5fcef4eac36a7c3f97de133e19 # swift-ci 07936b0
         with:
           swift-version: ${{ env.SWIFT_VERSION }}
       - name: Probes · Sweep
