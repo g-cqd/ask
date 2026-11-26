@@ -14,9 +14,9 @@ let package = Package(
         .package(name: "ask", path: ".."),
         .package(url: "https://github.com/ordo-one/package-benchmark", .upToNextMajor(from: "1.38.0")),
         // The same revision ask pins; SwiftPM resolves one revision per package.
-        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "e9ab0df71a205cd6ed33e9ca6871b13dce91d533"),
+        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "a777029a43269692cac6485c254ff0c1b438789e"),
         // The same revision ask pins, for MCPStress's codec floor.
-        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "a7bb9cc463fd1a7f58a404ce28dbbee6b7ee7fe7")
+        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "75deac170071149540c436bdab47a5c6d5520a4a")
     ],
     targets: [
         .executableTarget(

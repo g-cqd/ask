@@ -56,7 +56,7 @@ jobs:
       - name: Setup · Read .swift-version
         run: echo "SWIFT_VERSION=$(cat .swift-version)" >> "$GITHUB_ENV"
       - name: Setup · Install Swift
-        uses: g-cqd/swift-ci/setup-swift@47a42af8d79c2e5f8a50f9c4a13b0d3b46f2d009 # swift-ci 47a42af
+        uses: g-cqd/swift-ci/setup-swift@fda8ff085332c1883685384f975dff7227b1f7e5 # swift-ci fda8ff0
         with:
           swift-version: ${{ env.SWIFT_VERSION }}
       # litmus builds through xcrun, which runs Xcode's own Swift (6.3.3 on macos-26, which cannot read a 6.4 manifest) unless
@@ -105,7 +105,7 @@ jobs:
       - name: Setup · Read .swift-version
         run: echo "SWIFT_VERSION=$(cat .swift-version)" >> "$GITHUB_ENV"
       - name: Setup · Install Swift
-        uses: g-cqd/swift-ci/setup-swift@47a42af8d79c2e5f8a50f9c4a13b0d3b46f2d009 # swift-ci 47a42af
+        uses: g-cqd/swift-ci/setup-swift@fda8ff085332c1883685384f975dff7227b1f7e5 # swift-ci fda8ff0
         with:
           swift-version: ${{ env.SWIFT_VERSION }}
       # litmus builds through xcrun, which runs Xcode's own Swift (6.3.3 on macos-26, which cannot read a 6.4 manifest) unless
