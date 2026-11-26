@@ -45,6 +45,14 @@ package struct RelayFrame: Sendable, Equatable {
         self.body = body
     }
 
+    /// A frame this module built from parts already checked: a parsed frame's body moved to another channel, or a body it wrote in
+    /// its kind's shape. Never from bytes that arrived.
+    init(checked kind: Kind, channel: UInt32, body: [UInt8]) {
+        self.kind = kind
+        self.channel = channel
+        self.body = body
+    }
+
     /// The frame parsed from `bytes`, refused unless it is exactly one well-formed frame.
     package init(parsing bytes: some Collection<UInt8>) throws(Refusal) {
         let bytes = Array(bytes)
