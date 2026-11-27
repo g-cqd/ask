@@ -31,6 +31,12 @@ extension AgentConversation {
         saveThreadRecord(.identity(name, of: main.path), in: recorder, as: "which conversation \(name) belongs to")
     }
 
+    /// Records that `name` works with `model` from here (nil: back to `threads.model`, else the conversation's).
+    func recordModel(_ name: String, _ model: String?) {
+        guard let main = session.withLock({ $0 }) else { return }
+        saveThreadRecord(.model(name, model), in: main, as: "\(name)'s model")
+    }
+
     /// Records that `name` merged, with `summary`, at the leaf of the conversation it merged into.
     func recordMerged(_ name: String, summary: String, into parent: SessionRecorder?) {
         guard let main = session.withLock({ $0 }) else { return }
@@ -67,6 +73,10 @@ extension AgentConversation {
                 state: merged ? .merged : .stopped
             )
             if let title { threads.rename(record.id, to: title) }
+            // Its own model, as `/model` in its lane last chose it (owner, 2026-11-27).
+            if let chosen = records.last(where: { $0.event == .model && $0.id == record.id }) {
+                threads.setModel(record.id, to: chosen.model)
+            }
             // A subagent comes back as one: read-only, without an agent tool, as its definition if that still exists.
             if let definition = record.subagent {
                 let workspace = current.withLock { $0.settings.workspace }
@@ -95,11 +105,19 @@ extension AgentConversation {
         let first = start.flatMap { id in branch.firstIndex { $0.id == id }.map { $0 + 1 } } ?? 0
         var updates = blocks.filter { $0.at == nil }.map(\.update)
         var pending: [SessionEntry] = []
+        // The model that answered before what is shown, so the first change shown is told as one.
+        var routed = branch[..<first].last { if case .destination = $0.payload { true } else { false } }
+            .flatMap { if case .destination(let destination) = $0.payload { destination } else { nil } }
         func flush() {
             for step in SessionReplay.steps(pending) {
                 switch step {
                     case .prompt(let text): updates.append(.userPrompt(text))
                     case .pictures(let images): updates.append(.promptPictures(images.map(ToolImage.init)))
+                    case .destination(let destination):
+                        if let earlier = routed, earlier != destination {
+                            updates.append(Self.answersFromHere(destination))
+                        }
+                        routed = destination
                     case .event(let event):
                         recordUsage(event)
                         updates += Self.updates(for: event)
@@ -148,7 +166,7 @@ extension AgentConversation {
                         summary: record.summary ?? ""
                     )
                     return (record.shown(in: branch), merged)
-                case .identity, .renamed: return nil
+                case .identity, .renamed, .model: return nil
             }
         }
     }

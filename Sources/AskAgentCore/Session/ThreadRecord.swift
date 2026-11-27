@@ -11,6 +11,8 @@ public struct ThreadRecord: Sendable, Equatable {
         case identity
         /// It was named `title`, by the on-device model or with `/rename`.
         case renamed
+        /// It works with `model` from here, as `/model` in its lane chose it; no `model` takes its own away (owner, 2026-11-27).
+        case model
     }
 
     public var event: Event
@@ -23,6 +25,8 @@ public struct ThreadRecord: Sendable, Equatable {
     public var title: String?
     /// On a start: that it is a subagent (roadmap 0063), and the definition it runs as; empty for none. Nil for a thread.
     public var subagent: String?
+    /// On a ``Event/model``: the word `/model` was given, such as `claude-opus-5-5` or `codex/gpt-6`; nil when it was reset.
+    public var model: String?
 
     /// The id a ``Event/renamed`` record names the conversation itself by (note n60), which no thread has: threads are `thread-N`.
     public static let conversation = "conversation"
@@ -56,6 +60,13 @@ public struct ThreadRecord: Sendable, Equatable {
     public static func renamed(_ id: String, to title: String) -> ThreadRecord {
         var record = ThreadRecord(.renamed, id: id)
         record.title = title
+        return record
+    }
+
+    /// `id` works with `model` from here; nil for back to `threads.model`, else the conversation's.
+    public static func model(_ id: String, _ model: String?) -> ThreadRecord {
+        var record = ThreadRecord(.model, id: id)
+        record.model = model
         return record
     }
 

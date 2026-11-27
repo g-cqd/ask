@@ -21,14 +21,14 @@ extension SessionLogRecord: Codable {
     private enum SandboxKeys: String, CodingKey { case type, write, read, network }
     /// The thread record's own key set, as the sandbox record has one.
     private enum ThreadKeys: String, CodingKey {
-        case type, event, id, parent, prompt, file, at, summary, title, subagent
+        case type, event, id, parent, prompt, file, at, summary, title, subagent, model
     }
     private enum Kind: String, Codable, CaseIterable { case session, entry, leaf, sandbox, thread }
     /// A thread record's optional text fields, each under its key: read and written the same way.
     private static var threadTexts: [(ThreadKeys, WritableKeyPath<ThreadRecord, String?>)] {
         [
             (.parent, \.parent), (.prompt, \.prompt), (.file, \.file), (.summary, \.summary), (.title, \.title),
-            (.subagent, \.subagent)
+            (.subagent, \.subagent), (.model, \.model)
         ]
     }
 

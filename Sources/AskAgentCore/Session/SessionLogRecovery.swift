@@ -75,7 +75,10 @@ struct SessionLogRecovery {
     /// (`.some(nil)`), or an entry of a kind it does not have (`.some(entry)`). Nil when it is neither, and so damage.
     private mutating func newer(_ line: ArraySlice<UInt8>) -> SessionEntry?? {
         guard let probe = try? decoder.decode(SessionLogProbe.self, from: Array(line)) else { return nil }
-        if !SessionLogRecord.knownTypes.contains(probe.type) {
+        // A record of a type, or a thread record of an event, this build does not have.
+        let unknownThreadEvent =
+            probe.type == "thread" && probe.event.map { ThreadRecord.Event(rawValue: $0) == nil } == true
+        if !SessionLogRecord.knownTypes.contains(probe.type) || unknownThreadEvent {
             tree.keepUnknownRecord(Array(line))
             return .some(nil)
         }

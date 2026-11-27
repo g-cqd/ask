@@ -1,6 +1,7 @@
 internal import AskAI
 internal import AskAgentCore
 internal import AskTUI
+internal import Synchronization
 internal import Testing
 
 @testable import AskSession
@@ -59,5 +60,37 @@ struct ThreadModelTests {
         #expect(await fixture.conversation.focusedThreadModel()?.model == "claude-other-2")
         fixture.conversation.laneShown(nil)
         #expect(await fixture.conversation.focusedThreadModel() == nil)
+    }
+
+    @Test func `a thread's own model is recorded in main's session, and comes back with it`() async throws {
+        let fixture = try await ConversationFixture()
+        let main = try fixture.newSession()
+        _ = try main.append(.user("start"))
+        fixture.conversation.session.withLock { $0 = main }
+        let id = try Self.setUpThread(in: fixture, main: main)
+        // The thread, back from main's records as a resume brings it, holding its own session.
+        _ = fixture.conversation.restoreThreads()
+        await fixture.conversation.threadModel(id, arguments: "claude-other-2", update: fixture.update)
+        #expect(main.tree.threads.contains(.model(id, "claude-other-2")))
+        // As a resume does: the table emptied, its sessions let go, then rebuilt from main's records.
+        _ = fixture.conversation.restoreThreads()
+        #expect(fixture.conversation.threads.thread(id)?.model == "claude-other-2")
+        await fixture.conversation.threadModel(id, arguments: "reset", update: fixture.update)
+        _ = fixture.conversation.restoreThreads()
+        #expect(fixture.conversation.threads.thread(id)?.model == nil, "a reset is kept too")
+    }
+
+    /// A thread set up as starting one does, without running it; its session is closed once recorded, so a restore can open it.
+    private static func setUpThread(in fixture: ConversationFixture, main: SessionRecorder) throws -> String {
+        let path: String
+        do {
+            let recorder = try fixture.newSession()
+            path = recorder.path
+            _ = fixture.conversation.threads.add(prompt: "look", recorder: recorder)
+        }
+        let id = fixture.conversation.threads.runners.last?.id ?? "thread-1"
+        try main.recordThread(.started(id, parent: nil, prompt: "look", file: path, at: main.tree.leaf))
+        fixture.conversation.threads.reset()
+        return id
     }
 }

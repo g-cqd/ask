@@ -6,6 +6,8 @@ struct SessionLogProbe: Decodable {
     }
 
     let type: String
+    /// A thread record's event.
+    let event: String?
     let id: String?
     let parent: String?
     let payload: Payload?

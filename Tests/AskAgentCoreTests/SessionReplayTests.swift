@@ -115,7 +115,8 @@ struct SessionReplayTests {
         )
     }
 
-    @Test func `routing inserted between a tool call and its result is invisible to replay and context`() {
+    @Test func `routing inserted between a tool call and its result keeps the call whole, and is invisible to context`()
+    {
         let asked = response([.toolCall(id: "call", name: "read", input: .empty)])
         let payloads: [SessionPayload] = [
             .user("Go"), .response(asked), .toolResult(callID: "call", content: "ok", isError: false)
@@ -127,7 +128,17 @@ struct SessionReplayTests {
             ),
             at: 2
         )
-        #expect(SessionReplay.steps(entries(routed)) == SessionReplay.steps(entries(payloads)))
+        // Replay says where the routing was recorded (owner, 2026-11-27), and the call still finishes with its result, uninterrupted.
+        let destination = SessionDestination(
+            connectionID: "stable",
+            authorizationID: "grant",
+            name: "renamed",
+            model: "model"
+        )
+        #expect(
+            SessionReplay.steps(entries(routed)).filter { $0 != .destination(destination) }
+                == SessionReplay.steps(entries(payloads))
+        )
         #expect(RequestContext(entries(routed)) == RequestContext(entries(payloads)))
     }
 

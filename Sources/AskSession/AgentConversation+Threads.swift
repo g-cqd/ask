@@ -197,8 +197,7 @@ extension AgentConversation {
                 let loop =
                     try await threads.isSubagent(name)
                     ? self.subagentLoop(for: threads.subagentDefinition(name)) : self.threadLoop(model: own)
-                // Which model answers in its lane, on its status line (owner, 2026-11-26).
-                if !threads.isSubagent(name) { update(.thread(id: name, .label(await self.threadModelLabel(own)))) }
+                if !threads.isSubagent(name) { try await self.routeThread(name, own: own, update: update) }
                 let route = ApprovalRoute(
                     send: { update(.thread(id: name, $0)) },
                     waiting: { began in

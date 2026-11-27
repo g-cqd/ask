@@ -12,6 +12,9 @@ public enum SessionReplay {
         /// The pictures pasted into the prompt just before (roadmap 0224).
         case pictures([ImagePart])
         case event(AgentEvent)
+        /// Where the session's requests went from here: every recorded routing, for the reader to tell a change of model by the one
+        /// before it (owner, 2026-11-27).
+        case destination(SessionDestination)
     }
 
     /// The steps for `entries`, in order: a tree's active branch, root first.
@@ -27,7 +30,11 @@ public enum SessionReplay {
             pending.removeAll()
         }
         for entry in entries {
-            if case .destination = entry.payload { continue }
+            // Not a turn: a call waiting for its result is not interrupted by it.
+            if case .destination(let destination) = entry.payload {
+                steps.append(.destination(destination))
+                continue
+            }
             if case .toolResult(let id, let content, let isError, let images, let facts) = entry.payload,
                 let index = pending.firstIndex(where: { $0.id == id })
             {

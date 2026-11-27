@@ -23,7 +23,8 @@ struct SessionDestinationPersistenceTests {
         #expect(context.messages.count == 1)
         #expect(!String(describing: context.messages).contains("work-label"))
         #expect(!String(describing: context.messages).contains("revision-one"))
-        #expect(SessionReplay.steps(restored.activeBranch()) == [.prompt("hello")])
+        // Replay says where routing was recorded, for a change of model to be shown there (owner, 2026-11-27); never as a prompt.
+        #expect(SessionReplay.steps(restored.activeBranch()) == [.destination(selected), .prompt("hello")])
         #expect(SessionSummary(restored).prompts == 1)
     }
 

@@ -43,6 +43,7 @@ extension AgentConversation {
             }
         }
         threads.setModel(id, to: word)
+        recordModel(id, word)
         let label = await threadModelLabel(word)
         let when = thread.state.isActive ? "from its next run" : "from its next message"
         say("\(id) works with \(label) \(when); main keeps its model.", false)
