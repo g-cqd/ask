@@ -14,8 +14,8 @@ final class ScreenSession {
     let frames: FrameBox
     private var clipboard: ScreenClipboard
     /// The screen's height, for paging; the render loop knows its own.
-    private var rows: Int
-    private var columns: Int
+    var rows: Int
+    var columns: Int
     var run: Task<Void, Never>?
     var runnerOutput = RunnerOutputWatch()
     /// The lane the conversation was last told is shown.
@@ -41,14 +41,18 @@ final class ScreenSession {
     let notification: TerminalNotification
     var progressShown = false
     var longAction = LongAction()
+    /// The gateway viewers' terminals showing this screen (ADR-0170), and where they attach.
+    var mirrors: ScreenMirrorSet
 
     init(
         _ screen: ScreenTerminal,
         conversation: any Conversation,
         label: String,
         options: ScreenOptions,
-        opening: consuming [ConversationUpdate]
+        opening: consuming [ConversationUpdate],
+        mirrors: ScreenMirrors = .process
     ) {
+        self.mirrors = ScreenMirrorSet(registry: mirrors)
         terminal = screen.session
         renderer = screen.renderer
         connection = screen.connection
@@ -133,15 +137,10 @@ final class ScreenSession {
                 effects = [.quit]
             case .askColours:
                 return true
+            case .mirrorAttached, .mirrorInput, .mirrorResized, .mirrorEnded:
+                effects = await handleMirror(event) ?? []
         }
-        for effect in effects where await !perform(effect) {
-            return false
-        }
-        syncProgress()
-        syncLane()
-        syncAutoscroll()
-        render()
-        return true
+        return await settle(effects)
     }
 
     /// The shown lane's output is watched, and the conversation told which lane is shown, for `/reload` (roadmap 0195).
@@ -153,7 +152,7 @@ final class ScreenSession {
     }
 
     /// Carries out one effect of the controller. Returns false when the screen should close.
-    private func perform(_ effect: ScreenController.Effect) async -> Bool {
+    func perform(_ effect: ScreenController.Effect) async -> Bool {
         let sink = sink
         switch effect {
             case .startRun, .queuePrompt, .sendToThread: send(effect)

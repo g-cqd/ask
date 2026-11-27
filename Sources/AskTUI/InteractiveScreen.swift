@@ -92,7 +92,8 @@ func runInteractiveScreen(
     environment: [String: String] = [:],
     pasteboard: @escaping @Sendable (String) async -> PasteboardResult = { _ in .copied },
     resizes: AsyncStream<Void>,
-    appearances: AsyncStream<Void> = AsyncStream { $0.finish() }
+    appearances: AsyncStream<Void> = AsyncStream { $0.finish() },
+    mirrors: ScreenMirrors = .process
 ) async throws -> ScreenExit {
     let connection = SerializedConnection(connection)
     let terminal = TerminalSession(connection: connection, modes: modes(for: options), keyboardProtocol: .probe)
@@ -112,7 +113,8 @@ func runInteractiveScreen(
         label: label,
         options: options,
         opening: openingUpdates(history: history, notices: notices, details: details),
-        changes: (resizes, appearances)
+        changes: (resizes, appearances),
+        mirrors: mirrors
     )
 }
 
@@ -127,7 +129,8 @@ private func runInteractiveScreen(
     label: String,
     options: ScreenOptions,
     opening: consuming [ConversationUpdate],
-    changes: (resizes: AsyncStream<Void>, appearances: AsyncStream<Void>)
+    changes: (resizes: AsyncStream<Void>, appearances: AsyncStream<Void>),
+    mirrors: ScreenMirrors = .process
 ) async throws -> ScreenExit {
     let exit: ScreenExit
     do {
@@ -137,7 +140,8 @@ private func runInteractiveScreen(
             conversation: conversation,
             label: label,
             options: options,
-            opening: consume opening
+            opening: consume opening,
+            mirrors: mirrors
         )
         exit = try await session.run(resizes: changes.resizes, appearances: changes.appearances)
     } catch {

@@ -24,4 +24,12 @@ enum ScreenEvent: Sendable {
     case inputEnded
     /// Time to ask the terminal for its colours again, after macOS changed appearance (roadmap 0108).
     case askColours
+    /// A gateway viewer's terminal joined (ADR-0170).
+    case mirrorAttached(ScreenMirror)
+    /// A key or paste from a viewer's terminal, applied as the person's.
+    case mirrorInput(InputEvent)
+    /// A viewer's terminal changed size.
+    case mirrorResized(Int)
+    /// A viewer's terminal went away.
+    case mirrorEnded(Int)
 }
