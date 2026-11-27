@@ -55,8 +55,10 @@ struct NoiseLinkTests {
         }
         _ = try? await impostor
         // Only the first handshake message left the node: its ephemeral key, never its static one.
-        #expect(nodeEnd.sent.withLock { $0.count } == 1)
-        #expect(nodeEnd.sent.withLock { $0.first?.count } == 2 + 32)
+        let sent: [[UInt8]] = nodeEnd.sent.withLock { $0 }
+        let firstLength: Int = sent.first?.count ?? 0
+        #expect(sent.count == 1)
+        #expect(firstLength == 2 + 32)
     }
 
     @Test func `the gateway refuses a node it has not enrolled`() async throws {

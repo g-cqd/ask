@@ -19,23 +19,6 @@ struct ViewerEndpointTests {
         }
     }
 
-    /// A connected client of the endpoint's socket.
-    private static func connect(_ path: String) throws -> TCPStream {
-        let client = socket(AF_UNIX, SOCK_STREAM, 0)
-        var address = sockaddr_un()
-        address.sun_family = sa_family_t(AF_UNIX)
-        withUnsafeMutableBytes(of: &address.sun_path) { raw in
-            for (index, byte) in path.utf8.enumerated() { raw[index] = byte }
-        }
-        let connected = withUnsafePointer(to: &address) { pointer in
-            unsafe pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) {
-                unsafe Darwin.connect(client, $0, socklen_t(MemoryLayout<sockaddr_un>.size))
-            }
-        }
-        guard connected == 0 else { throw POSIXError(.ECONNREFUSED) }
-        return TCPStream(descriptor: client)
-    }
-
     private static func send(_ message: ChannelMessage, _ stream: TCPStream) async throws {
         try await stream.send(try NoiseFraming.frame(message.bytes))
     }
@@ -99,7 +82,7 @@ struct ViewerEndpointTests {
         _ = terminal.read { $0.contains("viewer-test") }
         #expect(ScreenViewers.isRunning)
 
-        let node = try Self.connect(endpoint.socketPath)
+        let node = try UnixSocket.connect(to: endpoint.socketPath)
         try await Self.send(.attach(size, session: "4242"), node)
         let (drawn, _) = await Self.read(node) { drawn, _ in drawn.contains("viewer-test") }
         #expect(drawn.contains("\u{1B}[?1049h") && drawn.contains("viewer-test"))
@@ -129,7 +112,7 @@ struct ViewerEndpointTests {
         )
         let size = try #require(ChannelMessage.Size(columns: 80, rows: 24))
         for first: ChannelMessage in [.attach(size, session: "2"), .input([0x61])] {
-            let node = try Self.connect(endpoint.socketPath)
+            let node = try UnixSocket.connect(to: endpoint.socketPath)
             try await Self.send(first, node)
             let (_, last) = await Self.read(node) { _, message in if case .refused = message { true } else { false } }
             guard case .refused = last else {

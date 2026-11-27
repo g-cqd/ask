@@ -9,7 +9,7 @@ internal import Foundation
 /// `ask gateway`: this computer's side of the gateway (ADR-0170). Its key, kept in the keychain, and the controller keys it trusts,
 /// kept in `<config>/gateway/trusted.json`. Trusting and untrusting are done here, at the computer, and recorded in the security
 /// audit log.
-struct GatewayCommand: ParsableCommand {
+struct GatewayCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "gateway",
         abstract: "This computer's gateway key, and the controller keys it trusts.",
@@ -17,21 +17,27 @@ struct GatewayCommand: ParsableCommand {
             "ask gateway fingerprint: this computer's key and its fingerprint (made the first time).\n"
             + "ask gateway trust KEY [--label NAME]: trust a controller's public key (base64 or hex).\n"
             + "ask gateway untrust KEY|FINGERPRINT: stop trusting it (a fingerprint's first 8 digits or more).\n"
-            + "ask gateway list: the controllers trusted."
+            + "ask gateway list: the controllers trusted.\n"
+            + "ask gateway node: link to the gateway (gateway.address, gateway.key) and share this computer's sessions until stopped."
     )
 
-    @Argument(help: "fingerprint, trust, untrust or list.") var action: String
+    @Argument(help: "fingerprint, trust, untrust, list or node.") var action: String
     @Argument(help: "For trust and untrust: the key, or for untrust a fingerprint's start.") var key: String?
     @Option(help: "For trust: what to call the controller, such as the browser it was made in.") var label =
         "controller"
 
-    func run() {
+    func run() async {
         switch action {
             case "fingerprint": fingerprint()
             case "trust": trust()
             case "untrust": untrust()
             case "list": list()
-            default: fail("ask gateway: \(action) is not fingerprint, trust, untrust or list.", code: 64)
+            case "node":
+                let reason = await GatewayNodeRunner.run { line in
+                    FileHandle.standardError.write(Data((line + "\n").utf8))
+                }
+                fail("ask gateway node: \(reason).", code: 78)
+            default: fail("ask gateway: \(action) is not fingerprint, trust, untrust, list or node.", code: 64)
         }
     }
 

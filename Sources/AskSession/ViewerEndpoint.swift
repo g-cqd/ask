@@ -42,7 +42,7 @@ final class ViewerEndpoint: Sendable {
         _ = chmod(folder, 0o700)
         socketPath = folder + "/\(description.id).sock"
         descriptionPath = folder + "/\(description.id).json"
-        let listener = try Self.listening(at: socketPath)
+        let listener = try UnixSocket.listen(at: socketPath)
         let expected = description.id
         acceptor = try SocketAcceptor(listener: listener) { client in
             // The person's own processes only: a socket in an owner-only folder, and its peer checked again.
@@ -67,36 +67,5 @@ final class ViewerEndpoint: Sendable {
         acceptor.stop()
         unlink(socketPath)
         unlink(descriptionPath)
-    }
-
-    /// A Unix socket listening at `path`, made with no access for anyone but the owner.
-    private static func listening(at path: String) throws(TCPStream.Failure) -> Int32 {
-        unlink(path)
-        let listener = socket(AF_UNIX, SOCK_STREAM, 0)
-        guard listener >= 0 else { throw TCPStream.Failure(call: "socket", code: errno) }
-        var address = sockaddr_un()
-        address.sun_family = sa_family_t(AF_UNIX)
-        let bytes = Array(path.utf8)
-        guard bytes.count < MemoryLayout.size(ofValue: address.sun_path) else {
-            Darwin.close(listener)
-            throw TCPStream.Failure(call: "socket path", code: ENAMETOOLONG)
-        }
-        withUnsafeMutableBytes(of: &address.sun_path) { raw in
-            for (index, byte) in bytes.enumerated() { raw[index] = byte }
-        }
-        let previous = umask(0o077)
-        defer { umask(previous) }
-        let failed: String? = withUnsafePointer(to: &address) { pointer in
-            unsafe pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { raw in
-                if unsafe bind(listener, raw, socklen_t(MemoryLayout<sockaddr_un>.size)) != 0 { return "bind" }
-                return listen(listener, 16) != 0 ? "listen" : nil
-            }
-        }
-        if let failed {
-            let code = errno
-            Darwin.close(listener)
-            throw TCPStream.Failure(call: failed, code: code)
-        }
-        return listener
     }
 }
