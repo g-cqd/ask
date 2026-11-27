@@ -144,6 +144,12 @@ The model can run commands in the background, and `/thread` starts threads. The 
 jobs`). Click the count, or type `/jobs`, to list them below the input: Up and Down choose one, Enter shows its output (a thread's
 conversation) in place of the conversation, and Esc, or a click on the list's first row, `main`, goes back. Jobs never outlive ask.
 
+A job the model left running tells it when it ends, so the model need not wait for it: it goes on with something else, and the
+job's end, with what it printed, reaches it as a message at its next step. If the model had finished meanwhile, the end starts its
+next turn, in main or in the thread that started the job. An end the model already saw (it waited for it, stopped the job, or read
+its status) is not told again, nor is the end of your own `!` command. The model can ask not to be told of a job with the `job`
+tool's `quiet` action.
+
 One list shows at a time: while the sidebar is shown, the list below the input is not. Below the input, jobs alone are a flat list; once a thread exists it is the same tree as the sidebar's. On a wide screen, `/sidebar`, **Ctrl+\\**, or a click on `«` in the top-right corner shows them beside the conversation, one row
 each:
 

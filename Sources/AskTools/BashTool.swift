@@ -114,7 +114,8 @@ public struct BashTool: ArgumentTool {
         readiness: ShellReadiness?,
         yield: Int?,
         limit: Int,
-        in context: ToolContext
+        in context: ToolContext,
+        forPerson: Bool = false
     ) async throws(ToolFailure) -> ToolOutput {
         let observe = observe
         let job = access.jobs.start(
@@ -133,7 +134,17 @@ public struct BashTool: ArgumentTool {
                 try await access.jobs.foreground.race {
                     try await JobWaiting.wait(for: job, readiness: readiness, seconds: limit, clock: clock, in: context)
                 } ?? .backgrounded
-            return await Self.output(of: outcome, job: job, readiness: readiness, yield: yield, limit: limit)
+            let output = await Self.output(
+                of: outcome,
+                job: job,
+                readiness: readiness,
+                yield: yield,
+                limit: limit,
+                notifies: !forPerson
+            )
+            // An end that came between the wait and the job being left running is told now; any other, when it comes. Once either way.
+            if output.backgroundJob != nil { access.jobs.announceEnd(of: job) }
+            return output
         } catch {
             job.stop()
             await job.ended()
@@ -152,66 +163,26 @@ public struct BashTool: ArgumentTool {
         // Their login shell when it is one; else the one their model's commands get.
         let shell = shell.flatMap { JobTable.isShell($0) ? $0 : nil } ?? access.jobs.commandShell(nil, in: context)
         do {
-            return try await launch(
+            let output = try await launch(
                 command,
                 shell: shell,
                 readiness: nil,
                 yield: Self.personYield,
                 limit: Self.personYield,
-                in: context
+                in: context,
+                // The person's own command: its end is theirs to see, not the model's to be told of.
+                forPerson: true
             )
+            return output
         } catch {
             return error.output
         }
     }
 
-    /// What the call returns once its wait is over: the output of a command that ended, a job still running in the background,
-    /// or an error for one that was stopped.
-    private static func output(
-        of outcome: JobWaiting.Outcome,
-        job: Job,
-        readiness: ShellReadiness?,
-        yield: Int?,
-        limit: Int
-    ) async -> ToolOutput {
-        switch outcome {
-            case .found where job.status != .running: return Self.finished(job)
-            case .found: return Self.running(job, "[\(job.id) \(readiness?.headline ?? "ready"); still running]")
-            case .ended: return Self.finished(job)
-            case .backgrounded where job.status != .running: return Self.finished(job)
-            case .backgrounded:
-                return Self.running(
-                    job,
-                    "[sent to the background by the person as \(job.id)\(JobWaiting.fileNote(job)); display [#\(job.displayID)]; "
-                        + "it goes on; use job to inspect, send input, or stop]"
-                )
-            case .timedOut where readiness == nil && yield != nil:
-                return Self.running(
-                    job,
-                    "[still running as \(job.id) after \(limit) s\(JobWaiting.fileNote(job)); "
-                        + "display [#\(job.displayID)]; use job to inspect, send input, or stop]"
-                )
-            case .timedOut, .cancelled:
-                job.stop()
-                await job.ended()
-                return .error(
-                    Self.body(job.takeOutput())
-                        + (outcome == .cancelled
-                            ? Self.abortedMark
-                            : "\(Self.timedOutMark) \(limit) s; the command and its children were stopped]")
-                )
-        }
-    }
-
-    /// A command left running as a job: its output so far, then `note`.
-    private static func running(_ job: Job, _ note: String) -> ToolOutput {
-        job.markBackgrounded()
-        return ToolOutput(body(job.takeOutput()) + note, backgroundJob: job.id)
-    }
-
     /// The result of a command that ended: its output, where the whole of it is if that was too long, and
     /// how it ended.
     static func finished(_ job: Job) -> ToolOutput {
+        job.markEndReported()
         let printed = job.printed
         let cut = printed.bytes > OutputCap.standard.maximumBytes || printed.lines >= OutputCap.standard.maximumLines
         if !cut { job.discardFile() }

@@ -38,7 +38,7 @@ extension Job {
             let key: Int? = state.withLock { state in
                 guard state.status == .running else { return nil }
                 defer { state.nextWaiter += 1 }
-                state.waiters[state.nextWaiter] = Waiter(needle: nil, continuation: continuation)
+                state.waiters[state.nextWaiter] = Waiter(needle: nil, continuation: continuation, reports: false)
                 return state.nextWaiter
             }
             if key == nil { continuation.resume(returning: .ended) }

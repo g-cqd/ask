@@ -5,6 +5,8 @@ public import AskAgentCore
 public struct JobActionTool: ArgumentTool, JobTool {
     public enum Action: String, Decodable, Sendable {
         case input, stop, status, wait
+        /// Go on with something else, and be told when the job ends; or, with quiet, not be (owner, 2026-11-27).
+        case notify, quiet
     }
 
     public struct Arguments: Decodable, Sendable {
@@ -37,11 +39,14 @@ public struct JobActionTool: ArgumentTool, JobTool {
             Each returns what the job printed since it was last shown. A wait whose time is up leaves the job running. To \
             wait for a text, a port or a file, start the command with bash's wait_for. Stop the jobs you started once they \
             are no longer needed.
+            You need not wait: a job you left running tells you when it ends, as a message, even when you have finished \
+            meanwhile, so you can go on with something else. notify asks for that again; quiet stops it, for a job whose \
+            end does not matter.
             """
     ) {
         ToolProperty.string("job").described("The job's name, as bash gave it: job-1.")
         // @dl:accept -- independent tools declare wire fields through the same builder; their field lists are data
-        ToolProperty.schema("action", #"{"type":"string","enum":["input","status","stop","wait"]}"#)
+        ToolProperty.schema("action", #"{"type":"string","enum":["input","status","stop","wait","notify","quiet"]}"#)
             .described("What to do: input unless given.").optional
         ToolProperty.string("text").described("With input: what to write to the job's standard input.").optional
         ToolProperty.boolean("close_input").described("With input: close the job's standard input after writing.")
@@ -70,9 +75,21 @@ public struct JobActionTool: ArgumentTool, JobTool {
         let job = try access.job(arguments.job)
         switch action {
             case .status:
-                return ToolOutput(BashTool.body(job.takeOutput()) + "[\(job.id) status: \(job.status.description)]")
+                let status = job.status
+                // A status that shows the end shows it to the model, which needs no telling then.
+                if status != .running { job.markEndReported() }
+                return ToolOutput(BashTool.body(job.takeOutput()) + "[\(job.id) status: \(status.description)]")
+            case .notify, .quiet:
+                if job.status != .running { return JobWaiting.ended(job, headline: "[\(job.id) had already ended]") }
+                job.notifyOnEnd(action == .notify)
+                let note =
+                    action == .notify
+                    ? "you will be told when it ends; go on meanwhile" : "you will not be told when it ends"
+                return ToolOutput(BashTool.body(job.takeOutput()) + "[\(job.id) still running; \(note)]")
             case .stop:
                 let wasRunning = job.status == .running
+                // The stop's result shows the end, so the model is not told of it again.
+                job.markEndReported()
                 job.stop()
                 await job.ended()
                 let headline = wasRunning ? "[\(job.id) stopped]" : "[\(job.id) had already ended]"

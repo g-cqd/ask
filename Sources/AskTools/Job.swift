@@ -34,6 +34,8 @@ public final class Job: Sendable {
         var needle: [UInt8]?
         var carry: [UInt8] = []
         let continuation: CheckedContinuation<WaitResult, Never>
+        /// Whether what it ends on goes back to the model, as a tool's wait does; not a cleanup's wait for the end.
+        var reports = true
     }
 
     struct State {
@@ -41,6 +43,10 @@ public final class Job: Sendable {
         var endedAt: ContinuousClock.Instant?
         var lastOutputAt: ContinuousClock.Instant?
         var backgrounded = false
+        /// Whether the model is told when the job ends, if it has not seen the end itself (owner, 2026-11-27).
+        var notifies = false
+        /// Whether the model has seen the job's end, or been told of it.
+        var endReported = false
         var unread: OutputBuffer
         /// The last ``recentBytes`` of all output, seen or not: where a text a waiter looks for may have begun.
         var recent: [UInt8] = []
@@ -212,6 +218,8 @@ public final class Job: Sendable {
             if let file = state.file { _ = try? file.close() }
             state.file = nil
             defer { state.waiters.removeAll() }
+            // A tool waiting on the job returns its end to the model, which needs no telling then.
+            if state.waiters.values.contains(where: \.reports) { state.endReported = true }
             return (state.waiters.values.map(\.continuation), observers)
         }
         for observer in observers { observer.finish() }

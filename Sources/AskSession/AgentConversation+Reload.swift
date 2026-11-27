@@ -45,6 +45,10 @@ extension AgentConversation {
                     }
                 }
                 group.addTask { await JobActivity.follow(jobs) { update(.runnerActivity($0)) } }
+                // A job the model left running tells it when it ends, even once its turn is over (owner, 2026-11-27).
+                group.addTask {
+                    for await ending in jobs.endings() { self.deliver(ending, update: update) }
+                }
                 // One watcher for the configuration files and the executable; the screen owns this task while it shows
                 // the conversation.
                 group.addTask { await self.watchFiles(since: startup, update: update) }

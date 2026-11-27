@@ -147,7 +147,13 @@ struct JobToolsTests {
         clock.advance(by: .milliseconds(50))
         let output = await waiting
         await jobs.stopAll()
-        #expect(output == ToolOutput("[job-1 port \(port) accepts connections; still running]", backgroundJob: "job-1"))
+        #expect(
+            output
+                == ToolOutput(
+                    "[job-1 port \(port) accepts connections; still running]" + BashTool.endNoticeLine,
+                    backgroundJob: "job-1"
+                )
+        )
     }
 
     /// A port the kernel handed out, released, and that refuses connections now. Anything else on the machine may take

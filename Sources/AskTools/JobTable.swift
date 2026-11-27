@@ -16,8 +16,9 @@ public final class JobTable: Sendable {
     private let owners = Mutex<[String: String]>([:])
     private let counter = Atomic<Int>(0)
     private let displayIDs = Mutex(JobDisplayIDs())
-    private let observers = Mutex<[Int: AsyncStream<[JobSummary]>.Continuation]>([:])
-    private let nextObserver = Atomic<Int>(0)
+    private let observers = Listeners<[JobSummary]>()
+    /// Who hears of the jobs whose end the model is to be told of (owner, 2026-11-27).
+    let endListeners = Listeners<JobEnding>()
     /// How many finished jobs are kept, and which were let go (`jobs.keepFinished`).
     let retention = Mutex(JobRetention())
     /// Stops the jobs' groups if ask is killed, which nothing in ask can observe (ADR-0079).
@@ -157,6 +158,7 @@ public final class JobTable: Sendable {
         // The table learns of an ending the way a stop does, by waiting for it, so nothing polls.
         Task { [weak self] in
             await job.ended()
+            self?.announceEnd(of: job)
             self?.letGoFinished()
             self?.notifyObservers()
         }
@@ -169,6 +171,9 @@ public final class JobTable: Sendable {
             jobs[id] ?? jobs.values.first { $0.displayID == (id.hasPrefix("#") ? String(id.dropFirst()) : id) }
         }
     }
+
+    /// The thread job `id` was started for; nil for main's, or the person's.
+    func owner(of id: String) -> String? { owners.withLock { $0[id] } }
 
     /// The jobs still running, by name.
     public var running: [String] {
@@ -202,18 +207,10 @@ public final class JobTable: Sendable {
 
     /// The running jobs now, then again each time one starts or ends. A slow reader sees the newest list, not every list.
     public func changes() -> AsyncStream<[JobSummary]> {
-        AsyncStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
-            let key = nextObserver.wrappingAdd(1, ordering: .relaxed).newValue
-            observers.withLock { $0[key] = continuation }
-            continuation.onTermination = { [weak self] _ in self?.observers.withLock { $0[key] = nil } }
-            continuation.yield(summaries)
-        }
+        observers.stream(buffering: .bufferingNewest(1), first: summaries)
     }
 
-    private func notifyObservers() {
-        let list = summaries
-        observers.withLock { for continuation in $0.values { continuation.yield(list) } }
-    }
+    private func notifyObservers() { observers.send(summaries) }
 
     private static func number(_ id: String) -> Int { order(id) }
 
