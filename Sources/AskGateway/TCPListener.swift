@@ -11,10 +11,15 @@ package final class TCPListener: Sendable {
     /// - Parameters:
     ///   - host: a dotted IPv4 address.
     ///   - port: the port, or 0.
+    ///   - subnet: when set, any peer outside this IPv4 subnet is closed before a byte is read.
     ///   - accept: receives each connection, on the accepting thread: it must hand the stream over, not serve it there.
     /// - Throws: ``TCPStream/Failure`` naming the call that failed.
-    package init(host: String, port: UInt16, accept: @escaping @Sendable (TCPStream) -> Void) throws(TCPStream.Failure)
-    {
+    package init(
+        host: String,
+        port: UInt16,
+        subnet: IPv4Subnet? = nil,
+        accept: @escaping @Sendable (TCPStream) -> Void
+    ) throws(TCPStream.Failure) {
         var address = sockaddr_in()
         address.sin_family = sa_family_t(AF_INET)
         address.sin_port = port.bigEndian
@@ -30,7 +35,15 @@ package final class TCPListener: Sendable {
             return unsafe getsockname(descriptor, raw, &named) != 0 ? "getsockname" : nil
         }
         self.port = UInt16(bigEndian: address.sin_port)
-        acceptor = try SocketAcceptor(listener: listener) { accept(TCPStream(descriptor: $0)) }
+        acceptor = try SocketAcceptor(listener: listener) { client in
+            if let subnet {
+                guard let peer = IPv4Subnet.peerAddress(of: client), subnet.contains(peer) else {
+                    Darwin.close(client)
+                    return
+                }
+            }
+            accept(TCPStream(descriptor: client))
+        }
     }
 
     /// Stops accepting; connections already accepted go on.

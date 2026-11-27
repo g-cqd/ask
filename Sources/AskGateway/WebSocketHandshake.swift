@@ -6,7 +6,11 @@ internal import Foundation
 package struct WebSocketHandshake: Sendable, Equatable {
     /// Why an opening was refused.
     package enum Refusal: Error, Equatable {
-        case incomplete, tooLarge, notAWebSocket, wrongVersion, missingKey
+        case incomplete
+        case tooLarge
+        case notAWebSocket
+        case wrongVersion
+        case missingKey
     }
 
     /// The request's path, such as `/` or `/socket`.
@@ -19,28 +23,44 @@ package struct WebSocketHandshake: Sendable, Equatable {
     /// The largest header block read before the opening is refused.
     package static let largest = 16_384
 
-    /// The handshake at the start of `bytes`, and how many bytes it took; ``Refusal/incomplete`` while the headers have not ended.
-    package static func parse(_ bytes: [UInt8]) throws(Refusal) -> (handshake: WebSocketHandshake, length: Int) {
+    struct RequestHead {
+        let method: String
+        let target: String
+        let headers: [String: String]
+        let end: Int
+    }
+
+    /// Reads the HTTP/1.1 request line, lowercased headers, and header block byte length from `bytes`.
+    static func readRequest(_ bytes: [UInt8]) throws(Refusal) -> RequestHead {
         guard let end = headerEnd(bytes) else { throw bytes.count > largest ? .tooLarge : .incomplete }
         guard end <= largest else { throw .tooLarge }
         let text = String(decoding: bytes[..<end], as: UTF8.self)
         var lines = text.components(separatedBy: "\r\n")
         let request = lines.removeFirst().split(separator: " ")
-        guard request.count == 3, request[0] == "GET", request[2].hasPrefix("HTTP/1.1") else { throw .notAWebSocket }
+        guard request.count == 3, request[2].hasPrefix("HTTP/1.1") else { throw .notAWebSocket }
         var headers: [String: String] = [:]
         for line in lines where !line.isEmpty {
             guard let colon = line.firstIndex(of: ":") else { throw .notAWebSocket }
             headers[line[..<colon].lowercased()] = line[line.index(after: colon)...]
                 .trimmingCharacters(in: .whitespaces)
         }
-        guard headers["upgrade"]?.lowercased() == "websocket",
-            headers["connection"]?.lowercased().split(separator: ",")
+        return RequestHead(method: String(request[0]), target: String(request[1]), headers: headers, end: end)
+    }
+
+    /// The handshake at the start of `bytes`, and how many bytes it took; ``Refusal/incomplete`` while the headers have not ended.
+    package static func parse(_ bytes: [UInt8]) throws(Refusal) -> (handshake: WebSocketHandshake, length: Int) {
+        let head = try readRequest(bytes)
+        guard head.method == "GET",
+            head.headers["upgrade"]?.lowercased() == "websocket",
+            head.headers["connection"]?.lowercased().split(separator: ",")
                 .contains(where: { $0.trimmingCharacters(in: .whitespaces) == "upgrade" })
                 == true
         else { throw .notAWebSocket }
-        guard headers["sec-websocket-version"] == "13" else { throw .wrongVersion }
-        guard let key = headers["sec-websocket-key"], Data(base64Encoded: key)?.count == 16 else { throw .missingKey }
-        return (WebSocketHandshake(path: String(request[1]), headers: headers, key: key), end)
+        guard head.headers["sec-websocket-version"] == "13" else { throw .wrongVersion }
+        guard let key = head.headers["sec-websocket-key"], Data(base64Encoded: key)?.count == 16 else {
+            throw .missingKey
+        }
+        return (WebSocketHandshake(path: head.target, headers: head.headers, key: key), head.end)
     }
 
     /// The `Sec-WebSocket-Accept` for `key`.
@@ -55,11 +75,6 @@ package struct WebSocketHandshake: Sendable, Equatable {
                 + "Sec-WebSocket-Accept: \(Self.accept(for: key))\r\n\r\n")
                 .utf8
         )
-    }
-
-    /// An HTTP answer refusing the opening, with `status` such as `400 Bad Request`.
-    package static func refusal(_ status: String) -> [UInt8] {
-        Array("HTTP/1.1 \(status)\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".utf8)
     }
 
     /// Where the header block ends: past the first empty line.

@@ -4,34 +4,50 @@ internal import AskAgentCore
 package import AskGateway
 internal import Foundation
 
-/// Where this computer keeps the controller keys it trusts: `<config>/gateway/trusted.json`, owner-only, replaced whole (ADR-0089).
+/// Where a computer keeps the gateway keys it trusts (`<config>/gateway/trusted.json` for controllers on a node, and
+/// `<config>/gateway/nodes.json` for enrolled nodes on the gateway): owner-only, replaced whole (ADR-0089, ADR-0170).
 package enum GatewayTrustFile {
-    package static var path: String {
-        let configuration = (ConfigurationSource.here.loader.trustPath as NSString).deletingLastPathComponent
-        return configuration + "/gateway/trusted.json"
+    package enum Role: Sendable {
+        case controllers
+        case nodes
+
+        var fileName: String {
+            switch self {
+                case .controllers: "trusted.json"
+                case .nodes: "nodes.json"
+            }
+        }
     }
 
-    /// The trusted controllers; none when the file is missing. A file that does not read stops the command, so a typo is never
-    /// taken for an empty list.
-    package static func load() -> GatewayTrust {
-        guard let data = FileManager.default.contents(atPath: path) else { return GatewayTrust() }
+    package static func path(for role: Role = .controllers) -> String {
+        let configuration = (ConfigurationSource.here.loader.trustPath as NSString).deletingLastPathComponent
+        return configuration + "/gateway/" + role.fileName
+    }
+
+    package static var path: String { path(for: .controllers) }
+
+    /// The trusted entries; none when the file is missing. A file that does not read stops the command, so a typo is never taken for
+    /// an empty list.
+    package static func load(_ role: Role = .controllers) -> GatewayTrust {
+        let file = path(for: role)
+        guard let data = FileManager.default.contents(atPath: file) else { return GatewayTrust() }
         guard let trust = try? AemiJSON.JSONDecoder().decode(GatewayTrust.self, from: Array(data)) else {
-            fail("ask: \(path) cannot be read as the gateway's trusted controllers.", code: 65)
+            fail("ask: \(file) cannot be read.", code: 65)
         }
         return trust
     }
 
-    /// The trusted controllers as the file says now; none when it is missing or does not read. For the node, which reads it again
-    /// on each channel and each list, and must not stop on a file being written.
-    package static func current() -> GatewayTrust {
-        guard let data = FileManager.default.contents(atPath: path),
+    /// The trusted entries as the file says now; none when it is missing or does not read. Read again on each channel or connection.
+    package static func current(_ role: Role = .controllers) -> GatewayTrust {
+        guard let data = FileManager.default.contents(atPath: path(for: role)),
             let trust = try? AemiJSON.JSONDecoder().decode(GatewayTrust.self, from: Array(data))
         else { return GatewayTrust() }
         return trust
     }
 
-    package static func save(_ trust: GatewayTrust) {
-        let folder = (path as NSString).deletingLastPathComponent
+    package static func save(_ trust: GatewayTrust, _ role: Role = .controllers) {
+        let file = path(for: role)
+        let folder = (file as NSString).deletingLastPathComponent
         var encoder = AemiJSON.JSONEncoder()
         encoder.options.keyOrder = .sorted
         do {
@@ -40,9 +56,9 @@ package enum GatewayTrustFile {
                 withIntermediateDirectories: true,
                 attributes: [.posixPermissions: 0o700]
             )
-            try AtomicFile.replace(URL(fileURLWithPath: path), with: encoder.encodeToBytes(trust))
+            try AtomicFile.replace(URL(fileURLWithPath: file), with: encoder.encodeToBytes(trust))
         } catch {
-            fail("ask: cannot write \(path): \(error)", code: 73)
+            fail("ask: cannot write \(file): \(error)", code: 73)
         }
     }
 }
