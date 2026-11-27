@@ -11,6 +11,11 @@ package final class TCPStream: ByteStream {
         package let call: String
         package let code: Int32
         package var description: String { "\(call): \(String(cString: strerror(code)))" }
+
+        package init(call: String, code: Int32) {
+            self.call = call
+            self.code = code
+        }
     }
 
     private let descriptor: Int32
@@ -25,18 +30,7 @@ package final class TCPStream: ByteStream {
         _ = setsockopt(descriptor, SOL_SOCKET, SO_SNDTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
         var noSignal: Int32 = 1
         _ = setsockopt(descriptor, SOL_SOCKET, SO_NOSIGPIPE, &noSignal, socklen_t(MemoryLayout<Int32>.size))
-        let (stream, continuation) = AsyncStream<[UInt8]>.makeStream()
-        pieces = stream
-        Thread.detachNewThread {
-            var buffer = [UInt8](repeating: 0, count: 65_536)
-            while true {
-                let count = buffer.withUnsafeMutableBytes { unsafe read(descriptor, $0.baseAddress, $0.count) }
-                if count < 0, errno == EINTR { continue }
-                guard count > 0 else { break }
-                continuation.yield(Array(buffer[..<count]))
-            }
-            continuation.finish()
-        }
+        pieces = DescriptorReader.pieces(of: descriptor)
     }
 
     /// Connects to `host:port`, IPv4 or IPv6, by the addresses `host` resolves to, each tried in turn.
@@ -49,13 +43,7 @@ package final class TCPStream: ByteStream {
     }
 
     package func send(_ bytes: [UInt8]) async throws {
-        var offset = 0
-        while offset < bytes.count {
-            let written = bytes[offset...].withUnsafeBytes { unsafe write(descriptor, $0.baseAddress, $0.count) }
-            if written < 0, errno == EINTR { continue }
-            guard written > 0 else { throw Failure(call: "write", code: errno) }
-            offset += written
-        }
+        guard DescriptorReader.writeAll(bytes, to: descriptor) else { throw Failure(call: "write", code: errno) }
     }
 
     /// One task receives at a time, as a link does: each call reads the stream's one buffer through an iterator of its own.

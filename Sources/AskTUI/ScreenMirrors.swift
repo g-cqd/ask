@@ -31,7 +31,9 @@ final class ScreenMirrors: Sendable {
     var isRunning: Bool { running.withLock { $0 != nil } }
 
     /// Attaches a terminal on `connection` to the running screen; its id, or nil when no screen runs or the terminal cannot be used.
-    func attach(_ connection: any TerminalConnection) -> Int? {
+    /// `closing`: a descriptor the mirror owns from here, closed once it is gone, or at once when nothing attaches.
+    func attach(_ connection: any TerminalConnection, closing descriptor: Int32? = nil) -> Int? {
+        let closer = descriptor.map(DescriptorCloser.init)
         let taken = running.withLock { running -> (Int, AsyncStream<ScreenEvent>.Continuation)? in
             guard var current = running else { return nil }
             defer {
@@ -40,7 +42,11 @@ final class ScreenMirrors: Sendable {
             }
             return (current.next, current.sink)
         }
-        guard let (id, sink) = taken, let mirror = try? ScreenMirror(id: id, connection: connection) else { return nil }
+        // Without a mirror the closer goes now, closing the descriptor.
+        guard let (id, sink) = taken, let mirror = try? ScreenMirror(id: id, connection: connection, closer: closer)
+        else {
+            return nil
+        }
         sink.yield(.mirrorAttached(mirror))
         return id
     }

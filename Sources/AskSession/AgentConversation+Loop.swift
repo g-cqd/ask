@@ -181,6 +181,14 @@ func runInteractive(
             grants: reloaded?.grantsPath.flatMap(SessionGrants.take(from:)),
             makeLoop: conversationLoop(instructions: files, jobs: jobs, mcp: mcp)
         )
+        // Viewers through the gateway reach the screen here, when this computer shares its sessions (ADR-0170).
+        var notices = startupNotices
+        let viewers = ViewerEndpoint.start(
+            settings,
+            workspace: workingDirectory,
+            environment: LaunchEnvironment.values
+        ) { notices.append($0) }
+        defer { viewers?.stop() }
         // A shutdown signal exits at once from the screen, so its jobs are signalled there; a normal quit
         // stops them gracefully below.
         // Standard error is the screen's terminal: kept in a file for the screen's life (the owner, 2026-11-14).
@@ -189,7 +197,7 @@ func runInteractive(
                 conversation: conversation,
                 label: settings.label,
                 history: conversation.openingUpdates(settings, reloaded: reloaded, pickSession: pickSession),
-                notices: startupNotices + settings.description,
+                notices: notices + settings.description,
                 details: details + settings.detailLines + ProjectInstructions.describe(files),
                 options: settings.screenOptions,
                 beforeSignalExit: { jobs.terminateAllNow() }

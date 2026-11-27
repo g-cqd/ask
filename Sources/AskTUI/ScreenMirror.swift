@@ -12,10 +12,13 @@ final class ScreenMirror: Sendable {
     let session: TerminalSession
     let renderer: RenderLoop<ScreenComposer>
     let input: InputSource
+    /// Closes the terminal's descriptor once the mirror is gone, when the mirror owns it.
+    private let closer: DescriptorCloser?
 
-    /// A mirror on `connection`, whose size it is drawn at.
-    init(id: Int, connection: any TerminalConnection) throws {
+    /// A mirror on `connection`, whose size it is drawn at; `closer` closes the descriptor it owns once the mirror is gone.
+    init(id: Int, connection: any TerminalConnection, closer: DescriptorCloser? = nil) throws {
         self.id = id
+        self.closer = closer
         let serialized = SerializedConnection(connection)
         self.connection = serialized
         var modes = TerminalModes.fullScreen

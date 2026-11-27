@@ -135,7 +135,7 @@ let package = Package(
             name: "AskSession",
             dependencies: [
                 .product(name: "AemiSearch", package: "AemiSearch"),
-                "AskAI", "AskAgentCore", "AskApple", "AskCore", "AskMCP", "AskTools", "AskTUI",
+                "AskAI", "AskAgentCore", "AskApple", "AskCore", "AskGateway", "AskMCP", "AskTools", "AskTUI",
                 .product(name: "AemiJSON", package: "AemiJSON"),
                 .product(name: "TerminalKitInput", package: "TerminalKit")
             ],
@@ -247,7 +247,8 @@ let package = Package(
         .testTarget(
             name: "AskSessionTests",
             dependencies: [
-                "AskSession", "AskAgentCore", "AskAI", "AskTools", "AskTUI",
+                "AskSession", "AskAgentCore", "AskAI", "AskGateway", "AskTools", "AskTUI",
+                .product(name: "TerminalKitIO", package: "TerminalKit"),
                 .product(name: "AemiSearch", package: "AemiSearch")
             ],
             path: "Tests/AskSessionTests",
@@ -266,7 +267,7 @@ let package = Package(
         .testTarget(
             name: "AskTUITests",
             dependencies: [
-                "AskTUI", "AskCore", .product(name: "AemiLexers", package: "aemi"),
+                "AskTUI", "AskCore", "AskGateway", .product(name: "AemiLexers", package: "aemi"),
                 .product(name: "TerminalKitIO", package: "TerminalKit"),
                 .product(name: "TerminalKitCore", package: "TerminalKit"),
                 .product(name: "TerminalKitCodecs", package: "TerminalKit"),
