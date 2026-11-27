@@ -33,9 +33,13 @@ jobs:
     steps:
       - name: Plan · Choose Scope
         id: kind
+        # Inputs reach the shell as environment variables, never pasted into the script (code scanning, 2026-11-27).
+        env:
+          EVENT: ${{ github.event_name }}
+          SCOPE: ${{ inputs.scope }}
         run: |
-          if [ "${{ github.event_name }}" = workflow_dispatch ]; then
-            if [ "${{ inputs.scope }}" = all ]; then echo "all=true" >> "$GITHUB_OUTPUT"; fi
+          if [ "$EVENT" = workflow_dispatch ]; then
+            if [ "$SCOPE" = all ]; then echo "all=true" >> "$GITHUB_OUTPUT"; fi
           elif [ "$(date -u +%u)" = 1 ]; then
             echo "all=true" >> "$GITHUB_OUTPUT"
           fi

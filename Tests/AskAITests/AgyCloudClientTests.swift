@@ -68,7 +68,7 @@ struct AgyCloudClientTests {
 
     @Test func `an account with no project says why, from the reason codes alone`() async {
         let body =
-            #"{"currentTier":{"id":"free-tier","name":"x"},"ineligibleTiers":[{"reasonCode":"UNSUPPORTED_LOCATION","reasonMessage":"secret ya29.leak text"},{"reasonCode":"not a code"},{"reasonCode":"UNSUPPORTED_LOCATION"}]}"#
+            #"{"currentTier":{"id":"free-tier","name":"x"},"ineligibleTiers":[{"reasonCode":"UNSUPPORTED_LOCATION","reasonMessage":"secret fake-token.leak text"},{"reasonCode":"not a code"},{"reasonCode":"UNSUPPORTED_LOCATION"}]}"#
         await #expect(throws: AgyCloudError.noProject(reasons: ["UNSUPPORTED_LOCATION"])) { try await account(body) }
         let text = AgyCloudError.noProject(reasons: ["UNSUPPORTED_LOCATION"]).description
         #expect(text.contains("UNSUPPORTED_LOCATION") && text.contains("agy"))
@@ -96,12 +96,12 @@ struct AgyCloudClientTests {
 
     @Test func `a refusal names the status and Google's status word and nothing else of the body`() async {
         let body =
-            #"{"error":{"code":403,"status":"PERMISSION_DENIED","message":"token ya29.SECRET for user@example.com"}}"#
+            #"{"error":{"code":403,"status":"PERMISSION_DENIED","message":"token fake-token.SECRET for user@example.com"}}"#
         await #expect(throws: AgyCloudError.refused(status: 403, reason: "PERMISSION_DENIED")) {
             try await account(body, status: 403)
         }
         let text = AgyCloudError.refused(status: 403, reason: "PERMISSION_DENIED").description
-        #expect(text.contains("403") && text.contains("PERMISSION_DENIED") && !text.contains("ya29"))
+        #expect(text.contains("403") && text.contains("PERMISSION_DENIED") && !text.contains("fake-token"))
         await #expect(throws: AgyCloudError.refused(status: 401, reason: nil)) {
             try await account("not json", status: 401)
         }

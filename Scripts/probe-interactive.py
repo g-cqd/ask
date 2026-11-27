@@ -533,10 +533,12 @@ def install_build(directory, name="ask", script=None, sign=None):
         shutil.copy2(ASK, staged)
     else:
         open(staged, "w").write(script)
-        os.chmod(staged, 0o755)
     if sign is not None:
         subprocess.run(["codesign", "--force", "--sign", sign, "--identifier", "ask", "--timestamp=none", staged],
                        check=True, capture_output=True)
+    if script is not None:
+        # Signed (which writes to it) before this: from here the owner's to read and run.
+        os.chmod(staged, 0o500)
     os.rename(staged, os.path.join(directory, name))
     return os.path.join(directory, name)
 

@@ -60,7 +60,7 @@ def main():
     # --no-sandbox is a launch flag: run a wrapper script that adds it.
     wrapper = tempfile.mkdtemp() + "/ask"
     open(wrapper, "w").write(f'#!/bin/sh\nexec "{folding_binary}" --no-sandbox "$@"\n')
-    os.chmod(wrapper, 0o755)
+    os.chmod(wrapper, 0o500)  # the owner's to read and run; nobody writes it again
     folding.BINARY = wrapper
     try:
         run("unsandboxed", "Not sandboxed", "!", "yellow", ("brown", "yellow"))

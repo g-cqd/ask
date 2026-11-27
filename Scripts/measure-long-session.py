@@ -179,4 +179,5 @@ def main():
         print(f"  {name:20} median {statistics.median(values):8.1f}   [{', '.join(f'{v:.1f}' for v in values)}]")
 
 
-main()
+if __name__ == "__main__":
+    main()

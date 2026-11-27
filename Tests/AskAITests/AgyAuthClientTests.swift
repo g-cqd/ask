@@ -15,7 +15,7 @@ struct AgyAuthClientTests {
     }
 
     private static func tokens(
-        access: String = "ya29.access-1",
+        access: String = "fake-token.access-1",
         refresh: String? = "1//refresh-1",
         expires: Double = 3599,
         extra: String =
@@ -53,7 +53,7 @@ struct AgyAuthClientTests {
                 + "&code=4%2F0AeaYSHDqabcdefghij&code_verifier=verifier-value-0123456789"
                 + "&redirect_uri=https%3A%2F%2Fantigravity.google%2Foauth-callback"
         )
-        #expect(credentials.accessToken == "ya29.access-1" && credentials.refreshToken == "1//refresh-1")
+        #expect(credentials.accessToken == "fake-token.access-1" && credentials.refreshToken == "1//refresh-1")
         #expect(credentials.expiresAt == 1_000 + 3599 - 300, "renewed 300 s early, as the other sign-ins are")
         #expect(credentials.accountEmail == "person@example.com")
         #expect(credentials.scopes == "openid https://www.googleapis.com/auth/cloud-platform")
@@ -84,7 +84,7 @@ struct AgyAuthClientTests {
         async throws
     {
         let old = AgyCredentials(
-            accessToken: "ya29.old",
+            accessToken: "fake-token.old",
             refreshToken: "1//keep",
             expiresAt: 5,
             scopes: "openid",
@@ -92,13 +92,13 @@ struct AgyAuthClientTests {
             projectID: "project-1",
             tierID: "free-tier"
         )
-        let (client, transport) = client([.json(200, Self.tokens(access: "ya29.new", refresh: nil, extra: ""))])
+        let (client, transport) = client([.json(200, Self.tokens(access: "fake-token.new", refresh: nil, extra: ""))])
         let renewed = try await client.refresh(old, secret: Self.secret, now: 2_000)
         #expect(
             try #require(transport.sent.first).bodyText
                 == "grant_type=refresh_token&client_id=\(AgyOAuth.clientID)&client_secret=\(Self.secret)&refresh_token=1%2F%2Fkeep"
         )
-        #expect(renewed.accessToken == "ya29.new" && renewed.refreshToken == "1//keep")
+        #expect(renewed.accessToken == "fake-token.new" && renewed.refreshToken == "1//keep")
         #expect(renewed.expiresAt == 2_000 + 3599 - 300)
         #expect(
             renewed.accountEmail == "a@b.example" && renewed.projectID == "project-1" && renewed.tierID == "free-tier"
@@ -118,7 +118,7 @@ struct AgyAuthClientTests {
         (403, "access_denied"), (503, "temporarily_unavailable")
     ])
     func `a refusal names the status and a known code and nothing else`(_ status: Int, _ code: String) async {
-        let body = #"{"error":"\#(code)","error_description":"secret-looking detail ya29.leak GOCSPX-leak"}"#
+        let body = #"{"error":"\#(code)","error_description":"secret-looking detail fake-token.leak GOCSPX-leak"}"#
         let (client, _) = client([.json(status, body)])
         await #expect(throws: AgyAuthError.tokenEndpoint(status: status, code: code)) {
             try await client.complete(pending, pasted: Self.code, secret: Self.secret, now: 0)
@@ -211,7 +211,7 @@ struct AgyAuthClientTests {
         ]
         #expect(
             all.allSatisfy {
-                !$0.description.contains("GOCSPX") && !$0.description.contains("ya29") && !$0.description.isEmpty
+                !$0.description.contains("GOCSPX") && !$0.description.contains("fake-token") && !$0.description.isEmpty
             }
         )
         #expect(AgyAuthError.tokenEndpoint(status: 400, code: "invalid_grant").description.contains("ask login agy"))

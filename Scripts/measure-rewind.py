@@ -4,10 +4,11 @@ is sent, and each run reports how long the screen kept drawing after Enter, and 
 
     Scripts/measure-rewind.py .build/release/ask SESSION.jsonl [N]
 """
-import sys, os, time, shutil, tempfile, select
+import importlib.util, sys, os, time, shutil, tempfile, select
 B=os.path.abspath(sys.argv[1]); S=sys.argv[2]; N=sys.argv[3] if len(sys.argv)>3 else "3"
-src=open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'measure-long-session.py')).read().replace('\nmain()\n','\n')
-m={}; sys.argv=['x',B,S,'1']; exec(compile(src,'m','exec'),m)
+sys.argv=['x',B,S,'1']
+spec=importlib.util.spec_from_file_location('measure_long_session', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'measure-long-session.py'))
+module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module); m=vars(module)
 def run():
     root=tempfile.mkdtemp(); p,c,s=[os.path.join(root,n) for n in ('p','c','s')]
     for d in (p,c,s): os.makedirs(d)

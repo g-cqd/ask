@@ -348,6 +348,12 @@ def tool_results(server):
     return {b["tool_use_id"]: b["content"] for b in blocks if b["type"] == "tool_result"}
 
 
+def serving_argv(port):
+    """The loopback web server of `serving`, as an argument list, for starting it here without a shell."""
+    serving(port)
+    return ["python3", "-u", "/tmp/ask-serve-loopback.py", str(port)]
+
+
 def serving(port):
     """A loopback web server as a shell command, saying `Serving HTTP on` once it listens: Scripts/serve-loopback.py says why it
     is not `python3 -m http.server`. Run from a copy under a short name, because the probes read the command back from one row of
@@ -370,7 +376,7 @@ def server_alone(yielded):
     except OSError as error:
         printed = str(error)
     port, began = free_port(), time.time()
-    alone = subprocess.Popen(serving(port), shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    alone = subprocess.Popen(serving_argv(port), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     while time.time() - began < 60 and not accepts(port) and alone.poll() is None:
         time.sleep(0.2)
     took = f"its port opened after {time.time() - began:.1f} s" if accepts(port) else f"its port did not open in {time.time() - began:.0f} s"

@@ -49,7 +49,7 @@ def main():
         tool = root + "/tool"
         with open(tool, "w") as file:
             file.write(f"#!/bin/sh\nprintf '%s|' \"$@\" >> '{out}'\n")
-        os.chmod(tool, 0o755)
+        os.chmod(tool, 0o500)  # the owner's to read and run; nobody writes it again
         with open(config + "/ask/config.json", "w") as file:
             json.dump({"ui": {"inputPrefix": "ask> ", "tint": "off", "separator": "off", "padding": "off"},
                        "openers": {"rules": [{"match": {"kind": "file"}, "command": [tool, "{path}", "{line}"]}]}}, file)

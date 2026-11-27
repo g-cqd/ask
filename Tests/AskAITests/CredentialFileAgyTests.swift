@@ -14,7 +14,7 @@ struct CredentialFileAgyTests {
     )
 
     private let agy = AgyCredentials(
-        accessToken: "ya29.access",
+        accessToken: "fake-token.access",
         refreshToken: "1//refresh",
         expiresAt: 5_000,
         scopes: "openid",
@@ -104,11 +104,11 @@ struct CredentialFileAgyTests {
     @Test func `a refresh is saved only while what is stored is still what was refreshed`() throws {
         try file.saveAgy(agy)
         var renewed = agy
-        renewed.accessToken = "ya29.renewed"
+        renewed.accessToken = "fake-token.renewed"
         #expect(try file.saveAgy(renewed, ifStill: agy))
         #expect(try file.loadAgy() == renewed)
         var stale = agy
-        stale.accessToken = "ya29.stale"
+        stale.accessToken = "fake-token.stale"
         #expect(try !file.saveAgy(stale, ifStill: agy), "the stored credentials changed meanwhile")
         #expect(try file.loadAgy() == renewed)
         try file.removeAgy()
