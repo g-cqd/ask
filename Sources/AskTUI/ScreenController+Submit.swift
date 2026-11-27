@@ -12,7 +12,7 @@ extension ScreenController {
     /// The commands that are a thread's lane's own (roadmap 0195), keeping the lane: `/thread` starts one from that thread, under it;
     /// `/rename TITLE` names it; `/model` shows or chooses its own model; `/merge` (or `/close`) merges it now; `/reload` comes back to it. Nil for
     /// anything else, or outside a thread's lane.
-    private func threadLaneCommand(_ line: String) -> [Effect]? {
+    func threadLaneCommand(_ line: String) -> [Effect]? {
         guard let lane = state.lane, lane.isThread, case .command(let name, let arguments) = SlashInput(line) else {
             return nil
         }

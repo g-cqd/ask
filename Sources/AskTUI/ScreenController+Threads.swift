@@ -7,6 +7,8 @@ extension ScreenController {
         // A thread's model is its own, never main's label (owner, 2026-11-26).
         if case .label(let text) = update {
             state.threadLabels[id] = text
+            // Its model changed: the `/model` list marks another one now.
+            if state.lane?.id == id { forgetLaneChoices() }
             return []
         }
         let inLane = state.lane?.isThread == true && state.lane?.id == id

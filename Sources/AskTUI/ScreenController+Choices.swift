@@ -111,9 +111,14 @@ extension ScreenController {
     }
 
     /// Runs the command a chosen row stands for: the draft is cleared, the line is shown as if it had been typed, and the command starts.
+    /// In a thread's lane, a command the lane answers itself (`/model`, `/rename`…) is the thread's, chosen from the list as typed.
     mutating func run(_ row: PickerRow, command: String, arguments: String) -> [Effect] {
         state.picker = nil
         state.editor.clear()
+        if let effects = threadLaneCommand("/\(command) \(arguments)") {
+            history.record("/\(command) \(arguments)")
+            return effects
+        }
         let known = SlashCommand.named(command, in: commands) ?? SlashCommand(name: command, summary: "")
         return runCommand(known, arguments: arguments, line: "/\(command) \(arguments)")
     }

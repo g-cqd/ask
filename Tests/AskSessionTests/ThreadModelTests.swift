@@ -48,4 +48,16 @@ struct ThreadModelTests {
         await fixture.conversation.threadModel(id, arguments: "", update: fixture.update)
         #expect(notices(fixture, in: id).last?.contains("claude-test-1") == true)
     }
+
+    @Test func `the /model list marks the model of the thread whose lane is shown, and main's outside it`() async throws
+    {
+        let fixture = try await ConversationFixture()
+        let id = try thread(fixture)
+        await fixture.conversation.threadModel(id, arguments: "claude-other-2", update: fixture.update)
+        #expect(await fixture.conversation.focusedThreadModel() == nil, "main's lane is shown")
+        fixture.conversation.laneShown(id)
+        #expect(await fixture.conversation.focusedThreadModel()?.model == "claude-other-2")
+        fixture.conversation.laneShown(nil)
+        #expect(await fixture.conversation.focusedThreadModel() == nil)
+    }
 }

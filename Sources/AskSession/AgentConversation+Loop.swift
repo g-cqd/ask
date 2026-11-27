@@ -42,12 +42,23 @@ extension AgentConversation {
     }
 
     /// The model a thread works with, as the status line names it in its lane: its own, `threads.model`, or the conversation's.
-    func threadModelLabel(_ own: String?) async -> String {
+    func threadModelLabel(_ own: String?) async -> String { await threadResolvedModel(own).label }
+
+    /// The model a thread works with: its own, `threads.model`, or the conversation's.
+    func threadResolvedModel(_ own: String?) async -> ResolvedModel {
         let word = own ?? current.withLock { $0.settings.configuration.threads.value.threadModel }
         guard let word, let settings = try? await settings(forModel: word) else {
-            return current.withLock { $0.settings.model.label }
+            return current.withLock { $0.settings.model }
         }
-        return settings.model.label
+        return settings.model
+    }
+
+    /// The model of the thread whose lane is shown; nil in main's, or a subagent's.
+    func focusedThreadModel() async -> ResolvedModel? {
+        guard let id = focusedThread.withLock({ $0 }), let thread = threads.thread(id), !threads.isSubagent(id) else {
+            return nil
+        }
+        return await threadResolvedModel(thread.model)
     }
 
     /// The settings in force with `word` as the model, read as `/model` reads its word; throws when it does not resolve.

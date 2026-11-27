@@ -42,6 +42,7 @@ extension ScreenController {
     /// Shows `runner`'s output in place of the conversation and asks for it.
     mutating func enterLane(_ runner: RunnerInfo) -> [Effect] {
         leaveLane()
+        forgetLaneChoices()
         unpopThreadQuestion()
         defer { popThreadQuestion() }
         if runner.kind == .agent { return enterThread(runner) }
@@ -64,6 +65,7 @@ extension ScreenController {
     /// Puts the main conversation back, as it was, and says `notice` there if given. Nothing happens when no lane is focused.
     mutating func leaveLane(notice: String? = nil) {
         guard let lane = state.lane else { return }
+        forgetLaneChoices()
         unpopThreadQuestion()
         defer { popThreadQuestion() }
         clearSelection()
@@ -99,5 +101,14 @@ extension ScreenController {
             swap(&lane.stashedQuestions, &state.pendingQuestions)
         }
         state.lane = lane
+    }
+}
+
+extension ScreenController {
+    /// The lists that depend on the lane shown (`/model` marks the model that answers there) are asked for again, not shown from the
+    /// other lane's answer.
+    mutating func forgetLaneChoices() {
+        state.choices["model"] = nil
+        asking.remove("model")
     }
 }

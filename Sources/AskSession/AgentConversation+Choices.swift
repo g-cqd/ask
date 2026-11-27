@@ -10,7 +10,9 @@ extension AgentConversation {
         switch command {
             case "model":
                 let (model, project) = current.withLock { ($0.settings.model, $0.settings.workspace) }
-                return await ModelChoices.rows(current: model, project: project, environment: LaunchEnvironment.values)
+                // In a thread's lane, the model that answers there (owner, 2026-11-27).
+                let shown = await focusedThreadModel() ?? model
+                return await ModelChoices.rows(current: shown, project: project, environment: LaunchEnvironment.values)
             case "config":
                 let user = configEditorPath(.user)
                 let project = configEditorPath(.project)
