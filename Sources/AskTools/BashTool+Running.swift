@@ -28,6 +28,8 @@ extension BashTool {
                         + "it goes on; use job to inspect, send input, or stop]",
                     notifies: notifies
                 )
+            // If the command ended as its yield expired, return its result rather than calling it still running and draining its output.
+            case .timedOut where job.status != .running && readiness == nil && yield != nil: return Self.finished(job)
             case .timedOut where readiness == nil && yield != nil:
                 return Self.running(
                     job,

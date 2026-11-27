@@ -28,6 +28,9 @@ struct JobEndNoticeTests {
         return await JobActionTool(jobs: jobs).run(input, in: context).content
     }
 
+    /// Releases a job blocked on `read _` so it finishes only after the caller is ready.
+    private func release(_ id: String) throws { try #require(jobs.job(id)).sendInput("\n", closing: true) }
+
     /// The next ending the table tells of.
     private func nextEnding(_ endings: AsyncStream<JobEnding>) async -> JobEnding? {
         var iterator = endings.makeAsyncIterator()
@@ -37,8 +40,9 @@ struct JobEndNoticeTests {
     @Test(.timeLimit(.minutes(1)))
     func `a job left running tells its end once, with what it printed`() async throws {
         let endings = jobs.endings()
-        let (id, started) = try await leave("sleep 2; echo built-ok")
+        let (id, started) = try await leave("read _; echo built-ok")
         #expect(started.contains("you will be told when it ends"))
+        try release(id)
         let ending = try #require(await nextEnding(endings))
         #expect(ending.id == id && ending.owner == nil)
         #expect(ending.report.contains("which you left running, ended") && ending.report.contains("built-ok"))
@@ -48,19 +52,54 @@ struct JobEndNoticeTests {
     @Test(.timeLimit(.minutes(1)))
     func `ends the model saw, or asked not to hear of, are not told; the next one is`() async throws {
         let endings = jobs.endings()
-        let (waited, _) = try await leave("sleep 2")
-        #expect(try await job(waited, "wait").contains("[\(waited) ended]"))
-        let (stopped, _) = try await leave("sleep 30")
+        let (waited, _) = try await leave("read _; echo waited-ok")
+        async let waitResult = job(waited, "wait")
+        await jobs.foreground.waitUntilWaiting()
+        try release(waited)
+        #expect(try await waitResult.contains("[\(waited) ended]"))
+
+        let (stopped, _) = try await leave("sleep 60")
         _ = try await job(stopped, "stop")
-        let (quiet, _) = try await leave("sleep 2")
+
+        let (quiet, _) = try await leave("read _")
         #expect(try await job(quiet, "quiet").contains("you will not be told"))
+        try release(quiet)
         await jobs.job(quiet)?.ended()
+
         // The person's own command: its end is theirs.
-        let person = await BashTool(jobs: jobs).runForPerson("sleep 6", shell: nil, in: context)
-        #expect(person.backgroundJob != nil && !person.content.contains("you will be told"))
-        let (told, _) = try await leave("sleep 8; echo last")
+        let person = await BashTool(jobs: jobs).runForPerson("sleep 60", shell: nil, in: context)
+        let personID = try #require(person.backgroundJob)
+        #expect(!person.content.contains("you will be told"))
+        jobs.job(personID)?.stop()
+        await jobs.job(personID)?.ended()
+
+        let (told, _) = try await leave("read _; echo last")
+        try release(told)
         let ending = try #require(await nextEnding(endings))
         #expect(ending.id == told, "the first end told is the last job's: none of the others was")
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func `a job that already ended before job wait starts is not told a second time`() async throws {
+        let endings = jobs.endings()
+        let (early, _) = try await leave("read _")
+        // Make it quiet first so its own end does not emit before wait; wait on an already-ended job must still mark endReported.
+        _ = try await job(early, "quiet")
+        try release(early)
+        await jobs.job(early)?.ended()
+        // Already ended: returns the ended headline via JobWaiting.ended, marking endReported.
+        _ = try await job(early, "notify")
+        #expect(jobs.job(early)?.claimEndNotice() == false)
+
+        // Direct check of Job.wait(for: nil) fast path when the job already ended before wait() was called.
+        let (fast, _) = try await leave("read _")
+        _ = try await job(fast, "quiet")
+        try release(fast)
+        await jobs.job(fast)?.ended()
+        jobs.job(fast)?.notifyOnEnd(true)
+        _ = await jobs.job(fast)?.wait(for: nil)
+        #expect(jobs.job(fast)?.claimEndNotice() == false, "wait(for: nil) on an ended job marks endReported")
+        _ = endings
     }
 
     @Test(.timeLimit(.minutes(1)))
@@ -68,12 +107,12 @@ struct JobEndNoticeTests {
         let endings = jobs.endings()
         let jobs = jobs
         let context = context
-        // Longer than the yield, so it is left running.
-        let input = try JSONObject(validating: Array(#"{"command":"sleep 3","yield_seconds":1}"#.utf8))
+        let input = try JSONObject(validating: Array(#"{"command":"read _","yield_seconds":1}"#.utf8))
         let started = await JobOwner.$current.withValue("thread-2") {
             await BashTool(jobs: jobs).run(input, in: context)
         }
-        #expect(started.backgroundJob != nil, Comment(rawValue: started.content))
+        let id = try #require(started.backgroundJob)
+        try release(id)
         #expect(await nextEnding(endings)?.owner == "thread-2")
     }
 }

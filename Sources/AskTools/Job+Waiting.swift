@@ -16,7 +16,11 @@ extension Job {
             await withCheckedContinuation { continuation in
                 let immediate: WaitResult? = state.withLock { state in
                     if let needle, state.unread.contains(needle) { return .found }
-                    if state.status != .running { return .ended }
+                    if state.status != .running {
+                        // A wait for the end returns the job's end to the model, which needs no separate telling then.
+                        if needle == nil { state.endReported = true }
+                        return .ended
+                    }
                     if Task.isCancelled { return .cancelled }
                     // Seeded with the end of all recent output, shown or not, so a text that began before the wait
                     // and ends in the next chunk is still found.
