@@ -31,10 +31,18 @@ The owner decided (2026-11-26):
 | **gateway** | the always-on Mac | a small relay: it accepts nodes on the LAN, accepts browsers on loopback (through `cloudflared`), and routes sealed frames between them; it never holds a session key |
 | **shell** | the browser | a static, signed web app: key handling, the dashboard, and a terminal emulator |
 
-The screen a browser sees is ask's screen, **rendered on the node**: the session's conversation (the `Conversation` seam ADR-0154
-serves) drives one more `ScreenSession` per viewer, composed at that viewer's size. The browser receives the bytes a terminal would,
-and sends keys, pastes, mouse and resize as a terminal does. The local terminal is never resized by a viewer, and nothing in ask's
+The screen a browser sees is ask's screen, **rendered on the node**: each viewer is a second terminal attached to the running screen
+(`ScreenMirror`), drawn from the same state by a render loop of its own, at the viewer's own size. The browser receives the bytes a
+terminal would, and sends keys and pastes as a terminal does. The local terminal is never resized by a viewer, and nothing in ask's
 core learns there is a browser.
+
+A viewer shares the screen, as two people at one keyboard would: the same input line, the same lane, the same place in the
+transcript. Its pointer is not used, since a click means a place in the screen's own frame, not the viewer's; scrolling and every
+command are on keys. (A screen of the viewer's own, from the same conversation, was the first design; the conversation sends each
+run's updates to the screen that started it, so a second screen would not see the first's runs.)
+
+Sessions live in each `ask` process, the node is one more: each `ask` that shares its sessions accepts its viewers on a Unix socket of
+its own, owner-only, and the node relays between the gateway's channels and those sockets.
 
 ### Two doors, never one
 
