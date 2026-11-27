@@ -66,6 +66,7 @@ package struct NodeChannel: Sendable {
         return sealed
     }
 
-    /// The most output bytes in one message: Noise's limit less the tag and the kind byte.
-    static let largestOutput = 65_519 - 1
+    /// The most output bytes in one message. A channel's Noise message is a relay frame's body, at most 65,514 bytes; less its
+    /// 16-byte tag and the kind byte.
+    static let largestOutput = RelayFrame.maximumBody - 16 - 1
 }

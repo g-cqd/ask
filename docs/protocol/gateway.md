@@ -25,7 +25,7 @@ What the gateway reads: inside the node's Noise channel, and as WebSocket messag
 ```
 +------+---------------+------------------+
 | kind | channel (u32) | body (the rest)  |
-| 1 B  | 4 B           | 0 to 65,519 B    |
+| 1 B  | 4 B           | 0 to 65,514 B    |
 +------+---------------+------------------+
 ```
 
@@ -40,7 +40,7 @@ What the gateway reads: inside the node's Noise channel, and as WebSocket messag
 | `0x20` | `ping` | any | 8 bytes, echoed in `pong`. Channel 0. |
 | `0x21` | `pong` | any | the 8 bytes of the `ping`. Channel 0. |
 
-A frame shorter than 5 bytes, of an unknown kind, longer than 65,524 bytes, or whose body breaks its kind's shape ends the connection
+A frame shorter than 5 bytes, of an unknown kind, longer than 65,519 bytes (so that a whole frame is one Noise message), or whose body breaks its kind's shape ends the connection
 with `close` reason `4`. Channel 0 carries only `hello`, `list`, `lists`, `ping`, `pong`; every other kind names a channel above 0.
 
 ## The sealed list
@@ -73,4 +73,5 @@ Inside a channel's Noise transport, after the handshake: one message per Noise m
 | `0x11` | `ended` | node | UTF-8 words: the session ended or was closed at the node. |
 | `0x12` | `refused` | node | UTF-8 words: what was asked is not allowed (policy, an unknown session or folder). |
 
-Columns and rows are 1 to 1,000. Output larger than one Noise message is split; it is a byte stream.
+Columns and rows are 1 to 1,000. A channel's Noise message travels as a relay frame's body, so it is at most 65,514 bytes: a
+message carries at most 65,497 bytes of output, and more is split; output is a byte stream.

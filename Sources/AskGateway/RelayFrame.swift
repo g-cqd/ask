@@ -28,8 +28,9 @@ package struct RelayFrame: Sendable, Equatable {
         case wrongChannel, malformedBody
     }
 
-    /// The largest body: a Noise message's 65,535 bytes less this header's 5 and Noise's 16-byte tag.
-    package static let maximumBody = 65_519
+    /// The largest body: a whole frame travels as one Noise message between a node and the gateway, 65,535 bytes less Noise's
+    /// 16-byte tag, so the body is that less this header's 5.
+    package static let maximumBody = 65_514
 
     package let kind: Kind
     package let channel: UInt32

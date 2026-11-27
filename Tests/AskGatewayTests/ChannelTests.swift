@@ -47,6 +47,11 @@ struct ChannelTests {
             joined += bytes
         }
         #expect(joined == large)
+        // Nested inside the node's link: each piece fits a relay frame, and each frame one Noise message of the link.
+        for message in sealed {
+            let frame = try RelayFrame(kind: .data, channel: 1, body: message)
+            #expect(frame.bytes.count <= 65_535 - 16)
+        }
     }
 
     @Test func `an untrusted controller is refused before the node answers`() throws {
