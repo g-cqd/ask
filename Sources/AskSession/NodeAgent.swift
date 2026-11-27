@@ -14,10 +14,14 @@ actor NodeAgent {
         let receive: @Sendable () async throws -> RelayFrame?
         /// This computer's shared sessions now.
         let sessions: @Sendable () -> [ViewerEndpoint.Description]
+        /// The canonical folders a controller may start a new session in.
+        let folders: @Sendable () -> [String]
         /// The controller keys trusted now.
         let trusted: @Sendable () -> [Curve25519.KeyAgreement.PublicKey]
         /// A connection to session `id`'s viewer socket; nil when it cannot be reached.
         let dial: @Sendable (String) async -> (any ByteStream)?
+        /// Starts a new session in a folder and returns its session id, or why it was refused.
+        let start: @Sendable (ChannelMessage.Size, String) async -> Result<String, GatewayStartPolicy.Refusal>
         /// Records a remote action: what, and the controller's fingerprint.
         let audit: @Sendable (String, String) -> Void
     }
@@ -26,7 +30,7 @@ actor NodeAgent {
     private var node: GatewayNode
     private var viewers: [UInt32: any ByteStream] = [:]
     private var relays: [UInt32: Task<Void, Never>] = [:]
-    private var published: [ViewerEndpoint.Description]?
+    private var published: SharedNodeList?
 
     init(
         world: World,
@@ -58,27 +62,32 @@ actor NodeAgent {
         relays.removeAll()
     }
 
-    /// Sends the sessions, sealed to each trusted controller, when they changed since the last time.
+    /// Sends the sessions and startable folders, sealed to each trusted controller, when they changed since the last time.
     func publish() async {
-        let sessions = world.sessions()
-        guard sessions != published else { return }
+        let list = SharedNodeList(sessions: world.sessions(), folders: world.folders())
+        guard list != published else { return }
         let controllers = world.trusted()
         guard !controllers.isEmpty,
-            let json = try? AemiJSON.JSONEncoder().encodeToBytes(["sessions": sessions]),
+            let json = try? AemiJSON.JSONEncoder().encodeToBytes(list),
             let frame = try? GatewayNode.list(json, to: controllers)
         else { return }
         guard (try? await world.send(frame)) != nil else { return }
-        published = sessions
+        published = list
     }
 
     private func handle(_ event: GatewayNode.Event) async {
         switch event {
             case .attach(let channel, let size, let session, let controller):
                 await attach(channel, size: size, session: session, controller: controller)
-            case .start(let channel, _, _, let controller):
-                world.audit("start refused", controller)
-                for frame in node.refuse(channel, "starting a session from the gateway is not available yet") {
-                    try? await world.send(frame)
+            case .start(let channel, let size, let folder, let controller):
+                switch await world.start(size, folder) {
+                    case .success(let session):
+                        world.audit("started \(session)", controller)
+                        await publish()
+                        await attach(channel, size: size, session: session, controller: controller)
+                    case .failure(let refusal):
+                        world.audit("start refused", controller)
+                        for frame in node.refuse(channel, refusal.reason) { try? await world.send(frame) }
                 }
             case .input(let channel, let bytes): await forward(.input(bytes), on: channel)
             case .resize(let channel, let size): await forward(.resize(size), on: channel)

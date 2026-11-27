@@ -95,6 +95,9 @@ public struct ScreenOptions: Sendable, Equatable {
     /// `ui.historyLimit` (note n29): the most blocks the screen keeps; nil, the default, for all of them.
     public var historyLimit: Int?
     public var outputFoldBytes = 32 * 1024
+    /// `policy.gatewayApprovals` (ADR-0170): whether a gateway viewer's keys may answer an approval; false leaves approvals to the
+    /// person at the computer.
+    public var mirrorApprovalsAllowed = true
 
     /// The look before roadmap 0074: an `ask> ` prefix, no tint, no rule. What the screen's older tests were written against.
     public static let legacy = ScreenOptions(prompt: "ask> ", tint: false, separator: false, padding: false)

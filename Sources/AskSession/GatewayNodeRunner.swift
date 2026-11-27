@@ -2,6 +2,7 @@ internal import AemiJSON
 internal import AskAI
 internal import AskAgentCore
 internal import AskGateway
+internal import AskTools
 internal import CryptoKit
 internal import Darwin
 internal import Foundation
@@ -62,13 +63,53 @@ package enum GatewayNodeRunner {
         folder: String,
         audit: SecurityAuditLog
     ) -> NodeAgent {
-        NodeAgent(
+        let env = LaunchEnvironment.values
+        let home = env["HOME"]
+        return NodeAgent(
             world: NodeAgent.World(
                 send: { try await link.send($0) },
                 receive: { try await link.receive() },
                 sessions: { SharedSessions.read(folder) },
+                folders: {
+                    guard let configuration = try? ConfigurationSource.here.layers().result.configuration else {
+                        return []
+                    }
+                    return GatewayStartPolicy.canonicalFolders(
+                        allowed: configuration.gateway.value.folders,
+                        policyAllows: configuration.policy.value.gatewayStart != false,
+                        home: home
+                    )
+                },
                 trusted: { GatewayTrustFile.current().keys },
                 dial: { id in try? UnixSocket.connect(to: folder + "/\(id).sock") },
+                start: { size, requested in
+                    guard let configuration = try? ConfigurationSource.here.layers().result.configuration else {
+                        return .failure(.init(reason: "the configuration cannot be read"))
+                    }
+                    let canonical: String
+                    do {
+                        canonical = try GatewayStartPolicy.resolve(
+                            requested,
+                            allowed: configuration.gateway.value.folders,
+                            policyAllows: configuration.policy.value.gatewayStart != false,
+                            home: home
+                        )
+                    } catch let refusal as GatewayStartPolicy.Refusal {
+                        return .failure(refusal)
+                    } catch {
+                        return .failure(.init(reason: "\(error)"))
+                    }
+                    guard let executable = BinaryIdentity.running()?.path else {
+                        return .failure(.init(reason: "this computer's ask binary cannot be located"))
+                    }
+                    return await GatewaySessionStarter.start(
+                        executable: executable,
+                        in: canonical,
+                        size: size,
+                        viewersFolder: folder,
+                        environment: env
+                    )
+                },
                 audit: { what, controller in
                     audit.record(kind: "gateway.remote", outcome: what, attributes: ["controller": controller])
                 }

@@ -62,6 +62,7 @@ extension RunSettings {
         options.shortPaths = (ui.paths ?? .short) == .short
         options.pathAncestors =
             ui.pathAncestors.map { $0 == UISection.noAncestorLimit ? nil : $0 } ?? defaults.pathAncestors
+        options.mirrorApprovalsAllowed = configuration.policy.value.gatewayApprovals != false
         return options
     }
 

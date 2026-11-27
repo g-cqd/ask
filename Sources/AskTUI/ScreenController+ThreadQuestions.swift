@@ -24,6 +24,7 @@ extension ScreenController {
                 shown.cursor = approval.cursor
                 shown.checked = approval.checked
                 shown.showsWholeDetail = approval.showsWholeDetail
+                shown.mirrorRefused = approval.mirrorRefused
                 state.pendingApproval = shown
             } else {
                 // Named for its thread, which is not the conversation shown (owner, 2026-11-26).
@@ -49,6 +50,7 @@ extension ScreenController {
             kept.cursor = shown.cursor
             kept.checked = shown.checked
             kept.showsWholeDetail = shown.showsWholeDetail
+            kept.mirrorRefused = shown.mirrorRefused
             state.threads[id]?.approval = kept
         }
         state.pendingApproval = nil

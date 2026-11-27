@@ -56,8 +56,26 @@ unread. For each controller, in turn:
 
 The fingerprint is the first 8 bytes of SHA-256 of the controller's public key; the message is a Noise `N_25519_ChaChaPoly_SHA256`
 message to that key, the prologue `ask-gateway/1 list`, a fresh ephemeral key for each, whose payload is the list as JSON (at most
-65,487 bytes). A controller opens the entry with its fingerprint and ignores the others. The format of the JSON is fixed with the
-node.
+65,487 bytes). A controller opens the entry with its fingerprint and ignores the others.
+
+The payload JSON is an object with two arrays (`SharedNodeList`):
+
+```json
+{
+  "sessions": [
+    {
+      "id": "4242",
+      "folder": "/srv/project",
+      "label": "claude-sonnet-5-5",
+      "started": "2026-11-27T00:00:00Z"
+    }
+  ],
+  "folders": ["/srv/project"]
+}
+```
+
+`folders` lists the canonical directories a controller may pass to `start` (`gateway.folders`, empty when `policy.gatewayStart` is
+`false` or none is configured).
 
 ## Channel messages
 

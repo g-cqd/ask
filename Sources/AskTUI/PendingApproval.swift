@@ -8,6 +8,8 @@ public struct PendingApproval: Sendable, Equatable {
     public let detail: String?
     /// Whether the command is unfolded.
     public internal(set) var showsWholeDetail = false
+    /// Whether a gateway viewer already tried to answer and was told approvals stay at the computer (`policy.gatewayApprovals`).
+    var mirrorRefused = false
     /// The row the arrows are on.
     public internal(set) var cursor: Int
     /// The row checked: what Enter confirms.

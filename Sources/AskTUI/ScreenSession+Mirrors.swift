@@ -27,7 +27,7 @@ extension ScreenSession {
                 return []
             case .mirrorInput(let input):
                 controller.frame = frames.load()
-                return controller.handle(input, pageRows: Swift.max(1, rows - 3), columns: columns)
+                return controller.handleMirror(input, pageRows: Swift.max(1, rows - 3), columns: columns)
             case .mirrorResized(let id):
                 guard let mirror = mirrors.shown[id], let size = try? mirror.connection.getSize() else { return [] }
                 mirror.renderer.resize(columns: size.columns, rows: size.rows)

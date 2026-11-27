@@ -2,6 +2,7 @@ internal import AskGateway
 internal import CryptoKit
 internal import Darwin
 internal import Foundation
+internal import Synchronization
 internal import Testing
 
 @testable import AskSession
@@ -78,18 +79,33 @@ struct NodeAgentTests {
         }
     }
 
-    private func start(trusting trusted: [Key]) -> (Gateway, Viewers, Task<Void, Never>) {
+    private func start(
+        trusting trusted: [Key],
+        starter: @escaping @Sendable (ChannelMessage.Size, String) async -> Result<String, GatewayStartPolicy.Refusal> =
+            { _, _ in
+                .failure(.init(reason: "starting disabled in test"))
+            }
+    ) -> (Gateway, Viewers, Task<Void, Never>) {
         let gateway = Gateway()
         let viewers = Viewers()
         let keys = trusted.map(\.publicKey)
         let raw = Set(keys.map(\.rawRepresentation))
+        let sessions = SessionsBox([Self.session])
         let agent = NodeAgent(
             world: NodeAgent.World(
                 send: { await gateway.nodeSent($0) },
                 receive: { await gateway.nodeReceives() },
-                sessions: { [Self.session] },
+                sessions: { sessions.list() },
+                folders: { ["/srv/p"] },
                 trusted: { keys },
                 dial: { _ in await viewers.dial() },
+                start: { size, folder in
+                    let result = await starter(size, folder)
+                    if case .success(let id) = result {
+                        sessions.add(ViewerEndpoint.Description(id: id, folder: folder, label: "m", started: "s2"))
+                    }
+                    return result
+                },
                 audit: { _, _ in }
             ),
             key: nodeKey,
@@ -97,6 +113,13 @@ struct NodeAgentTests {
         )
         let (rescans, _) = AsyncStream<Void>.makeStream()
         return (gateway, viewers, Task { await agent.run(rescans: rescans) })
+    }
+
+    private final class SessionsBox: Sendable {
+        private let items: Mutex<[ViewerEndpoint.Description]>
+        init(_ initial: [ViewerEndpoint.Description]) { items = Mutex(initial) }
+        func list() -> [ViewerEndpoint.Description] { items.withLock { $0 } }
+        func add(_ item: ViewerEndpoint.Description) { items.withLock { $0.append(item) } }
     }
 
     /// Opens channel `channel` as `key`, and returns the controller's side once the node answered.
@@ -175,6 +198,41 @@ struct NodeAgentTests {
             closed?.kind == .close && closed?.body.first == 1,
             "a controller this computer does not trust is closed out"
         )
+        gateway.toNode.finish()
+        await running.value
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func `starting a session publishes the updated list and attaches, or refuses when disallowed`() async throws {
+        let (gateway, viewers, running) = start(trusting: [controllerKey]) { _, folder in
+            folder == "/srv/p" ? .success("99") : .failure(.init(reason: "outside gateway.folders"))
+        }
+        _ = await gateway.next()
+        _ = await gateway.next()
+
+        var (controller, _) = try await open(gateway, as: controllerKey, channel: 1)
+        gateway.toNode.yield(
+            try RelayFrame(kind: .data, channel: 1, body: try controller.send(.start(size, folder: "/srv/p")))
+        )
+        let updated = try #require(await gateway.next())
+        #expect(updated.kind == .list)
+        let opened = String(decoding: try SealedList.open(updated.body, with: controllerKey), as: UTF8.self)
+        #expect(opened.contains(#""id":"99""#))
+        let viewer = try #require(await viewers.next())
+        #expect(await Self.read(viewer) == .attach(size, session: "99"))
+
+        var (second, _) = try await open(gateway, as: controllerKey, channel: 3)
+        gateway.toNode.yield(
+            try RelayFrame(kind: .data, channel: 3, body: try second.send(.start(size, folder: "/etc")))
+        )
+        let refused = try #require(await gateway.next())
+        guard case .refused(let words) = try second.receive(refused.body) else {
+            Issue.record("expected refusal")
+            return
+        }
+        #expect(words.contains("outside"))
+        #expect(await gateway.next()?.kind == .close)
+        await viewer.close()
         gateway.toNode.finish()
         await running.value
     }
