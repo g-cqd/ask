@@ -1,3 +1,4 @@
+internal import AskCore
 package import CryptoKit
 internal import Foundation
 
@@ -25,9 +26,7 @@ package enum GatewayKeys {
                     return UInt8(text[start ..< text.index(start, offsetBy: 2)], radix: 16)
                 }
         } else {
-            var base64 = text.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
-            while base64.count % 4 != 0 { base64 += "=" }
-            bytes = Data(base64Encoded: base64).map(Array.init)
+            bytes = Base64URL.decode(text)
         }
         guard let bytes, bytes.count == 32 else { return nil }
         return try? Curve25519.KeyAgreement.PublicKey(rawRepresentation: bytes)

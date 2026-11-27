@@ -1,3 +1,5 @@
+// @dl:accept -- two providers' sign-in constants: a client id, endpoints and scopes each, as ClaudeOAuth's are
+internal import AskCore
 internal import Foundation
 
 /// The Antigravity sign-in's fixed addresses and its request. The client id names the application; it is public.

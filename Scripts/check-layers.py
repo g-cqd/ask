@@ -27,7 +27,7 @@ ALLOWED = {
     # The Agent Client Protocol on a connection (ADR-0153): a second driver of the screen's `Conversation` (ADR-0154).
     "AskACP": {"AskTUI"},
     # ADR-0170: the gateway's channels and protocol, on CryptoKit alone.
-    "AskGateway": set(),
+    "AskGateway": {"AskCore"},
     # The conversation and the composition of a run (ADR-0149): above every library, below only the executable.
     "AskSession": {"AskAI", "AskAgentCore", "AskApple", "AskCore", "AskGateway", "AskMCP", "AskTools", "AskTUI"},
 }
