@@ -29,26 +29,26 @@ let package = Package(
         .library(name: "AskTUI", targets: ["AskTUI"])
     ],
     dependencies: [
-        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "fe6a0e52d739507cb59e895711b1e73830890472"),
-        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "fb4478051725c95614e76b15ac11e9a5c6a502a3"),
+        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "3079667e77eab559cb40c6ee72a350060ba59a20"),
+        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "b6aaf0127cc480b33090dc4564324b7abfdcb408"),
         .package(
             url: "https://github.com/g-cqd/AemiMCP.git",
             revision: "992b1a62ec80a85f814bb6f9f7d378ad820d0bcd",
             traits: []
         ),
-        .package(url: "https://github.com/g-cqd/AemiRegex.git", revision: "1b58215ac7266f8c847065f0cb63ab1cc75b3bc9"),
+        .package(url: "https://github.com/g-cqd/AemiRegex.git", revision: "cdde55a04a7fa09afdcd98f9be922402b0583b69"),
         .package(
             url: "https://github.com/g-cqd/AemiMarkdown.git",
-            revision: "7310d84c3e05708940d5954888b26eb24b9e6a82"
+            revision: "eccfa4ba6c9a449fc8a062235204530fa067ee17"
         ),
         .package(
             url: "https://github.com/g-cqd/AemiMermaid.git",
-            revision: "48652014a0b545080194610af09458325e5fb709"
+            revision: "6bce3d23db8b727a5d45d2f3dc07f63e1f1678c9"
         ),
-        .package(url: "https://github.com/g-cqd/AemiHMMML.git", revision: "2daa7f8c91cd9aada423ae6c62cde19fcf9d6795"),
-        .package(url: "https://github.com/g-cqd/AemiHTML.git", revision: "1e6b46932f423e8e9ccbb1a7de297005ead746b8"),
-        .package(url: "https://github.com/g-cqd/AemiSearch.git", revision: "3b20d77581083c6996b28663bae4c0d341cc1b2f"),
-        .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "9f8d1a3eafed0ad23919b9c68d33606632ce0659"),
+        .package(url: "https://github.com/g-cqd/AemiHMMML.git", revision: "433747ef378e0efa33879595d835ae9c3b8ca81d"),
+        .package(url: "https://github.com/g-cqd/AemiHTML.git", revision: "9a5fb3ca87b4355495788de897754737845769ec"),
+        .package(url: "https://github.com/g-cqd/AemiSearch.git", revision: "867978ebe89d834edad6b2a407f23c5785177da8"),
+        .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "8633e6352822d15fc11e46b69da6a76adee72f31"),
         .package(url: "https://github.com/swiftlang/swift-subprocess.git", .upToNextMinor(from: "1.0.2")),
         .package(url: "https://github.com/apple/swift-argument-parser.git", .upToNextMinor(from: "1.8.2"))
     ],
