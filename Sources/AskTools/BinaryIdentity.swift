@@ -22,12 +22,43 @@ public struct BinaryIdentity: Sendable, Equatable {
         let resolved = String(cString: real)
         var info = stat()
         guard stat(resolved, &info) == 0 else { return nil }
-        self.path = resolved
-        device = Int64(info.st_dev)
-        inode = UInt64(info.st_ino)
-        size = Int64(info.st_size)
-        seconds = Int64(info.st_mtimespec.tv_sec)
-        nanoseconds = Int64(info.st_mtimespec.tv_nsec)
+        self.init(
+            path: resolved,
+            device: Int64(info.st_dev),
+            inode: UInt64(info.st_ino),
+            size: Int64(info.st_size),
+            seconds: Int64(info.st_mtimespec.tv_sec),
+            nanoseconds: Int64(info.st_mtimespec.tv_nsec)
+        )
+    }
+
+    private init(path: String, device: Int64, inode: UInt64, size: Int64, seconds: Int64, nanoseconds: Int64) {
+        self.path = path
+        self.device = device
+        self.inode = inode
+        self.size = size
+        self.seconds = seconds
+        self.nanoseconds = nanoseconds
+    }
+
+    /// Represents the running staged build `running` as having come from `watchedPath` so `/reload` and ``BinaryWatcher`` watch the
+    /// install path rather than the private staged copy (security audit 2026-11-22, HIGH-10).
+    public static func watching(_ watchedPath: String, running: BinaryIdentity) -> BinaryIdentity {
+        if let onDisk = BinaryIdentity(path: watchedPath),
+            onDisk.size == running.size,
+            onDisk.seconds == running.seconds,
+            onDisk.nanoseconds == running.nanoseconds
+        {
+            return onDisk
+        }
+        return BinaryIdentity(
+            path: watchedPath,
+            device: running.device,
+            inode: 0,
+            size: running.size,
+            seconds: running.seconds,
+            nanoseconds: running.nanoseconds
+        )
     }
 
     /// The running executable, examined now. Cheap: one `stat`.

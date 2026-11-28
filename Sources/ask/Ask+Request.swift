@@ -27,6 +27,7 @@ extension Ask {
         request.reloadedFrom = reloadedFrom
         request.reloadStarted = reloadStarted
         request.reloadGrants = reloadGrants
+        request.reloadedSource = reloadedSource
         request.focusThread = focusThread
         request.selectedProvider = selectedProvider
         request.selectedModel = selectedModel

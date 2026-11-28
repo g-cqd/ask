@@ -174,6 +174,8 @@ func runInteractive(
 ) async {
     // Before a new build can replace this one's file, which /reload compares against (roadmap 0153).
     LaunchSignature.start()
+    let configDir = (ConfigurationSource.here.loader.trustPath as NSString).deletingLastPathComponent
+    ReloadStaging.sweepPrevious(configDirectory: configDir, keeping: BinaryIdentity.running()?.path)
     let workingDirectory = source.workspace
     let directory = SessionDirectory(project: workingDirectory, environment: LaunchEnvironment.values)
     let details = startupDetails(resumed: resumed, reloaded: reloaded)
@@ -190,6 +192,7 @@ func runInteractive(
             jobs: jobs,
             mcp: mcp,
             grants: reloaded?.grantsPath.flatMap(SessionGrants.take(from:)),
+            reloadedSource: reloaded?.sourcePath,
             makeLoop: conversationLoop(instructions: files, jobs: jobs, mcp: mcp)
         )
         // Viewers through the gateway reach the screen here, when this computer shares its sessions (ADR-0170).

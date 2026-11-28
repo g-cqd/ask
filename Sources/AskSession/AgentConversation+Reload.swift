@@ -1,6 +1,7 @@
 internal import AskAgentCore
 internal import AskTUI
 internal import AskTools
+internal import Darwin
 internal import Foundation
 internal import Synchronization
 
@@ -92,32 +93,49 @@ extension AgentConversation {
             return
         }
         update(.notice("Checking the new build (\(latest.summary))…", isError: false))
-        guard await signatureAllows(latest, update: update) else { return }
+        guard let stagedPath = await stageAndVerify(latest, update: update) else { return }
+        if stopsJobs { await jobs.stopAll() }
+        reloadTarget.withLock { $0 = (stagedPath: stagedPath, watchedPath: startup.path) }
+        update(.notice("Reloading into the new build…", isError: false))
+        update(.requestExit(.reload))
+    }
+
+    private func stageAndVerify(_ latest: BinaryIdentity, update: @Sendable (ConversationUpdate) -> Void) async
+        -> String?
+    {
+        let stagedPath: String
+        do {
+            stagedPath = try ReloadStaging.stage(latest.path, configDirectory: askConfigDirectory())
+        } catch {
+            update(.notice("Not reloading: \(error). Staying on the running build.", isError: true))
+            return nil
+        }
+        guard await signatureAllows(stagedPath: stagedPath, update: update) else {
+            unlink(stagedPath)
+            return nil
+        }
         if case .failed(let reason) = await SelfCheck.run(
-            latest.path,
+            stagedPath,
             arguments: source.flags.arguments,
             environment: LaunchEnvironment.values,
             workingDirectory: source.workspace
         ) {
+            unlink(stagedPath)
             update(
                 .notice(
                     "Not reloading: the new build failed its self-check: \(reason). Staying on the running build.",
                     isError: true
                 )
             )
-            return
+            return nil
         }
-        if stopsJobs { await jobs.stopAll() }
-        reloadTarget.withLock { $0 = latest }
-        update(.notice("Reloading into the new build…", isError: false))
-        update(.requestExit(.reload))
+        return stagedPath
     }
 
-    /// Whether the new build may replace this one: signed as this one is, or this one unsigned, which is said.
-    private func signatureAllows(_ latest: BinaryIdentity, update: @Sendable (ConversationUpdate) -> Void) async -> Bool
-    {
-        // A signed ask starts only a build signed as it is (roadmap 0153): the self-check would already run what is at the path.
-        switch BuildSignature.check(latest.path, against: await LaunchSignature.running) {
+    /// Whether the staged build may replace this one: signed as this one is, or this one unsigned, which is said.
+    private func signatureAllows(stagedPath: String, update: @Sendable (ConversationUpdate) -> Void) async -> Bool {
+        // Checked on the private staged copy, which is the exact file execve runs (security audit 2026-11-22, HIGH-10).
+        switch BuildSignature.check(stagedPath, against: await LaunchSignature.running) {
             case .refused(let reason):
                 update(
                     .notice(
@@ -143,7 +161,7 @@ extension AgentConversation {
     /// no screen to say so on, so this says it on the terminal and exits, the session saved.
     func reExecute() -> Never {
         guard let target = reloadTarget.withLock({ $0 }), let startup else { fail("ask: nothing to reload.", code: 70) }
-        var arguments = [target.path]
+        var arguments = [target.stagedPath]
         var flags = source.flags
         if let path = session.withLock({ $0?.path }) {
             arguments += ["--resume", path]
@@ -152,7 +170,9 @@ extension AgentConversation {
         }
         arguments += flags.arguments
         arguments += [
-            "--reloaded-from", startup.summary, "--reload-started", String(Int(Date().timeIntervalSince1970 * 1_000))
+            "--reloaded-from", startup.summary,
+            "--reload-started", String(Int(Date().timeIntervalSince1970 * 1_000)),
+            "--reloaded-source", target.watchedPath
         ]
         // What the person allowed for the session goes with it, in a file only they can read, taken once (roadmap 0159), in ask's
         // configuration, which no command or file tool may read or write (security audit 2026-11-22, HIGH-10).
@@ -162,11 +182,12 @@ extension AgentConversation {
         // The thread whose lane is shown, shown again by the new build.
         if let focused = focusedThread.withLock({ $0 }) { arguments += ["--focus-thread", focused] }
         let failure = Reexec.replaceProcess(
-            with: target.path,
+            with: target.stagedPath,
             arguments: arguments,
             workingDirectory: source.workspace,
             environment: LaunchEnvironment.values
         )
+        unlink(target.stagedPath)
         fail(
             "ask: could not restore the workspace or start the new build (errno \(failure)). "
                 + "Your session is saved; return to its workspace before running `ask --continue`.",

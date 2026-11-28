@@ -31,6 +31,7 @@ package struct LaunchRequest {
     package var reloadedFrom: String?
     package var reloadStarted: Int?
     package var reloadGrants: String?
+    package var reloadedSource: String?
     package var focusThread: String?
     package var selectedProvider: String?
     package var selectedModel: String?
@@ -112,7 +113,8 @@ package struct LaunchRequest {
                 from: $0,
                 startedMilliseconds: reloadStarted ?? 0,
                 grantsPath: reloadGrants,
-                focusThread: focusThread
+                focusThread: focusThread,
+                sourcePath: reloadedSource
             )
         }
         if let prompt {

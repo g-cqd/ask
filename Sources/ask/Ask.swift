@@ -144,6 +144,10 @@ struct Ask: AsyncParsableCommand {
     @Option(name: .customLong("reload-grants"), help: .hidden)
     var reloadGrants: String?
 
+    /// The executable path watched across private-staged reloads (HIGH-10).
+    @Option(name: .customLong("reloaded-source"), help: .hidden)
+    var reloadedSource: String?
+
     /// The thread whose lane a reload left shown (roadmap 0195).
     @Option(name: .customLong("focus-thread"), help: .hidden)
     var focusThread: String?

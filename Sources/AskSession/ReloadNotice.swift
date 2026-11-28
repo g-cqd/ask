@@ -12,6 +12,8 @@ struct ReloadNotice {
     var grantsPath: String?
     /// The thread whose lane was shown (roadmap 0195): the new process shows it again.
     var focusThread: String?
+    /// The install path `/reload` watches across private-staged reloads (HIGH-10).
+    var sourcePath: String?
 }
 
 /// What a start says about itself that is not needed to read the conversation: the session it resumed, and the reload that made it (ADR-0119).
