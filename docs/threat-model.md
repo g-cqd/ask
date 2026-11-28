@@ -12,6 +12,7 @@ and `docs/sandbox.md`; aligned with OWASP Top 10 for LLM Applications 2025 and O
 | D3 | Session transcripts & reload grants | `~/.local/state/ask` (sealed vault when enabled), `SessionGrants` | Argon2id (64 MiB, t=3, p=4) + AEAD; reload grants `O_EXCL \| O_NOFOLLOW` `0600` |
 | D4 | Human approval integrity | `ApprovalPolicy`, `CommandWords`, `CallGrants` | Conservative classifier, env scrubbing, grants disabled when `--no-sandbox` |
 | D5 | Terminal & display integrity | Local TTY / TUI | `TerminalTextFilter` / `OutputEscapes` strips CSI/OSC/DCS escapes (incl. OSC 52) |
+| D6 | Gateway node, server & shell-signing keys | Keychain (`gateway/*`), `trusted.json`, `nodes.json` | Non-file Keychain keys, `0700`/`0600` trust lists, end-to-end Noise `XX`/`IK`/`N` (ADR-0170) |
 
 ## 2. Adversaries
 
@@ -28,6 +29,8 @@ and `docs/sandbox.md`; aligned with OWASP Top 10 for LLM Applications 2025 and O
   client-supplied MCP servers remain subject to `ask`'s sandbox, approval gates, and organisation policy.
 - **A6 — Local same-user process & network adversary:** attempts symlink/TOCTOU races (`ScopedFile`), localhost tunnel
   hijacking (`ProviderProxy`), DNS rebinding (`FetchAddress`), or MITM.
+- **A7 — Untrusted relay / compromised gateway or LAN peer (ADR-0170):** observes or tampers with traffic through
+  Cloudflare or the gateway, probes the LAN nodes port, or attempts to serve modified web shell assets.
 
 ## 3. Trust Boundaries & Controls (OWASP LLM 2025 + Agentic AI)
 
@@ -42,6 +45,7 @@ and `docs/sandbox.md`; aligned with OWASP Top 10 for LLM Applications 2025 and O
 | Terminal escape injection (OSC 52 clipboard, title spoofing) | LLM05 | Model/tool ↔ TTY | `TerminalTextFilter` / `OutputEscapes` strips CSI/OSC/DCS before rendering | — |
 | Unbounded spend / runaway loops / memory OOM | LLM10, ASI08 | Model ↔ runtime | Turn limits, byte caps, budget tests, organisation policy caps (ADR-0168) | Bounded default `ui.historyLimit` / `jobs.keepFinished` (`N-A7`, Sprint 2) |
 | Release supply-chain tampering | LLM03 | CI ↔ users | Revision-pinned SwiftPM + `Package.resolved`, SHA-pinned Actions (`zizmor` 0 findings), Developer ID + notarisation + CycloneDX SBOM + SLSA provenance via `swift-ci` | Configure protected `release` Environment secrets on `g-cqd/ask` (`N-A6`) |
+| Compromised gateway, tunnel or LAN peer on web access (ADR-0170) | ASI03 | Browser ↔ gateway ↔ node | Two separated doors (LAN IP + CIDR for nodes, `127.0.0.1` + RS256 `Cf-Access-Jwt-Assertion` for controllers); Noise `XX` pinned keys on LAN; end-to-end Noise `IK` channels and Noise `N` `SealedList`; Ed25519-signed `ShellManifest` pinned by Service Worker + strict CSP; `policy.gateway*` | WebAuthn passkey PRF unlock (deferred) |
 
 ## 4. Accepted residual risks (with review expiry)
 

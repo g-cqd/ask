@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ask gateway</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">ask · gateway</div>
+    <div id="shell-pin" class="meta">Checking shell signature…</div>
+    <div id="conn-status" class="status">Locked</div>
+  </header>
+
+  <main id="unlock-view" class="panel">
+    <h1>Unlock Controller Key</h1>
+    <p class="hint">Sessions and the dashboard list are encrypted end-to-end (Noise IK &amp; Noise N). Neither Cloudflare nor the gateway holds your session key.</p>
+    <div class="row">
+      <input id="passphrase" type="password" placeholder="Passphrase (stretched with Argon2id 64 MiB / 3 passes)" autocomplete="current-password">
+      <button id="unlock-passphrase" type="button">Unlock / Create</button>
+    </div>
+    <div class="row">
+      <label class="file-btn">
+        Import 32-byte .key file
+        <input id="key-file" type="file" accept=".key,.txt">
+      </label>
+      <button id="export-seed" type="button" hidden>Download .key backup</button>
+    </div>
+    <p id="unlock-msg" class="msg"></p>
+  </main>
+
+  <section id="dashboard-view" class="panel" hidden>
+    <div class="identity-box">
+      <div>
+        <div class="label">Controller Fingerprint</div>
+        <code id="ctrl-fp"></code>
+      </div>
+      <div class="actions">
+        <button id="copy-trust" type="button">Copy `ask gateway trust` command</button>
+      </div>
+    </div>
+    <h2>Connected Computers &amp; Sessions</h2>
+    <div id="nodes-list" class="nodes"></div>
+  </section>
+
+  <section id="terminal-view" class="terminal-wrap" hidden>
+    <div class="term-bar">
+      <span id="term-title">Session</span>
+      <button id="term-detach" type="button">Back to dashboard</button>
+    </div>
+    <div id="terminal-host" class="terminal-host" tabindex="0"></div>
+  </section>
+
+  <script type="module" src="/app.mjs"></script>
+</body>
+</html>

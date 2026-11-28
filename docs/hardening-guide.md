@@ -12,6 +12,10 @@ MDM managed preferences so individual users cannot weaken the security floor:
 - **Forbid `--yes`:** requires human approval for non-granted tool calls.
 - **Connection & model allowlists:** restrict `ask` to approved enterprise LLM endpoints and models.
 - **Session vault encryption:** require Argon2id + AEAD encryption for stored transcripts under `~/.local/state/ask`.
+- **Gateway controls (ADR-0170):** set `policy.gatewayAllowed: false` to forbid sharing sessions with a gateway on
+  managed workstations; or keep sharing allowed while setting `policy.gatewayApprovals: false` (so tool/sandbox
+  approvals can only be answered at the physical keyboard) and `policy.gatewayStart: false` (forbidding remote session
+  creation).
 
 ## 2. Security Event Log (SIEM Export)
 
@@ -19,8 +23,9 @@ MDM managed preferences so individual users cannot weaken the security floor:
 `$XDG_STATE_HOME/ask/security-audit.jsonl` (default `~/.local/state/ask/security-audit.jsonl`).
 
 - **Recorded events:** `sandbox.approval`, `mcp.destructive_approval`, `tool.command_approval`, `tool.file_approval`,
-  `tool.host_approval`, `tool.approval` with `outcome` (`denied`, `allowed_once`, `granted_session`) and sanitized
-  non-secret scope metadata (program names, host, MCP tool name — never prompts, arguments, file contents, or keys).
+  `tool.host_approval`, `tool.approval`, and gateway events (`gateway.trust`, `gateway.enroll`, `gateway.node`,
+  `gateway.remote`, `gateway.viewer`, `gateway.shell`) with `outcome` and sanitized non-secret scope metadata (program
+  names, host, MCP tool name, key fingerprints — never prompts, arguments, file contents, or keys).
 - **Tamper resistance:** Seatbelt denies child commands write access to `$XDG_STATE_HOME/ask`.
 
 ## 3. Release Verification
