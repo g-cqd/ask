@@ -33,7 +33,7 @@ let package = Package(
         .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "fb4478051725c95614e76b15ac11e9a5c6a502a3"),
         .package(
             url: "https://github.com/g-cqd/AemiMCP.git",
-            revision: "64fb6d0725702f60c7afa5e7e0689a499ee5bedc",
+            revision: "480a812cedd5a8c5040a5b59abd1f872d85e57e5",
             traits: []
         ),
         .package(url: "https://github.com/g-cqd/AemiRegex.git", revision: "1b58215ac7266f8c847065f0cb63ab1cc75b3bc9"),
