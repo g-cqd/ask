@@ -105,6 +105,27 @@ extension PolicySection: DeclaredSection {
                     "Whether a controller through the gateway may start sessions in gateway.folders."
                 ),
                 \.gatewayStart
+            ),
+            .string(
+                SettingCatalog.row(
+                    "policy.minimumVersion",
+                    .text,
+                    #""0.1.0-alpha.1""#,
+                    "none",
+                    "The oldest version of ask the organisation allows to run (SemVer 2.0)."
+                ),
+                \.minimumVersion,
+                quoted: true
+            ),
+            .number(
+                SettingCatalog.row(
+                    "policy.sessionRetentionDays",
+                    .integer,
+                    "30",
+                    "none",
+                    "Days to keep recorded sessions before purging older ones at launch; 1 or more."
+                ),
+                \.sessionRetentionDays
             )
         ]
     )

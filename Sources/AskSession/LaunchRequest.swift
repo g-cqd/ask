@@ -107,6 +107,7 @@ package struct LaunchRequest {
             checkSelf(settings)
             return
         }
+        Self.applyRetention(settings.configuration.policy.value)
         await SessionProtectionSetup.decideAtLaunch(settings.configuration, inScreen: prompt == nil && restored == nil)
         let reloaded = reloadedFrom.map {
             ReloadNotice(
@@ -136,5 +137,21 @@ package struct LaunchRequest {
             reloaded: reloaded,
             pickSession: resume == ""
         )
+    }
+
+    static func applyRetention(_ policy: PolicySection) {
+        guard let retention = policy.sessionRetentionDays else { return }
+        let stateRoot = SessionDirectory.stateRoot(environment: LaunchEnvironment.values)
+        SessionRetention.purgeExpired(
+            days: retention,
+            stateRoot: stateRoot,
+            audit: SecurityAuditLog.defaultLog(environment: LaunchEnvironment.values)
+        )
+    }
+
+    package static func applyConfiguredRetention() {
+        if let policy = try? ConfigurationSource.here.layers().result.configuration.policy.value {
+            applyRetention(policy)
+        }
     }
 }

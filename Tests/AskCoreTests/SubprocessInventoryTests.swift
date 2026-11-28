@@ -20,7 +20,9 @@ struct SubprocessInventoryTests {
         "CommandCheck.swift":
             "a command is parsed by the shell that will run it, and read by shellcheck, before it runs (ADR-0139)",
         "MediaDecodeHost.swift":
-            "untrusted image, PDF, and video decoding runs in a zero-network Seatbelt child under sandbox-exec (N-A2 / R-DES-2)"
+            "untrusted image, PDF, and video decoding runs in a zero-network Seatbelt child under sandbox-exec (N-A2 / R-DES-2)",
+        "GatewaySessionStarter.swift":
+            "a gateway controller's start request opens a new interactive ask session in its own pseudo-terminal (ADR-0170)"
     ]
 
     private static let launches = [

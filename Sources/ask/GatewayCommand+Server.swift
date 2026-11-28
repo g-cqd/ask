@@ -92,11 +92,25 @@ extension GatewayCommand {
                 code: 64
             )
         }
+        let transport = URLSessionTransport()
         return ServeOptions(
             host: host,
             port: UInt16(port),
             subnet: subnet,
-            access: AccessVerifier.cloudflare(team: team, audience: aud)
+            access: AccessVerifier.cloudflare(team: team, audience: aud) { url in
+                let response = try await transport.send(
+                    HTTPRequest(url: url, method: "GET", headers: [], body: [], allowsRedirects: false)
+                )
+                guard (200 ... 299).contains(response.status) else {
+                    throw HTTPTransportError.failed("HTTP \(response.status)")
+                }
+                var bytes: [UInt8] = []
+                for try await chunk in response.body {
+                    bytes += chunk
+                    if bytes.count > 262_144 { break }
+                }
+                return bytes
+            }
         )
     }
 

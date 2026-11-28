@@ -160,6 +160,8 @@ profile: it is refused, and belongs in `requirements.json` or `defaults.json`.
 | `gatewayAllowed` | `false` keeps this computer from sharing its sessions with a [gateway](gateway.md), whatever `gateway.enabled` says. | `true` |
 | `gatewayApprovals` | `false` leaves approvals to the person at the computer: a controller through the gateway cannot answer them. | `true` |
 | `gatewayStart` | `false` keeps a controller through the gateway from starting sessions, even in `gateway.folders`. | `true` |
+| `minimumVersion` | The oldest [Semantic Version](https://semver.org) of `ask` allowed to run, such as `"0.1.0-alpha.1"` or `"0.2.0"`. An older binary refuses to start. | none |
+| `sessionRetentionDays` | Whole number of days (`1` or more) to keep recorded sessions before purging older session logs and sidecars at launch. Sessions open in a running `ask` are left untouched. | none |
 
 A profile's `requirements` may hold it too. A run, or a `/model` choice, that the policy does not allow stops with a message naming it
 and the file. A later drop-in replaces a

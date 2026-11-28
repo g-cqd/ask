@@ -1,3 +1,5 @@
+internal import AskCore
+
 /// `policy`: what only an organisation decides (roadmap 0130, ADR-0168), set in its `requirements.json` and nowhere else. Every key is
 /// optional; unset allows. Between the organisation's documents, a later one replaces what an earlier one set.
 public struct PolicySection: Sendable, Equatable, CustomStringConvertible, LayeredSection {
@@ -23,6 +25,10 @@ public struct PolicySection: Sendable, Equatable, CustomStringConvertible, Layer
     public var gatewayApprovals: Bool?
     /// `policy.gatewayStart`: whether a controller through the gateway may start sessions.
     public var gatewayStart: Bool?
+    /// `policy.minimumVersion`: the oldest SemVer of `ask` the organisation permits to run (roadmap 0130).
+    public var minimumVersion: String?
+    /// `policy.sessionRetentionDays`: days to keep recorded session transcripts before purging them at launch (roadmap 0130).
+    public var sessionRetentionDays: Int?
 
     /// The keys, in the order they are shown, from their declarations (``PolicySection/settings``).
     public static let keys = settings.all.map(\.name)
@@ -31,7 +37,14 @@ public struct PolicySection: Sendable, Equatable, CustomStringConvertible, Layer
 
     /// What this policy does not allow of a run that turns the sandbox off (`noSandbox`), runs every call without asking (`yes`), and
     /// uses `model` on the connection `provider`; nil when it allows all of it.
-    public func refusal(noSandbox: Bool, yes: Bool, provider: String, model: String) -> String? {
+    public func refusal(
+        noSandbox: Bool,
+        yes: Bool,
+        provider: String,
+        model: String,
+        runningVersion: String? = nil
+    ) -> String? {
+        if let minimumRefusal = versionRefusal(runningVersion: runningVersion) { return minimumRefusal }
         if noSandbox, allowNoSandbox == false { return "turning the sandbox off (--no-sandbox, --yolo)" }
         if yes, allowYes == false { return "running every tool call without asking (--yes, --yolo)" }
         if !Self.allows(providers, provider) {
@@ -39,6 +52,16 @@ public struct PolicySection: Sendable, Equatable, CustomStringConvertible, Layer
         }
         if !Self.allows(models, model) {
             return "the model \(model); it allows \(models?.joined(separator: ", ") ?? "")"
+        }
+        return nil
+    }
+
+    /// Why `runningVersion` fails `minimumVersion`; nil when `minimumVersion` is unset or met.
+    public func versionRefusal(runningVersion: String? = nil) -> String? {
+        let running = runningVersion ?? AskVersion.current
+        guard let minimumVersion, let required = SemanticVersion(minimumVersion) else { return nil }
+        guard let current = SemanticVersion(running), current >= required else {
+            return "ask \(running); policy.minimumVersion requires \(minimumVersion) or newer"
         }
         return nil
     }

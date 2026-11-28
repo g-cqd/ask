@@ -14,6 +14,7 @@ struct ServeCommand: AsyncParsableCommand {
     )
 
     func run() async {
+        LaunchRequest.applyConfiguredRetention()
         let sessions = ServedSessions()
         await ACPServer.serveStandardStreams(
             agent: ACPImplementation(name: "ask", title: "ask", version: AskVersion.current),

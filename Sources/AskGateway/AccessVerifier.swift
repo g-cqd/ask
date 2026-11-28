@@ -18,8 +18,12 @@ package actor AccessVerifier {
         self.mode = mode
     }
 
-    /// Standard Cloudflare Access configuration fetching keys from `https://<team>.cloudflareaccess.com/cdn-cgi/access/certs`.
-    package static func cloudflare(team: String, audience: String) -> AccessVerifier {
+    /// Standard Cloudflare Access configuration for `team` and `audience`, fetching keys with `fetchKeys` from ``certsURL(forTeam:)``.
+    package static func cloudflare(
+        team: String,
+        audience: String,
+        fetchKeys: @escaping @Sendable (URL) async throws -> [UInt8]
+    ) -> AccessVerifier {
         let clean =
             team.hasSuffix(".cloudflareaccess.com")
             ? String(team.dropLast(".cloudflareaccess.com".count))
@@ -30,11 +34,10 @@ package actor AccessVerifier {
                 issuer: issuer,
                 audience: audience,
                 fetchKeys: {
-                    guard let certsURL = URL(string: "\(issuer)/cdn-cgi/access/certs") else {
+                    guard let url = URL(string: "\(issuer)/cdn-cgi/access/certs") else {
                         throw AccessKeys.Failure.unreadable
                     }
-                    let (data, _) = try await URLSession.shared.data(from: certsURL)
-                    return Array(data)
+                    return try await fetchKeys(url)
                 }
             )
         )

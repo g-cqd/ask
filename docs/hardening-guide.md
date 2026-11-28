@@ -16,6 +16,10 @@ MDM managed preferences so individual users cannot weaken the security floor:
   managed workstations; or keep sharing allowed while setting `policy.gatewayApprovals: false` (so tool/sandbox
   approvals can only be answered at the physical keyboard) and `policy.gatewayStart: false` (forbidding remote session
   creation).
+- **Minimum binary version (`policy.minimumVersion`):** require a floor Semantic Version (e.g. `"0.1.0-alpha.1"`) so
+  outdated binaries missing security fixes refuse to run.
+- **Session retention (`policy.sessionRetentionDays`):** purge inactive recorded session transcripts and sidecars older
+  than `N` days at launch (logged as `policy.retention` in `SecurityAuditLog`).
 
 ## 2. Security Event Log (SIEM Export)
 

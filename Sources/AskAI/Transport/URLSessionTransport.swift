@@ -13,6 +13,22 @@ public struct URLSessionTransport: HTTPTransport {
     /// credentials on disk.
     public init(session: URLSession? = nil) { self.provided = session }
 
+    /// An ephemeral transport whose HTTPS requests dial through an authenticated loopback `CONNECT` proxy on `127.0.0.1:port`
+    /// (`PinnedPublicTransport`, CRIT-05).
+    public init(loopbackHTTPSProxyPort port: Int, proxyToken token: String) {
+        let config = Self.configuration()
+        config.connectionProxyDictionary = [
+            "HTTPSEnable": 1,
+            "HTTPSProxy": "127.0.0.1",
+            "HTTPSPort": port
+        ]
+        provided = URLSession(
+            configuration: config,
+            delegate: LoopbackProxyDelegate(port: port, token: token),
+            delegateQueue: nil
+        )
+    }
+
     private var session: URLSession { provided ?? lazySession.value }
 
     /// Ephemeral (no cookies, cache or credentials on disk), and patient: URLSession's default gives up after 60 s without data, and a
@@ -136,6 +152,33 @@ public struct URLSessionTransport: HTTPTransport {
         private static func reason(_ error: any Error, idle: TimeInterval) -> String {
             if (error as? URLError)?.code == .timedOut { return "no data arrived for \(Int(idle)) seconds" }
             return error.localizedDescription
+        }
+    }
+
+    private final class LoopbackProxyDelegate: NSObject, URLSessionTaskDelegate, Sendable {
+        private let port: Int
+        private let token: String
+
+        init(port: Int, token: String) {
+            self.port = port
+            self.token = token
+        }
+
+        func urlSession(
+            _ session: URLSession,
+            task: URLSessionTask,
+            didReceive challenge: URLAuthenticationChallenge,
+            completionHandler: @escaping @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+        ) {
+            let space = challenge.protectionSpace
+            if space.isProxy(), space.host == "127.0.0.1", space.port == port {
+                completionHandler(
+                    .useCredential,
+                    URLCredential(user: "ask", password: token, persistence: .none)
+                )
+            } else {
+                completionHandler(.performDefaultHandling, nil)
+            }
         }
     }
 }

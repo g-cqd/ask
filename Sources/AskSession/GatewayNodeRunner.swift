@@ -17,6 +17,9 @@ package enum GatewayNodeRunner {
         guard let configuration = try? source.layers().result.configuration else {
             return "the configuration cannot be read"
         }
+        if let minRefusal = configuration.policy.value.versionRefusal() {
+            return "your organisation does not allow running \(minRefusal)"
+        }
         guard configuration.policy.value.gatewayAllowed != false else {
             return "your organisation does not allow sharing sessions (policy.gatewayAllowed)"
         }
