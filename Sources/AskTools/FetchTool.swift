@@ -34,9 +34,10 @@ public struct FetchTool: Tool {
     private let resolve: @Sendable (String) -> [String]
 
     /// - Parameters:
-    ///   - http: what sends the requests; ask's own transport, which keeps no cookie and sends no stored credential.
+    ///   - http: what sends the requests; ask's own pinned transport, which keeps no cookie, sends no stored credential, and dials
+    ///     through ``PinnedPublicTransport`` so DNS rebinding cannot reach an inward address.
     ///   - resolve: the addresses a host name resolves to.
-    public init(http: any HTTPTransport = URLSessionTransport(), resolve: (@Sendable (String) -> [String])? = nil) {
+    public init(http: any HTTPTransport = PinnedPublicTransport(), resolve: (@Sendable (String) -> [String])? = nil) {
         self.http = http
         self.resolve = resolve ?? FetchResolver.addresses(of:)
     }

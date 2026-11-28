@@ -35,7 +35,11 @@ extension MCPHub {
         guard let address = server.url, let url = URL(string: address) else {
             throw MCPOAuthError("\(name) is a program, not a remote server: it has nothing to sign in to")
         }
-        try await MCPSignInFlow(http: http, file: file)
+        let serverHost = url.host(percentEncoded: false)?.lowercased() ?? ""
+        let serverInward = serverHost == "localhost" || InwardAddress.contains(serverHost)
+        let discoveryHTTP: any HTTPTransport =
+            (http is URLSessionTransport && !serverInward) ? PinnedPublicTransport() : http
+        try await MCPSignInFlow(http: discoveryHTTP, file: file)
             .signIn(url: url, challenge: signInChallenge(for: name), clientID: server.oauthClientID, opening: opening)
         await reconnect(name)
     }

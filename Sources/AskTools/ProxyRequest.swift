@@ -1,8 +1,14 @@
+internal import AskAI
 internal import Foundation
 
 /// What the provider proxy does with a request head (roadmap 0021). It serves `CONNECT host:port` tunnels only, to the hosts and ports
 /// it allows; a plain HTTP request is refused, since every provider speaks HTTPS, and so is anything it cannot read.
 public enum ProxyRequest {
+    public enum Rule: Sendable {
+        case allowList(Set<Target>)
+        /// Any public internet host (or explicit `localhost`/`127.0.0.1`/`::1`), for DNS-rebinding-pinned `fetch` and OAuth discovery.
+        case publicInternet
+    }
     /// A host and port a tunnel may go to. Host names are kept in lower case without a trailing dot, so one spelling matches another.
     public struct Target: Sendable, Hashable {
         public let host: String
@@ -40,6 +46,10 @@ public enum ProxyRequest {
     ///     know it, so another program on this machine cannot use the tunnel (security audit 2026-11-22, HIGH-07).
     /// - Returns: a tunnel to an allowed target, or the refusal to send.
     public static func decide(_ head: String, allowing allowed: Set<Target>, authorization: String) -> Decision {
+        decide(head, rule: .allowList(allowed), authorization: authorization)
+    }
+
+    public static func decide(_ head: String, rule: Rule, authorization: String) -> Decision {
         let lines = head.split(separator: "\r\n", omittingEmptySubsequences: false)
         let parts = (lines.first ?? "").split(separator: " ", omittingEmptySubsequences: true)
         guard parts.count == 3, parts[2].hasPrefix("HTTP/1.") else { return .refuse(400, "Bad Request") }
@@ -57,8 +67,16 @@ public enum ProxyRequest {
             return .refuse(407, "Proxy Authentication Required")
         }
         guard let target = target(of: parts[1]) else { return .refuse(400, "Bad Request") }
-        guard allowed.contains(target) else {
-            return .refuse(403, "Forbidden: \(target.host):\(target.port) is not a model provider ask uses")
+        switch rule {
+            case .allowList(let allowed):
+                guard allowed.contains(target) else {
+                    return .refuse(403, "Forbidden: \(target.host):\(target.port) is not a model provider ask uses")
+                }
+            case .publicInternet:
+                let explicitLocal = target.host == "localhost" || target.host == "127.0.0.1" || target.host == "::1"
+                if !explicitLocal, InwardAddress.contains(target.host) {
+                    return .refuse(403, "Forbidden: \(target.host) is a private or local address")
+                }
         }
         return .tunnel(target)
     }

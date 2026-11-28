@@ -36,10 +36,19 @@ public final class ProviderProxy: Sendable {
         func replace(with targets: Set<ProxyRequest.Target>) { self.targets.withLock { $0 = targets } }
     }
 
-    /// Starts listening.
+    /// Starts listening for model-provider tunnels.
     /// - Parameter allowed: the hosts and ports a tunnel may go to.
     /// - Throws: ``StartError`` when no socket can be bound.
-    public init(allowing allowed: Set<ProxyRequest.Target>) throws(StartError) {
+    public convenience init(allowing allowed: Set<ProxyRequest.Target>) throws(StartError) {
+        try self.init(allowList: AllowList(allowed), publicInternet: false, dialer: nil)
+    }
+
+    /// Starts listening as a DNS-rebinding-pinned public-internet `CONNECT` dialer (security audit 2026-11-22, CRIT-05).
+    convenience init(publicInternet: Void, dialer: ProxyTunnel.Dialer? = nil) throws(StartError) {
+        try self.init(allowList: AllowList([]), publicInternet: true, dialer: dialer)
+    }
+
+    private init(allowList: AllowList, publicInternet: Bool, dialer: ProxyTunnel.Dialer?) throws(StartError) {
         let listener = socket(AF_INET, SOCK_STREAM, 0)
         guard listener >= 0 else { throw .socket("socket", errno) }
         var address = sockaddr_in()
@@ -69,7 +78,6 @@ public final class ProviderProxy: Sendable {
         _ = fcntl(listener, F_SETFL, fcntl(listener, F_GETFL) | O_NONBLOCK)
         wake = pipe[1]
         port = Int(UInt16(bigEndian: address.sin_port))
-        let allowList = AllowList(allowed)
         self.allowList = allowList
         var generator = SystemRandomNumberGenerator()
         let token = (0 ..< 4).map { _ in String(generator.next() as UInt64, radix: 16) }.joined()
@@ -78,7 +86,14 @@ public final class ProviderProxy: Sendable {
         // The thread gets the pipe's ends as they are now, not the variable `pipe(2)` filled in.
         let ends = pipe
         Thread.detachNewThread {
-            Self.accepting(on: listener, until: ends, allowing: allowList, authorization: authorization)
+            Self.accepting(
+                on: listener,
+                until: ends,
+                allowing: allowList,
+                publicInternet: publicInternet,
+                authorization: authorization,
+                dialer: dialer
+            )
         }
     }
 
@@ -87,7 +102,9 @@ public final class ProviderProxy: Sendable {
         on listener: Int32,
         until wake: [Int32],
         allowing allowList: AllowList,
-        authorization: String
+        publicInternet: Bool,
+        authorization: String,
+        dialer: ProxyTunnel.Dialer?
     ) {
         defer { for descriptor in [listener] + wake { close(descriptor) } }
         let open = Atomic<Int>(0)
@@ -113,7 +130,8 @@ public final class ProviderProxy: Sendable {
                 continue
             }
             Thread.detachNewThread {
-                ProxyTunnel.serve(client, allowing: allowList.current, authorization: authorization)
+                let rule: ProxyRequest.Rule = publicInternet ? .publicInternet : .allowList(allowList.current)
+                ProxyTunnel.serve(client, rule: rule, authorization: authorization, dialer: dialer)
                 open.wrappingSubtract(1, ordering: .relaxed)
             }
         }

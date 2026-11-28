@@ -5,12 +5,25 @@ internal import Foundation
 /// One connection to the provider proxy (roadmap 0021), on a thread of its own: the request head is read, ``ProxyRequest`` decides,
 /// and an allowed tunnel is connected and relayed both ways until both sides close; anything else gets its refusal and is closed.
 enum ProxyTunnel {
+    enum ConnectOutcome {
+        case connected(Int32)
+        case inwardRefused
+        case unreachable
+    }
+
+    typealias Dialer = @Sendable (ProxyRequest.Target, ProxyRequest.Rule) -> ConnectOutcome
+
     /// The most a request head may be: a CONNECT line and a few headers.
     static let headLimit = 8192
     /// How long a client gets to send its request, and a connection to the provider to open.
     static let waitSeconds = 10
 
-    static func serve(_ client: Int32, allowing allowed: Set<ProxyRequest.Target>, authorization: String) {
+    static func serve(
+        _ client: Int32,
+        rule: ProxyRequest.Rule,
+        authorization: String,
+        dialer: Dialer? = nil
+    ) {
         defer { close(client) }
         noSignalOnClose(client)
         setTimeout(client, seconds: waitSeconds)
@@ -18,19 +31,24 @@ enum ProxyTunnel {
             reply(client, 400, "Bad Request")
             return
         }
-        switch ProxyRequest.decide(head, allowing: allowed, authorization: authorization) {
+        switch ProxyRequest.decide(head, rule: rule, authorization: authorization) {
             case .refuse(let status, let reason): reply(client, status, reason)
             case .tunnel(let target):
-                guard let upstream = connect(to: target) else {
-                    reply(client, 502, "Bad Gateway: \(target.host):\(target.port) could not be reached")
-                    return
+                let outcome = dialer?(target, rule) ?? connect(to: target, rule: rule)
+                switch outcome {
+                    case .inwardRefused:
+                        reply(client, 403, "Forbidden: \(target.host) resolves to a private or local address")
+                    case .unreachable:
+                        reply(client, 502, "Bad Gateway: \(target.host):\(target.port) could not be reached")
+                    case .connected(let upstream):
+                        defer { close(upstream) }
+                        noSignalOnClose(upstream)
+                        setTimeout(client, seconds: 0)
+                        guard writeAll(client, Array("HTTP/1.1 200 Connection Established\r\n\r\n".utf8)),
+                            rest.isEmpty || writeAll(upstream, rest)
+                        else { return }
+                        relay(client, upstream)
                 }
-                defer { close(upstream) }
-                setTimeout(client, seconds: 0)
-                guard writeAll(client, Array("HTTP/1.1 200 Connection Established\r\n\r\n".utf8)),
-                    rest.isEmpty || writeAll(upstream, rest)
-                else { return }
-                relay(client, upstream)
         }
     }
 
@@ -52,7 +70,6 @@ enum ProxyTunnel {
 
     private static func reply(_ client: Int32, _ status: Int, _ reason: String) {
         let flat = reason.replacing("\r", with: " ").replacing("\n", with: " ")
-        // A client that did not send the credential is told how to: those that have it in their proxy address send it then.
         let challenge = status == 407 ? "Proxy-Authenticate: Basic realm=\"ask\"\r\n" : ""
         _ = writeAll(
             client,
@@ -60,39 +77,73 @@ enum ProxyTunnel {
         )
     }
 
-    /// A connected socket to `target`, trying each of its addresses; nil when none answers.
-    private static func connect(to target: ProxyRequest.Target) -> Int32? {
+    /// Resolves `target` once and connects directly to its verified `sockaddr` without a second DNS lookup.
+    /// In `.publicInternet` mode, if any resolved record is inward (and the host was not an explicit local literal), the entire
+    /// target is refused with `.inwardRefused` before any `connect()` call is made (CRIT-05).
+    static func connect(
+        to target: ProxyRequest.Target,
+        rule: ProxyRequest.Rule,
+        resolvedAddressesForCheckOnly: [String]? = nil
+    ) -> ConnectOutcome {
+        let strictPublic = isStrictPublic(host: target.host, rule: rule)
+        if let synthetic = resolvedAddressesForCheckOnly {
+            return (strictPublic && synthetic.contains(where: InwardAddress.contains)) ? .inwardRefused : .unreachable
+        }
         var hints = addrinfo()
         hints.ai_socktype = SOCK_STREAM
         hints.ai_family = AF_UNSPEC
         var list: UnsafeMutablePointer<addrinfo>?
-        guard getaddrinfo(target.host, String(target.port), &hints, &list) == 0, let list else { return nil }
+        guard getaddrinfo(target.host, String(target.port), &hints, &list) == 0, let list else { return .unreachable }
         defer { freeaddrinfo(list) }
-        var entry: UnsafeMutablePointer<addrinfo>? = list
+        if strictPublic, hasInwardRecord(list) { return .inwardRefused }
+        return dialFirstAllowed(in: list, host: target.host)
+    }
+
+    private static func isStrictPublic(host: String, rule: ProxyRequest.Rule) -> Bool {
+        guard case .publicInternet = rule else { return false }
+        return host != "localhost" && host != "127.0.0.1" && host != "::1"
+    }
+
+    private static func hasInwardRecord(_ first: UnsafeMutablePointer<addrinfo>) -> Bool {
+        var scan: UnsafeMutablePointer<addrinfo>? = first
+        while let current = scan {
+            if let address = numeric(unsafe current.pointee),
+                InwardAddress.contains(String(address.prefix { $0 != "%" }))
+            {
+                return true
+            }
+            scan = unsafe current.pointee.ai_next
+        }
+        return false
+    }
+
+    private static func dialFirstAllowed(in first: UnsafeMutablePointer<addrinfo>, host: String) -> ConnectOutcome {
+        var entry: UnsafeMutablePointer<addrinfo>? = first
         while let current = entry {
-            if let address = numeric(current.pointee), !follows(target.host, to: address) {
-                entry = current.pointee.ai_next
+            let info = unsafe current.pointee
+            if let address = numeric(info), !follows(host, to: String(address.prefix { $0 != "%" })) {
+                entry = info.ai_next
                 continue
             }
-            let candidate = socket(current.pointee.ai_family, current.pointee.ai_socktype, current.pointee.ai_protocol)
+            let candidate = socket(info.ai_family, info.ai_socktype, info.ai_protocol)
             if candidate >= 0 {
                 _ = fcntl(candidate, F_SETFD, FD_CLOEXEC)
                 noSignalOnClose(candidate)
                 setTimeout(candidate, seconds: waitSeconds)
-                if Darwin.connect(candidate, current.pointee.ai_addr, current.pointee.ai_addrlen) == 0 {
+                if unsafe Darwin.connect(candidate, info.ai_addr, info.ai_addrlen) == 0 {
                     setTimeout(candidate, seconds: 0)
-                    return candidate
+                    return .connected(candidate)
                 }
                 close(candidate)
             }
-            entry = current.pointee.ai_next
+            entry = info.ai_next
         }
-        return nil
+        return .unreachable
     }
 
     /// Copies each side to the other until both have closed; a side that closes has its end passed on as a half-close.
     private static func relay(_ client: Int32, _ upstream: Int32) {
-        var open = [true, true]  // client to upstream, upstream to client
+        var open = [true, true]
         var buffer = [UInt8](repeating: 0, count: 64 * 1024)
         while open[0] || open[1] {
             var fds = [
@@ -125,26 +176,21 @@ enum ProxyTunnel {
         return true
     }
 
-    /// A write to a closed peer fails with EPIPE instead of killing ask with SIGPIPE.
     private static func noSignalOnClose(_ fd: Int32) {
         var on: Int32 = 1
         setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &on, socklen_t(MemoryLayout<Int32>.size))
     }
 
-    /// Reads and writes on `fd` give up after `seconds`; zero waits for ever, as a tunnel's relay does.
     private static func setTimeout(_ fd: Int32, seconds: Int) {
         var timeout = timeval(tv_sec: seconds, tv_usec: 0)
         setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
         setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
     }
 
-    /// Whether a tunnel to `host` may go to `address`, one it resolved to: a provider's name that leads inward is not followed
-    /// (security audit 2026-11-22, HIGH-07); a provider named by an inward address, as a local one is, is.
     static func follows(_ host: String, to address: String) -> Bool {
         InwardAddress.contains(host) || host == "localhost" || !InwardAddress.contains(address)
     }
 
-    /// The numeric address of `entry`, as `getnameinfo` writes it.
     private static func numeric(_ entry: addrinfo) -> String? {
         var host = [CChar](repeating: 0, count: Int(NI_MAXHOST))
         guard getnameinfo(entry.ai_addr, entry.ai_addrlen, &host, socklen_t(host.count), nil, 0, NI_NUMERICHOST) == 0
