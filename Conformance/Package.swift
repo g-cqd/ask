@@ -10,7 +10,7 @@ let package = Package(
         .package(name: "ask", path: ".."),
         .package(
             url: "https://github.com/g-cqd/AemiMCP.git",
-            revision: "480a812cedd5a8c5040a5b59abd1f872d85e57e5",
+            revision: "992b1a62ec80a85f814bb6f9f7d378ad820d0bcd",
             traits: []
         )
     ],
