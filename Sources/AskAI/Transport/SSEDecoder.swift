@@ -26,8 +26,6 @@ public struct SSEDecoder: Sendable {
     }
 
     private let limits: Limits
-    /// The last `id` field's value, the one a resumed stream names in `Last-Event-ID`.
-    public private(set) var lastEventID: String?
     /// The last `retry` field's wait, when it was digits only.
     public private(set) var retry: Duration?
     private var carry: [UInt8] = []
@@ -121,19 +119,9 @@ public struct SSEDecoder: Sendable {
         } else if field.matches(.eventField) {
             name.removeAll(keepingCapacity: true)
             name.append(span: value)
-        } else if field.matches(.idField) {
-            remember(id: value)
         } else if field.matches(.retryField) {
             remember(retry: value)
         }
-    }
-
-    /// An `id` with a NUL in it is ignored, as the specification says.
-    private mutating func remember(id value: Span<UInt8>) {
-        var bytes: [UInt8] = []
-        bytes.append(span: value)
-        guard !bytes.contains(0) else { return }
-        lastEventID = String(decoding: bytes, as: UTF8.self)
     }
 
     /// A `retry` that is not ASCII digits alone is ignored.
@@ -170,7 +158,6 @@ extension UInt8 {
 extension [UInt8] {
     fileprivate static let dataField = Array("data".utf8)
     fileprivate static let eventField = Array("event".utf8)
-    fileprivate static let idField = Array("id".utf8)
     fileprivate static let retryField = Array("retry".utf8)
 }
 

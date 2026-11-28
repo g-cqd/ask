@@ -138,7 +138,7 @@ let package = Package(
             name: "AskSession",
             dependencies: [
                 .product(name: "AemiSearch", package: "AemiSearch"),
-                "AskAI", "AskAgentCore", "AskApple", "AskCore", "AskGateway", "AskMCP", "AskTools", "AskTUI",
+                "AskAI", "AskAgentCore", "AskApple", "AskCore", "AskGateway", "AskTools", "AskTUI",
                 .product(name: "AemiMCP", package: "AemiMCP"),
                 .product(name: "AemiJSON", package: "AemiJSON"),
                 .product(name: "TerminalKitInput", package: "TerminalKit")
@@ -244,7 +244,7 @@ let package = Package(
         ),
         .testTarget(
             name: "AskGatewayTests",
-            dependencies: ["AskGateway", "AskCore"],
+            dependencies: ["AskGateway", "AskCore", .product(name: "AemiJSON", package: "AemiJSON")],
             path: "Tests/AskGatewayTests",
             swiftSettings: packageSettings
         ),
