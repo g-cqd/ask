@@ -1,6 +1,6 @@
+internal import AemiMCP
 internal import AskAI
 internal import AskAgentCore
-internal import AskMCP
 internal import AskTUI
 internal import AskTools
 internal import Foundation

@@ -1,5 +1,5 @@
+internal import AemiMCP
 public import AskAgentCore
-internal import AskMCP
 internal import Foundation
 internal import Synchronization
 

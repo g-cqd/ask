@@ -1,5 +1,5 @@
+internal import AemiMCP
 internal import AskAI
-internal import AskMCP
 internal import Foundation
 
 /// Finding a tool among those of servers too large to list (ADR-0100): by the words of a tool's name and description.

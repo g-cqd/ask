@@ -1,4 +1,4 @@
-internal import AskMCP
+internal import AemiMCP
 
 /// A tool's result as the text the model reads (ADR-0099). Text is passed on as it is; what a terminal agent cannot use is named, with
 /// its type and size, and never pasted: a base64 image would be tens of thousands of tokens of nothing.
@@ -23,7 +23,7 @@ enum MCPResultText {
             case .image(let type, let data): "[image \(type), \(size(ofBase64: data)) bytes: ask cannot show it]"
             case .audio(let type, let data): "[audio \(type), \(size(ofBase64: data)) bytes: ask cannot play it]"
             case .resourceLink(let uri, let name, _): "[resource \(name ?? uri): \(uri)]"
-            case .resource(let uri, let type, let text):
+            case .resource(let uri, let type, let text, _):
                 text ?? "[resource \(uri)\(type.map { " (\($0))" } ?? ""): no text]"
             case .unknown(let type): "[a \(type) block that ask does not understand]"
         }

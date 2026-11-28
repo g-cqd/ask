@@ -1,4 +1,4 @@
-internal import AskMCP
+internal import AemiMCP
 
 /// The text a resource listing gives the model: each resource's URI, name and description, at most ``maximum`` of them, and every template.
 enum MCPResourceListing {

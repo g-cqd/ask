@@ -1,7 +1,7 @@
 internal import AemiJSON
+internal import AemiMCP
 public import AskAI
 public import AskAgentCore
-internal import AskMCP
 
 /// `server_resource`: lists or reads what a connected server offers as resources (roadmap 0067), offered only while one does. It runs outside
 /// ask's sandbox like every server's tool, so it refuses a narrowed session. Not `mcp_…`: see ``MCPCallTool``.

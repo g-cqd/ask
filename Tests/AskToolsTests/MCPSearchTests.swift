@@ -1,3 +1,4 @@
+import AemiMCP
 import AskAI
 import AskMCP
 import Testing
@@ -13,7 +14,7 @@ struct MCPSearchTests {
             name: name,
             title: nil,
             description: description,
-            inputSchema: try! JSONObject(validating: Array(schema.utf8)),
+            inputSchema: try! MCPJSONObject(validating: Array(schema.utf8)),
             annotations: MCPToolAnnotations(),
             hasOutputSchema: false
         )

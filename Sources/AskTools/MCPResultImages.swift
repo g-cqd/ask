@@ -1,5 +1,5 @@
+internal import AemiMCP
 internal import AskAI
-internal import AskMCP
 internal import Foundation
 
 /// The pictures in a server's tool result, made fit to send like those `read` gives (roadmap 0084).

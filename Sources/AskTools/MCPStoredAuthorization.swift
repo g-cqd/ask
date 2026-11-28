@@ -1,3 +1,4 @@
+internal import AemiMCP
 internal import AskAI
 internal import AskMCP
 internal import Foundation
@@ -62,7 +63,7 @@ final class MCPStoredAuthorization: MCPAuthorization {
                 tokenEndpoint: endpoint,
                 clientID: record.clientID,
                 resource: server,
-                http: http,
+                http: MCPHTTPBridge(http),
                 now: now()
             )
         else { return false }

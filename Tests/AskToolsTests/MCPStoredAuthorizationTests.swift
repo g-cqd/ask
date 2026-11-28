@@ -1,5 +1,5 @@
+import AemiMCP
 import AskAI
-import AskMCP
 import Foundation
 import Synchronization
 import Testing

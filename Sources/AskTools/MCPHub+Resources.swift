@@ -1,5 +1,5 @@
+internal import AemiMCP
 internal import AskAgentCore
-internal import AskMCP
 internal import Synchronization
 
 /// A server's resources for the person (roadmap 0067): listed for the `@server:` picker, and read for each `@server:uri` of a message.

@@ -1,5 +1,6 @@
 // @dl:accept -- a server's tools share their imports, holder and sandbox refusal; each says its own definition and work (server_resource)
 internal import AemiJSON
+internal import AemiMCP
 public import AskAI
 public import AskAgentCore
 internal import AskMCP

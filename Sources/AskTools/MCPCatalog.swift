@@ -1,6 +1,6 @@
+internal import AemiMCP
 internal import AskAI
 internal import AskAgentCore
-internal import AskMCP
 internal import Synchronization
 
 /// The tools of the servers that are searched, not listed (ADR-0100), with the connection each is called through.

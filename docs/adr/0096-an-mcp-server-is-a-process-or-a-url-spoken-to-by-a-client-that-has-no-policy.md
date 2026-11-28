@@ -101,3 +101,9 @@ Against real servers (a throwaway test, not kept, run once each on 2026-10-25): 
 a 9-tool listing and a `search_docs` call in 0.8 s, with ask's own `User-Agent`; `rea` (`bunx rea-agents@6.5.0 mcp`) over stdio completed
 start and a 207-tool listing (689 KB of schemas) in 1.5 s and exited 0 on close, leaving no process of its own behind. The Xcode bridge
 was not run (it can raise a permission prompt in the owner's session).
+
+## Addendum (2026-11-28): the client moved to AemiMCP
+
+The client this decision describes now lives in `g-cqd/AemiMCP`, with its tests; `AskMCP` is the glue between ask's HTTP
+and JSON seams and it (ADR-0171). The decision is otherwise unchanged: the client has no policy, and ask's stays in
+`AskTools`.

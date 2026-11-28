@@ -1,4 +1,4 @@
-internal import AskMCP
+internal import AemiMCP
 
 /// A server's failures in words for the model and the person.
 enum MCPFailure {

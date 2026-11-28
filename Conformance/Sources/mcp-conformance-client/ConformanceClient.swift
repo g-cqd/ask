@@ -1,3 +1,4 @@
+import AemiMCP
 import AskAI
 import AskMCP
 import Foundation
@@ -21,12 +22,16 @@ struct ConformanceClient {
     }
 
     static func session(_ url: URL) async throws {
-        let transport = try HTTPMCPTransport(url: url, userAgent: "ask-conformance", http: URLSessionTransport())
+        let transport = try HTTPMCPTransport(
+            url: url,
+            userAgent: "ask-conformance",
+            http: MCPHTTPBridge(URLSessionTransport())
+        )
         let connection = MCPConnection(transport: transport, clientName: "ask-conformance", clientVersion: "1")
         _ = try await connection.start()
         let tools = try await connection.listTools()
         if let tool = tools.first {
-            let arguments = try JSONObject(validating: Array(#"{"a":2,"b":3}"#.utf8))
+            let arguments = try MCPJSONObject(validating: Array(#"{"a":2,"b":3}"#.utf8))
             _ = try await connection.callTool(tool.name, arguments: arguments)
         }
         await connection.close()

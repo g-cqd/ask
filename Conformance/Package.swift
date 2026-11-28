@@ -6,11 +6,21 @@ import PackageDescription
 let package = Package(
     name: "conformance",
     platforms: [.macOS(.v26)],
-    dependencies: [.package(name: "ask", path: "..")],
+    dependencies: [
+        .package(name: "ask", path: ".."),
+        .package(
+            url: "https://github.com/g-cqd/AemiMCP.git",
+            revision: "64fb6d0725702f60c7afa5e7e0689a499ee5bedc",
+            traits: []
+        )
+    ],
     targets: [
         .executableTarget(
             name: "mcp-conformance-client",
-            dependencies: [.product(name: "AskMCP", package: "ask"), .product(name: "AskAI", package: "ask")],
+            dependencies: [
+                .product(name: "AskMCP", package: "ask"), .product(name: "AskAI", package: "ask"),
+                .product(name: "AemiMCP", package: "AemiMCP")
+            ],
             path: "Sources/mcp-conformance-client"
         )
     ]

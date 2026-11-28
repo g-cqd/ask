@@ -1,4 +1,5 @@
 internal import AemiJSON
+internal import AemiMCP
 public import AskAI
 public import AskAgentCore
 internal import AskMCP
@@ -23,7 +24,7 @@ struct MCPToolAdapter: Tool {
         definition = ToolDefinition(
             name: name,
             description: "[MCP server \(server)] \(words)",
-            inputSchema: tool.inputSchema
+            inputSchema: JSONObject(tool.inputSchema) ?? .empty
         )
     }
 

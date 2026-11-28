@@ -1,4 +1,4 @@
-import AskMCP
+import AemiMCP
 import Testing
 
 @testable import AskTools

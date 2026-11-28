@@ -1,5 +1,5 @@
+internal import AemiMCP
 internal import AskCodemode
-internal import AskMCP
 internal import Darwin
 
 /// The process that hosts a script's VM, as its keeper holds it: its messages in, a message out, and its end. A test gives a

@@ -31,6 +31,11 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "fe6a0e52d739507cb59e895711b1e73830890472"),
         .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "fb4478051725c95614e76b15ac11e9a5c6a502a3"),
+        .package(
+            url: "https://github.com/g-cqd/AemiMCP.git",
+            revision: "64fb6d0725702f60c7afa5e7e0689a499ee5bedc",
+            traits: []
+        ),
         .package(url: "https://github.com/g-cqd/AemiRegex.git", revision: "1b58215ac7266f8c847065f0cb63ab1cc75b3bc9"),
         .package(
             url: "https://github.com/g-cqd/AemiMarkdown.git",
@@ -88,10 +93,7 @@ let package = Package(
         ),
         .target(
             name: "AskMCP",
-            dependencies: [
-                "AskAI", .product(name: "AemiJSON", package: "AemiJSON"),
-                .product(name: "Subprocess", package: "swift-subprocess")
-            ],
+            dependencies: ["AskAI", .product(name: "AemiMCP", package: "AemiMCP")],
             path: "Sources/AskMCP",
             swiftSettings: packageSettings
         ),
@@ -99,6 +101,7 @@ let package = Package(
             name: "AskTools",
             dependencies: [
                 "AskAgentCore", "AskAI", "AskCodemode", "AskCore", "AskMCP",
+                .product(name: "AemiMCP", package: "AemiMCP"),
                 .product(name: "AemiKernel", package: "aemi"),
                 .product(name: "AemiJSON", package: "AemiJSON"),
                 .product(name: "AemiJSONRPC", package: "AemiJSON"), .product(name: "AemiSearch", package: "AemiSearch"),
@@ -136,6 +139,7 @@ let package = Package(
             dependencies: [
                 .product(name: "AemiSearch", package: "AemiSearch"),
                 "AskAI", "AskAgentCore", "AskApple", "AskCore", "AskGateway", "AskMCP", "AskTools", "AskTUI",
+                .product(name: "AemiMCP", package: "AemiMCP"),
                 .product(name: "AemiJSON", package: "AemiJSON"),
                 .product(name: "TerminalKitInput", package: "TerminalKit")
             ],
@@ -214,8 +218,7 @@ let package = Package(
         .testTarget(
             name: "AskMCPTests",
             dependencies: [
-                "AskMCP", "AskAI", .product(name: "AemiJSON", package: "AemiJSON"),
-                .product(name: "AemiTesting", package: "aemi"), .product(name: "AemiRegex", package: "aemiregex")
+                "AskMCP", "AskAI", .product(name: "AemiMCP", package: "AemiMCP")
             ],
             path: "Tests/AskMCPTests",
             exclude: ["Fixtures"],
@@ -259,6 +262,7 @@ let package = Package(
             name: "AskToolsTests",
             dependencies: [
                 "AskTools", "AskAgentCore", "AskAI", "AskCodemode", "AskMCP",
+                .product(name: "AemiMCP", package: "AemiMCP"),
                 .product(name: "AemiTesting", package: "aemi"), .product(name: "AemiRegex", package: "aemiregex"),
                 .product(name: "AemiJSON", package: "AemiJSON"), .product(name: "AemiJSONRPC", package: "AemiJSON")
             ],

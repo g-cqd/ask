@@ -1,7 +1,7 @@
+internal import AemiMCP
 internal import AskAI
 internal import AskAgentCore
 internal import AskCore
-internal import AskMCP
 internal import Foundation
 internal import Synchronization
 

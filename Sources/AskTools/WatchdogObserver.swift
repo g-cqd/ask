@@ -1,4 +1,4 @@
-internal import AskMCP
+internal import AemiMCP
 
 /// Lists each MCP server's process group with the job watchdog, so a SIGKILL or a crash of ask does not leave the server running
 /// (ADR-0102), exactly as it does not leave a job.

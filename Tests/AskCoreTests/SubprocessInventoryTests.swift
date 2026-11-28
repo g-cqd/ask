@@ -6,6 +6,8 @@ internal import Testing
 @Suite("Processes are started only where the inventory says why")
 struct SubprocessInventoryTests {
     /// Each file that may start a process, and why no system API does the job.
+    // An MCP stdio server is a process by the protocol: AemiMCP's StdioTransport starts it (ADR-0171), from
+    // MCPHub+Transport.swift, so no file of ask's starts it.
     private static let inventory: [String: String] = [
         "Job.swift": "the model's commands: running them is the bash tool's point",
         "JobProcess.swift": "the model's commands, under sandbox-exec, which has no public API replacement",
@@ -13,8 +15,6 @@ struct SubprocessInventoryTests {
         "JobWatchdog+Process.swift": "must outlive a SIGKILL of ask, which only another process can",
         "SelfCheck.swift": "a new build of ask must be started to show it can start, before a reload",
         "ProjectLister.swift": "git is the authority on what it ignores",
-        "StdioTransport.swift": "an MCP stdio server is a process by the protocol",
-        "StdioTransport+Run.swift": "an MCP stdio server is a process by the protocol",
         "Reexec.swift": "/reload replaces ask with its new build: execve, not a child",
         "OpenerLaunch.swift": "the person's own opener command, started on their click (ADR-0148)",
         "CommandCheck.swift":

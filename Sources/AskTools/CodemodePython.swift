@@ -1,5 +1,5 @@
+internal import AemiMCP
 internal import AskCodemode
-internal import AskMCP
 internal import Foundation
 internal import Synchronization
 

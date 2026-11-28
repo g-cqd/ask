@@ -1,3 +1,4 @@
+internal import AemiMCP
 internal import AskAI
 public import AskAgentCore
 internal import AskCore
@@ -41,7 +42,7 @@ extension MCPHub {
                 url: url,
                 headers: headers.sorted { $0.key < $1.key }.map { (name: $0.key, value: $0.value) },
                 userAgent: userAgent,
-                http: http,
+                http: MCPHTTPBridge(http),
                 authorization: signIn
             )
         }

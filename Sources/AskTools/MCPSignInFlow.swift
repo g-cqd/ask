@@ -1,3 +1,4 @@
+internal import AemiMCP
 internal import AskAI
 internal import AskMCP
 internal import Foundation
@@ -29,8 +30,8 @@ struct MCPSignInFlow: Sendable {
         clientID configured: String?,
         opening: @Sendable (URL) async -> Void
     ) async throws(MCPOAuthError) {
-        let plan = try await MCPOAuthDiscovery.discover(server: url, challenge: challenge, http: http)
-        let client = MCPOAuthClient(plan: plan, http: http)
+        let plan = try await MCPOAuthDiscovery.discover(server: url, challenge: challenge, http: MCPHTTPBridge(http))
+        let client = MCPOAuthClient(plan: plan, http: MCPHTTPBridge(http))
         let kept = ((try? file.loadMCP(server: plan.resource)) ?? nil)
             .flatMap {
                 $0.issuer == plan.issuer.absoluteString ? $0 : nil
@@ -53,8 +54,8 @@ struct MCPSignInFlow: Sendable {
         let redirect = "http://127.0.0.1:\(listener.port)\(Self.callbackPath)"
         let id: String
         if let clientID { id = clientID } else { id = try await client.register(redirectURI: redirect) }
-        let pkce = PKCE.generate()
-        let state = PKCE.generate().verifier
+        let pkce = MCPPKCE.generate()
+        let state = MCPPKCE.generate().verifier
         let address = try client.authorizationURL(clientID: id, redirectURI: redirect, pkce: pkce, state: state)
         await opening(address)
         let code = try await Self.approval(listener, state: state)

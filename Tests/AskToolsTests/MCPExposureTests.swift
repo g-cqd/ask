@@ -1,6 +1,6 @@
+import AemiMCP
 import AskAI
 import AskAgentCore
-import AskMCP
 import Testing
 
 @testable import AskTools

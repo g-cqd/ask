@@ -1,4 +1,4 @@
-internal import AskMCP
+internal import AemiMCP
 internal import Synchronization
 
 /// The connected servers that say they have resources, with the connection each is read through (roadmap 0067), and the resources ask

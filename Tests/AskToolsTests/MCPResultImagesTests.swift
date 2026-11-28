@@ -1,5 +1,5 @@
+import AemiMCP
 import AskAI
-import AskMCP
 import CoreGraphics
 import Foundation
 import ImageIO

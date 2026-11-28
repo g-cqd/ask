@@ -1,4 +1,4 @@
-internal import AskMCP
+internal import AemiMCP
 
 /// A server's progress report as the short line a running block shows (roadmap 0067): the share done when the server gives a total,
 /// then its words; with no total, its words, or else its count.

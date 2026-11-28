@@ -1,3 +1,4 @@
+internal import AemiMCP
 internal import AskAI
 internal import AskAgentCore
 internal import AskMCP
@@ -18,6 +19,7 @@ enum MCPCalling {
             context.reportsProgress ? { @Sendable report in context.reportProgress(MCPProgressLine.of(report)) } : nil
         let allowance = ImageReader.Allowance(context.imageLimits)
         do {
+            guard let arguments = MCPJSONObject(arguments) else { return .error("the arguments are not a JSON object") }
             let result = try await connection.callTool(tool, arguments: arguments, onProgress: onProgress)
             let pictures = MCPResultImages(result, allowance: allowance)
             let text = MCPResultText.of(result, replacing: pictures.lines)

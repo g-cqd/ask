@@ -1,4 +1,4 @@
-import AskMCP
+import AemiMCP
 import Testing
 
 /// The rule itself, as the MCP spec (2025-06-18) defines the hints: `readOnlyHint` defaults to false, `destructiveHint` to true, and
